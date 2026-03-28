@@ -525,7 +525,8 @@ function sheetToArr(name) {
 // ════════════════════════════════
 //  STATE
 // ════════════════════════════════
-let GAS_URL   = localStorage.getItem('gasUrl')  || '';
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyYfUwWDVo0xfzbP-bGpNORl0MJ0RmkShJU662jEKp3D_Hb-rF7kBYC77CWVkxOjOs5xQ/exec';
+let GAS_URL   = localStorage.getItem('gasUrl')  || DEFAULT_GAS_URL;
 let SUP_PASS  = localStorage.getItem('supPass') || 'supervisor123';
 let currentUser = null;
 let allProducts = [], allCustomers = [], allSalespeople = [], allRoutes = [];
@@ -537,6 +538,8 @@ const today = new Date().toISOString().split('T')[0];
 
 document.getElementById('appsScriptCode').textContent = APPS_SCRIPT;
 document.getElementById('gasUrlInput').value  = GAS_URL;
+// Save the default URL so it persists even before user opens Setup
+if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
 document.getElementById('supPassInput').value = SUP_PASS;
 document.getElementById('topDate').textContent =
   new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
@@ -546,7 +549,17 @@ document.getElementById('topDate').textContent =
 // Auto-load salespeople on boot
 (async () => {
   if (!GAS_URL) return;
-  try { const d = await api('getData'); cacheData(d); populateSPDropdown(); } catch(e) {}
+  const sel = document.getElementById('loginUser');
+  sel.innerHTML = '<option value="">Loading salespeople...</option>';
+  sel.disabled = true;
+  try {
+    const d = await api('getData');
+    cacheData(d);
+    populateSPDropdown();
+  } catch(e) {
+    sel.innerHTML = '<option value="">Could not load — check Setup</option>';
+  }
+  sel.disabled = false;
 })();
 
 // ════════════════════════════════
