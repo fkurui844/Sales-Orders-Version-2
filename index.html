@@ -164,116 +164,67 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .hint{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6}
 
 /* ── RESPONSIVE — TABLET & MOBILE ── */
-
-/* Tablet (≤ 900px) */
 @media(max-width:900px){
   .stats-grid{grid-template-columns:1fr 1fr}
   .main{padding:20px 16px}
   .topbar{padding:0 16px}
 }
-
-/* Mobile (≤ 640px) */
 @media(max-width:640px){
-
-  /* Layout */
   .main{padding:12px}
   .topbar{padding:0 12px;height:52px}
   .brand-sub{display:none}
   .topbar-right{gap:6px}
-
-  /* Shrink user pill on mobile */
   .user-pill{padding:4px 8px 4px 4px;font-size:12px;gap:6px}
   .user-pill span#topUserName{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .btn-ghost.btn-sm{padding:5px 8px;font-size:11px}
-
-  /* Login card — full width, less padding */
   #loginScreen{padding:12px;align-items:flex-start;padding-top:40px}
   .login-card{padding:24px 20px;border-radius:var(--radius-lg)}
   .login-title{font-size:19px}
-
-  /* Tabs — stretch full width */
   .tabs{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))}
   .tab-btn{padding:8px 6px;font-size:12px;text-align:center}
-
-  /* Cards */
   .card{padding:16px;border-radius:var(--radius)}
   .card-title{font-size:14px}
   .section-header{flex-direction:column;align-items:flex-start;gap:10px}
   .section-header > div:last-child{width:100%;display:flex;gap:6px}
   .section-header input[type=text]{flex:1;width:auto}
-
-  /* Form grid — single column */
   .form-grid{grid-template-columns:1fr}
   .form-grid .full{grid-column:1}
-
-  /* Stats grid — 2 col on mobile */
   .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
   .stat-card{padding:14px 12px}
   .stat-value{font-size:20px}
   .stat-label{font-size:10px}
-
-  /* Products table — horizontal scroll */
   #productsTableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .products-table{min-width:480px}
   .products-table th,.products-table td{padding:8px 8px;font-size:12px}
   .qty-input{width:58px;font-size:12px}
-
-  /* Data table — horizontal scroll */
-  .card > #allOrdersTable,
-  #allOrdersTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .card > #allOrdersTable,#allOrdersTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .data-table{min-width:560px}
   .data-table th,.data-table td{padding:8px 10px;font-size:12px}
-
-  /* Supervisor breakdown table */
   #spBreakdown{overflow-x:auto;-webkit-overflow-scrolling:touch}
   #spBreakdown .data-table{min-width:420px}
-
-  /* Filters bar — wrap and full width inputs */
   .filters-bar{gap:8px}
-  .filters-bar select,
-  .filters-bar input[type=date]{width:100%;font-size:13px}
-
-  /* My Orders date filter — stack */
+  .filters-bar select,.filters-bar input[type=date]{width:100%;font-size:13px}
   #myOrders .section-header{flex-direction:column;align-items:flex-start;gap:8px}
   #myOrders .section-header > div:last-child{display:flex;flex-direction:column;gap:6px;width:100%}
   #myOrders .section-header input[type=date]{width:100%}
   #myOrders .section-header .btn{width:100%;justify-content:center}
-
-  /* Product summary — 1 col */
   .product-summary-grid{grid-template-columns:1fr}
-
-  /* Order summary */
   .summary-row{font-size:12px}
   .summary-total{font-size:14px}
-
-  /* Order action buttons — stack */
   .card > div[style*="justify-content:flex-end"]{flex-direction:column}
   .card > div[style*="justify-content:flex-end"] .btn{width:100%;justify-content:center}
-
-  /* Modal — full screen on mobile */
   .modal-backdrop{padding:0;align-items:flex-end}
   .modal{border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-height:92vh;padding:20px 16px}
   .modal-actions{flex-direction:column-reverse}
   .modal-actions .btn{width:100%;justify-content:center}
-
-  /* Toast — full width at bottom */
   .toast{left:12px;right:12px;bottom:16px;text-align:center}
-
-  /* Order cards */
   .order-card{padding:14px}
-
-  /* Expand inner */
   .expand-inner{padding:12px}
-
-  /* Bigger tap targets for inputs */
-  .field input,.input-plain,
-  select{min-height:44px;font-size:16px!important} /* 16px prevents iOS zoom */
+  .field input,.input-plain,select{min-height:44px;font-size:16px!important}
   .qty-input{min-height:36px}
   .btn-lg{min-height:48px;font-size:15px}
   .btn{min-height:40px}
 }
-
-/* Very small phones (≤ 375px) */
 @media(max-width:375px){
   .stats-grid{grid-template-columns:1fr}
   .tabs{grid-template-columns:1fr}
@@ -557,7 +508,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 // ══════════════════════════════════════════════════
-//  APPS SCRIPT SOURCE (for copy button in Setup)
+//  APPS SCRIPT SOURCE
 // ══════════════════════════════════════════════════
 const GAS_SOURCE = `const SS = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -684,36 +635,28 @@ function savePassword(p) {
   if (data.length < 1) throw new Error('Salesperson Details sheet is empty');
   var hdrs = data[0].map(function(h){ return String(h).trim(); });
 
-  // Find or create Password column
   var passCol = hdrs.indexOf('Password');
   if (passCol === -1) {
     passCol = hdrs.length;
     sheet.getRange(1, passCol+1).setValue('Password');
   }
 
-  // Find name column — try many variants
   var nameCol = -1;
   ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name','EMPLOYEE NAME'].forEach(function(k){
     if (nameCol === -1) nameCol = hdrs.indexOf(k);
   });
-  // If still not found, use column 0 as fallback
   if (nameCol === -1) nameCol = 0;
 
-  // Find payroll column — try many variants
   var payrollCol = -1;
   ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID','payroll no','payroll'].forEach(function(k){
     if (payrollCol === -1) payrollCol = hdrs.indexOf(k);
   });
 
-  // Search rows: match by name OR payroll OR any cell value matching name/payroll
   for (var i = 1; i < data.length; i++) {
     var rowName    = String(data[i][nameCol] || '').trim();
     var rowPayroll = payrollCol >= 0 ? String(data[i][payrollCol] || '').trim() : '';
-
     var matchName    = name    && rowName    && rowName.toLowerCase()    === name.toLowerCase();
     var matchPayroll = payroll && rowPayroll && rowPayroll.toLowerCase() === payroll.toLowerCase();
-
-    // Also try matching name against any cell in the row (in case nameCol guessed wrong)
     var matchAnyCell = false;
     if (name && !matchName) {
       for (var c = 0; c < data[i].length; c++) {
@@ -723,7 +666,6 @@ function savePassword(p) {
         }
       }
     }
-
     if (matchName || matchPayroll || matchAnyCell) {
       sheet.getRange(i+1, passCol+1).setValue(pass);
       SpreadsheetApp.flush();
@@ -731,7 +673,6 @@ function savePassword(p) {
     }
   }
 
-  // Nothing matched — return helpful debug info
   var sampleRow = data.length > 1 ? JSON.stringify(data[1]) : 'no data rows';
   throw new Error('No match found for name="' + name + '" payroll="' + payroll + '". Headers: [' + hdrs.join(', ') + ']. Sample row: ' + sampleRow);
 }
@@ -785,29 +726,22 @@ document.getElementById('topDate').textContent =
   .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
 if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
 
-// Boot: load salespeople — cache-first for instant startup
+// Boot
 (async () => {
   const inp = document.getElementById('spSearchInput');
-
-  // ── Step 1: Load from localStorage cache instantly ──
   const cached = localStorage.getItem('spDataCache');
   if (cached) {
     try {
       cacheData(JSON.parse(cached));
       inp.placeholder = 'Enter your payroll number...';
       inp.disabled = false;
-      // Refresh cache silently in background
       api('getData').then(d => {
         cacheData(d);
         localStorage.setItem('spDataCache', JSON.stringify(d));
       }).catch(e => console.warn('Background refresh failed:', e.message));
-      return; // Done — user can interact immediately
-    } catch(e) {
-      console.warn('Cache parse failed, fetching fresh:', e.message);
-    }
+      return;
+    } catch(e) { console.warn('Cache parse failed:', e.message); }
   }
-
-  // ── Step 2: No cache yet — fetch fresh (first ever load) ──
   inp.placeholder = 'Loading...';
   inp.disabled = true;
   try {
@@ -824,7 +758,6 @@ if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFA
 
 // ══════════════════════════════════════════════════
 //  SP HELPER FUNCTIONS
-//  Robustly extract fields regardless of column name casing
 // ══════════════════════════════════════════════════
 function getField(obj, candidates) {
   if (!obj) return '';
@@ -848,15 +781,23 @@ function spRoute(s) {
   return getField(s, ['Route','ROUTE','route','Territory','Region','Area']);
 }
 
-// Build a human-readable display label for a salesperson
-// Falls back gracefully: Name → Payroll → first non-empty field
+function spPassword(s) {
+  if (!s) return '';
+  // Check all common casing variants
+  for (const key of ['Password','PASSWORD','password','Pass','PASS','pass']) {
+    if (s[key] !== undefined && s[key] !== null && String(s[key]).trim() !== '') {
+      return String(s[key]).trim();
+    }
+  }
+  return '';
+}
+
 function spDisplayLabel(s) {
   if (!s) return '';
   const name    = spName(s);
   const payroll = spPayroll(s);
   if (name)    return name + (payroll ? ' (' + payroll + ')' : '');
   if (payroll) return 'Payroll: ' + payroll;
-  // Last resort: use first non-empty value in the object
   const firstVal = Object.values(s).find(v => v && String(v).trim());
   return firstVal ? String(firstVal).trim() : '(Unknown)';
 }
@@ -878,8 +819,7 @@ function renderSPOptions(list) {
     const payroll = spPayroll(s);
     const route   = spRoute(s);
     const label   = spDisplayLabel(s);
-    // Store the display label and index as data attributes for selection
-    return `<div class="sp-opt" data-idx="${i}" data-label="${encodeURIComponent(label)}" onclick="selectSPByIdx(${allSalespeople.indexOf(s)})">
+    return `<div class="sp-opt" data-idx="${i}" onclick="selectSPByIdx(${allSalespeople.indexOf(s)})">
       <div class="sp-opt-name">${name || label}</div>
       ${payroll ? `<div class="sp-opt-payroll">Payroll: ${payroll}</div>` : ''}
       ${route   ? `<div class="sp-opt-route">${route}</div>` : ''}
@@ -921,7 +861,6 @@ function hideSPDropdown() {
   inp.style.boxShadow = 'none';
 }
 
-// Select by index in allSalespeople array
 function selectSPByIdx(idx) {
   selectedSP = allSalespeople[idx] || null;
   if (!selectedSP) return;
@@ -930,10 +869,8 @@ function selectSPByIdx(idx) {
   const name    = spName(selectedSP);
   const payroll = spPayroll(selectedSP);
 
-  // Show the person's name (or best label) in the input box
   document.getElementById('spSearchInput').value = label;
 
-  // Show confirmation banner
   let bannerText = name || label;
   if (payroll && name) bannerText += ' — Payroll: ' + payroll;
   document.getElementById('spSelectedLabel').textContent = bannerText;
@@ -971,35 +908,51 @@ document.addEventListener('click', e => {
 });
 
 // ══════════════════════════════════════════════════
-//  LOGIN FLOW
+//  LOGIN FLOW  — ALL BUGS FIXED HERE
 // ══════════════════════════════════════════════════
-async function onUserSelected(displayName) {
+
+function onUserSelected(displayName) {
   clearMsg();
   if (!displayName) return;
-  const existPass = selectedSP
-    ? (selectedSP['Password'] || selectedSP['PASSWORD'] || selectedSP['password'] || '').trim()
-    : '';
+
+  // Use the centralised spPassword() helper — handles all casing variants
+  const existPass = spPassword(selectedSP);
+
   document.getElementById('stepName').style.display = 'none';
+
   if (!existPass) {
+    // First-time user: show create-password form
     loginMode = 'create';
     document.getElementById('stepCreate').style.display = 'block';
     document.getElementById('loginSubText').textContent = 'Welcome, ' + displayName;
+    document.getElementById('newPass1').value = '';
+    document.getElementById('newPass2').value = '';
     document.getElementById('newPass1').focus();
   } else {
+    // Returning user: show enter-password form
     loginMode = 'login';
     document.getElementById('passLabel').textContent = 'Password for ' + displayName;
     document.getElementById('loginSubText').textContent = 'Welcome back, ' + displayName;
+    document.getElementById('loginPass').value = '';
     document.getElementById('stepLogin').style.display = 'block';
     document.getElementById('loginPass').focus();
   }
 }
 
-async function doCreatePassword() {
-  const p1 = document.getElementById('newPass1').value.trim();
-  const p2 = document.getElementById('newPass2').value.trim();
+// ── FIX: doCreatePassword — button always resets, no silent hang ──
+function doCreatePassword() {
+  const p1  = document.getElementById('newPass1').value.trim();
+  const p2  = document.getElementById('newPass2').value.trim();
+  const btn = document.getElementById('createBtn');
   clearMsg();
+
   if (p1.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); return; }
   if (p1 !== p2)     { showMsg('Passwords do not match.', 'error'); return; }
+
+  if (!selectedSP) {
+    showMsg('Session error — please go back and select your name again.', 'error');
+    return;
+  }
 
   const name        = spName(selectedSP);
   const payroll     = spPayroll(selectedSP);
@@ -1011,53 +964,108 @@ async function doCreatePassword() {
     return;
   }
 
-  // ── Save password locally and sign in immediately — no waiting ──
-  if (selectedSP) selectedSP['Password'] = p1;
+  // Update local cache so password works immediately
+  selectedSP['Password'] = p1;
+
+  // Sign in immediately — no waiting on network
   toast('Password set! Signing you in…', 'success');
   finishLogin();
 
-  // ── Sync to sheet silently in the background ──
+  // Sync to sheet in background — silently, never blocks login
   api('savePassword', { name: nameToSend, payroll, pass: p1 })
     .then(() => console.log('Password synced to sheet.'))
-    .catch(e => console.warn('Background password sync failed:', e.message));
+    .catch(e => console.warn('Background password sync failed (non-critical):', e.message));
 }
 
-async function doLogin() {
+// ── FIX: doLogin — button always resets on both success and failure ──
+function doLogin() {
   const pass = document.getElementById('loginPass').value;
+  const btn  = document.getElementById('loginBtn');
   clearMsg();
-  if (!pass) { showMsg('Please enter your password.', 'error'); return; }
 
+  if (!pass) {
+    showMsg('Please enter your password.', 'error');
+    return;
+  }
+
+  // ── Supervisor path ──
   if (loginMode === 'supervisor') {
-    if (pass === SUP_PASS) { currentUser = { name: 'Supervisor', role: 'Supervisor' }; onLoginSuccess(); }
-    else { showMsg('Incorrect supervisor password.', 'error'); }
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Checking…';
+    // Use setTimeout to allow spinner to render before sync check
+    setTimeout(() => {
+      if (pass === SUP_PASS) {
+        currentUser = { name: 'Supervisor', role: 'Supervisor' };
+        onLoginSuccess();
+      } else {
+        showMsg('Incorrect supervisor password.', 'error');
+        btn.innerHTML = 'Sign In';
+        btn.disabled  = false;
+      }
+    }, 80);
     return;
   }
 
-  const stored = (selectedSP?.['Password'] || selectedSP?.['PASSWORD'] || selectedSP?.['password'] || '').trim();
-  if (stored && pass !== stored) {
-    showMsg('Incorrect password.', 'error');
+  // ── Salesperson path ──
+  if (!selectedSP) {
+    showMsg('Session error — please go back and select your name again.', 'error');
     return;
   }
-  finishLogin();
+
+  const stored = spPassword(selectedSP);
+
+  // If no stored password somehow got to this screen, just let them in
+  // (edge case: sheet updated between cache load and login attempt)
+  if (!stored) {
+    finishLogin();
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+  setTimeout(() => {
+    if (pass !== stored) {
+      showMsg('Incorrect password. Please try again.', 'error');
+      btn.innerHTML = 'Sign In';
+      btn.disabled  = false;
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginPass').focus();
+    } else {
+      finishLogin();
+      // btn will be hidden with login screen, no need to reset
+    }
+  }, 80);
 }
 
 function finishLogin() {
-  currentUser = {
-    name: spDisplayLabel(selectedSP),
-    role: (selectedSP?.['Role'] || selectedSP?.['ROLE'] || selectedSP?.['role'] || 'Salesperson'),
-    data: selectedSP
-  };
+  if (!selectedSP && loginMode !== 'supervisor') {
+    showMsg('Session error — please go back and select your name again.', 'error');
+    return;
+  }
+  if (loginMode === 'supervisor') {
+    currentUser = { name: 'Supervisor', role: 'Supervisor' };
+  } else {
+    currentUser = {
+      name: spDisplayLabel(selectedSP),
+      role: (getField(selectedSP, ['Role','ROLE','role']) || 'Salesperson'),
+      data: selectedSP
+    };
+  }
   onLoginSuccess();
 }
 
 function showSupLogin() {
-  loginMode = 'supervisor'; selectedSP = null;
+  loginMode = 'supervisor';
+  selectedSP = null;
   document.getElementById('stepName').style.display   = 'none';
   document.getElementById('stepCreate').style.display = 'none';
   document.getElementById('stepLogin').style.display  = 'block';
   document.getElementById('passLabel').textContent    = 'Supervisor Password';
   document.getElementById('loginSubText').textContent = 'Supervisor access';
   document.getElementById('loginPass').value = '';
+  document.getElementById('loginBtn').innerHTML = 'Sign In';
+  document.getElementById('loginBtn').disabled  = false;
   document.getElementById('loginPass').focus();
 }
 
@@ -1074,8 +1082,11 @@ function resetLogin() {
   document.getElementById('loginSubText').textContent       = 'Select your name to get started';
   document.getElementById('strengthFill').style.width       = '0';
   document.getElementById('strengthHint').textContent       = 'Minimum 6 characters';
-  document.getElementById('loginBtn').innerHTML             = 'Sign In';
-  document.getElementById('loginBtn').disabled              = false;
+  // Always fully reset both buttons
+  document.getElementById('loginBtn').innerHTML  = 'Sign In';
+  document.getElementById('loginBtn').disabled   = false;
+  document.getElementById('createBtn').innerHTML = 'Set Password &amp; Continue &#8594;';
+  document.getElementById('createBtn').disabled  = false;
   clearMsg();
 }
 
@@ -1504,7 +1515,7 @@ function showTab(id, btn) {
 }
 
 // ══════════════════════════════════════════════════
-//  API — JSONP (bypasses CORS + redirect issues)
+//  API — JSONP
 // ══════════════════════════════════════════════════
 function api(action, body = {}) {
   return new Promise((resolve, reject) => {
