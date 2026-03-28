@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Order System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F7F6F2;--surface:#FFFFFF;--surface2:#F0EFE9;
+    --border:#E2E0D8;--border2:#C8C6BC;
+    --text:#1A1916;--text2:#6B6960;--text3:#9B9A94;
+    --accent:#1B6B45;--accent-light:#E8F4EE;--accent-mid:#2D8A5A;
+    --danger:#C13B2A;--danger-light:#FAEAE8;
+    --warn:#B5620F;--warn-light:#FDF0E3;
+    --blue:#1A5AA8;--blue-light:#E8F0FB;
+    --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);
+    --shadow-lg:0 4px 20px rgba(0,0,0,.10),0 1px 4px rgba(0,0,0,.06);
+    --radius:10px;--radius-lg:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+  .app{display:flex;flex-direction:column;min-height:100vh}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .topbar-brand{display:flex;align-items:center;gap:10px}
+  .brand-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .brand-icon svg{width:18px;height:18px;fill:white}
+  .brand-name{font-weight:600;font-size:15px}
+  .brand-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .user-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 6px;font-size:13px;color:var(--text2)}
+  .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+  .main{flex:1;padding:28px 24px;max-width:1100px;margin:0 auto;width:100%}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;text-decoration:none}
+  .btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:var(--accent-mid)}.btn-primary:disabled{background:var(--text3);cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--surface2);border-color:var(--border2)}
+  .btn-sm{padding:5px 10px;font-size:12px}.btn-lg{padding:11px 24px;font-size:15px}
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+  .badge-green{background:var(--accent-light);color:var(--accent)}
+  .badge-blue{background:var(--blue-light);color:var(--blue)}
+  .badge-orange{background:var(--warn-light);color:var(--warn)}
+
+  /* LOGIN */
+  #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:16px}
+  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
+  .login-logo{width:48px;height:48px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+  .login-logo svg{width:26px;height:26px;fill:white}
+  .login-title{font-size:22px;font-weight:600;margin-bottom:4px}
+  .login-sub{color:var(--text2);font-size:13px;margin-bottom:28px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .field select,.field input,.input-plain{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+  .field select:focus,.field input:focus,.input-plain:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  .pass-wrap{position:relative}
+  .pass-wrap input{padding-right:40px}
+  .pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;font-size:15px;line-height:1}
+  .login-msg{border-radius:var(--radius);padding:11px 14px;font-size:13px;margin-bottom:16px;display:none;line-height:1.5}
+  .login-msg.error{background:var(--danger-light);border:1px solid #F5C0B8;color:var(--danger)}
+  .login-msg.info{background:var(--accent-light);border:1px solid #A8D8BC;color:var(--accent)}
+  .login-msg.warn{background:var(--warn-light);border:1px solid #F5D4A8;color:var(--warn)}
+  .new-pass-banner{background:var(--accent-light);border:1px solid #A8D8BC;border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--accent);line-height:1.5}
+  .strength-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+  .strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+  .strength-hint{font-size:11px;color:var(--text3);margin-top:4px}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
+  .tab-btn{padding:7px 18px;border-radius:7px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
+  .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px}
+  .card-title{font-size:15px;font-weight:600;margin-bottom:4px}
+  .card-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-grid .full{grid-column:1/-1}
+
+  /* PRODUCTS */
+  .products-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+  .products-table th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+  .products-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  .products-table tr:last-child td{border-bottom:none}
+  .products-table tr:hover td{background:var(--surface2)}
+  .qty-input{width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:center;outline:none;background:var(--surface)}
+  .qty-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
+  .qty-input.has-value{border-color:var(--accent);background:var(--accent-light);font-weight:600;color:var(--accent)}
+
+  /* ORDER SUMMARY */
+  .order-summary{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:16px}
+  .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text2);margin-bottom:6px}
+  .summary-total{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:600;margin-top:10px;padding-top:10px;border-top:2px solid var(--border)}
+  .total-amount{font-family:'DM Mono',monospace;color:var(--accent)}
+
+  /* ORDER CARDS */
+  .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;cursor:pointer;transition:all .15s}
+  .order-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+  .order-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+
+  /* SUPERVISOR */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+  .stat-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .stat-value{font-size:26px;font-weight:600;font-family:'DM Mono',monospace}
+  .stat-sub{font-size:12px;color:var(--text2);margin-top:4px}
+  .filters-bar{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+  .filters-bar select,.filters-bar input[type=date]{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none}
+  .data-table{width:100%;border-collapse:collapse}
+  .data-table th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+  .data-table td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+  .data-table tr:last-child td{border-bottom:none}
+  .data-table tr:hover td{background:#FAFAF7}
+  .data-table .mono{font-family:'DM Mono',monospace}
+  .expand-row td{background:var(--surface2)!important;padding:0!important}
+  .expand-inner{padding:16px 20px}
+  .product-breakdown{display:flex;flex-wrap:wrap;gap:8px}
+  .product-chip{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px}
+  .product-chip strong{color:var(--accent);font-family:'DM Mono',monospace}
+  .product-summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .product-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  .product-sum-name{font-weight:500;font-size:13px}
+  .product-sum-pkg{font-size:11px;color:var(--text3)}
+  .product-sum-qty{font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)}
+
+  /* MODAL */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal{background:var(--surface);border-radius:var(--radius-lg);padding:28px;max-width:560px;width:100%;box-shadow:var(--shadow-lg);max-height:88vh;overflow-y:auto}
+  .modal-title{font-size:18px;font-weight:600;margin-bottom:4px}
+  .modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:white;padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:300;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.success{background:var(--accent)}.toast.error{background:var(--danger)}.toast.info{background:var(--blue)}
+
+  /* LOADING */
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay{display:flex;align-items:center;justify-content:center;padding:48px;flex-direction:column;gap:12px;color:var(--text2)}
+  .loading-spinner-lg{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  .empty-state{text-align:center;padding:48px 24px;color:var(--text2)}
+
+  /* CONFIG */
+  .config-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:14px}
+  .config-step-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .config-step-num{width:26px;height:26px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+  .config-step-title{font-weight:600;font-size:14px}
+  .config-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+  .config-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+  .code-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'DM Mono',monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;color:var(--text);margin-top:8px;max-height:130px;overflow-y:auto;line-height:1.6}
+  .hint{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6}
+
+  @media(max-width:640px){
+    .stats-grid{grid-template-columns:1fr 1fr}
+    .form-grid{grid-template-columns:1fr}
+    .product-summary-grid{grid-template-columns:1fr}
+    .main{padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+    </div>
+    <div class="login-title">Sales Order System</div>
+    <div class="login-sub" id="loginSubText">Select your name to get started</div>
+
+    <div id="loginMsg" class="login-msg"></div>
+
+    <!-- STEP 1: pick name -->
+    <div id="stepName">
+      <div class="field">
+        <label>Salesperson</label>
+        <select id="loginUser" onchange="onUserSelected()">
+          <option value="">— Select your name —</option>
+        </select>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn btn-ghost btn-sm" onclick="showConfig()">&#9881; Setup / Configure</button>
+        &nbsp;
+        <button class="btn btn-ghost btn-sm" onclick="showSupLogin()">&#128272; Supervisor</button>
+      </div>
+    </div>
+
+    <!-- STEP 2a: create password (first time) -->
+    <div id="stepCreate" style="display:none">
+      <div class="new-pass-banner">
+        &#128075; Welcome! You haven't set a password yet.<br>Please create one to continue — it will be saved to the system.
+      </div>
+      <div class="field">
+        <label>Create Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="newPass1" placeholder="Choose a password" oninput="checkStrength(this.value)">
+          <button class="pass-toggle" onclick="toggleVis('newPass1',this)" tabindex="-1">&#128065;</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-hint" id="strengthHint">Minimum 6 characters</div>
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="newPass2" placeholder="Re-enter password" onkeydown="if(event.key==='Enter')doCreatePassword()">
+          <button class="pass-toggle" onclick="toggleVis('newPass2',this)" tabindex="-1">&#128065;</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doCreatePassword()" id="createBtn">
+        Create Password &amp; Sign In
+      </button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="resetLogin()">&#8592; Back</button>
+    </div>
+
+    <!-- STEP 2b: enter existing password -->
+    <div id="stepLogin" style="display:none">
+      <div class="field">
+        <label id="passLabel">Password</label>
+        <div class="pass-wrap">
+          <input type="password" id="loginPass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pass-toggle" onclick="toggleVis('loginPass',this)" tabindex="-1">&#128065;</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doLogin()" id="loginBtn">
+        Sign In
+      </button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="resetLogin()">&#8592; Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="app" id="appScreen" style="display:none">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
+      <div><div class="brand-name">Sales Orders</div><div class="brand-sub" id="topDate"></div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-pill">
+        <div class="user-avatar" id="topAvatar">?</div>
+        <span id="topUserName">—</span>
+        <span class="badge" id="topRole" style="margin-left:4px">—</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- SALESPERSON -->
+    <div id="spView" style="display:none">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('newOrder',this)">New Order</button>
+        <button class="tab-btn" onclick="showTab('myOrders',this)">My Orders</button>
+      </div>
+      <div id="newOrder">
+        <div class="card">
+          <div class="card-title">Place New Order</div>
+          <div class="card-sub">Select a customer then fill in quantities</div>
+          <div class="form-grid">
+            <div class="field"><label>Customer</label><select id="orderCustomer" onchange="onCustomerChange()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Select customer...</option></select></div>
+            <div class="field"><label>Route</label><input id="orderRoute" class="input-plain" readonly style="background:var(--surface2);color:var(--text2)" placeholder="Auto-filled"></div>
+            <div class="field"><label>Order Date</label><input type="date" id="orderDate" class="input-plain"></div>
+            <div class="field"><label>Delivery Date</label><input type="date" id="orderDelivery" class="input-plain"></div>
+            <div class="field full"><label>Notes (optional)</label><input type="text" id="orderNotes" class="input-plain" placeholder="Special instructions..."></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Products &amp; Quantities</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="productSearch" placeholder="Search..." style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;width:140px;outline:none;font-family:'DM Sans',sans-serif" oninput="filterProducts()">
+              <button class="btn btn-ghost btn-sm" onclick="clearAllQty()">Clear</button>
+            </div>
+          </div>
+          <div id="productsTableWrap"><div class="loading-overlay"><div class="loading-spinner-lg"></div><span>Loading products...</span></div></div>
+          <div class="order-summary" id="orderSummary" style="display:none">
+            <div id="summaryItems"></div>
+            <div class="summary-total"><span>Order Total</span><span class="total-amount" id="summaryGrandTotal">KES 0</span></div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-ghost" onclick="clearAllQty()">Reset</button>
+            <button class="btn btn-primary btn-lg" id="submitOrderBtn" onclick="submitOrder()" disabled>Submit Order</button>
+          </div>
+        </div>
+      </div>
+      <div id="myOrders" style="display:none">
+        <div class="section-header">
+          <div><div style="font-size:17px;font-weight:600">My Orders</div><div style="font-size:13px;color:var(--text2);margin-top:2px">Your submitted orders</div></div>
+          <div style="display:flex;gap:8px">
+            <input type="date" id="myFromDate" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+            <input type="date" id="myToDate" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+            <button class="btn btn-ghost btn-sm" onclick="loadMyOrders()">Filter</button>
+          </div>
+        </div>
+        <div id="myOrdersList"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
+      </div>
+    </div>
+
+    <!-- SUPERVISOR -->
+    <div id="supView" style="display:none">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('supDashboard',this)">Dashboard</button>
+        <button class="tab-btn" onclick="showTab('supOrders',this)">All Orders</button>
+        <button class="tab-btn" onclick="showTab('supProducts',this)">Product Summary</button>
+      </div>
+      <div id="supDashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value" id="sTotalOrders">—</div><div class="stat-sub">today</div></div>
+          <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" id="sTotalRevenue">—</div><div class="stat-sub">KES today</div></div>
+          <div class="stat-card"><div class="stat-label">Active Salespeople</div><div class="stat-value" id="sActiveSP">—</div><div class="stat-sub">with orders today</div></div>
+          <div class="stat-card"><div class="stat-label">Customers Served</div><div class="stat-value" id="sCustomers">—</div><div class="stat-sub">today</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Orders by Salesperson — Today</div>
+          <div class="card-sub">Click a row to expand order details</div>
+          <div id="spBreakdown"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
+        </div>
+      </div>
+      <div id="supOrders" style="display:none">
+        <div class="filters-bar">
+          <select id="filterSP" onchange="applyFilters()"><option value="">All Salespeople</option></select>
+          <select id="filterRoute" onchange="applyFilters()"><option value="">All Routes</option></select>
+          <input type="date" id="filterFrom" onchange="applyFilters()">
+          <input type="date" id="filterTo" onchange="applyFilters()">
+          <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden"><div id="allOrdersTable"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div></div>
+      </div>
+      <div id="supProducts" style="display:none">
+        <div class="filters-bar">
+          <input type="date" id="prodFilterFrom" onchange="loadProductSummary()">
+          <input type="date" id="prodFilterTo" onchange="loadProductSummary()">
+        </div>
+        <div class="card">
+          <div class="card-title">Total Quantities Ordered</div>
+          <div class="card-sub">Aggregated across all salespeople</div>
+          <div id="productSummaryContent"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div id="configModal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)hideConfig()">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-title">&#9881; Setup &amp; Configuration</div>
+    <div class="modal-sub">Connect this app to your Google Sheet via Apps Script</div>
+    <div class="config-step">
+      <div class="config-step-header"><div class="config-step-num">1</div><div class="config-step-title">Open Google Sheet → Extensions → Apps Script → replace all code with this</div></div>
+      <div class="code-block" id="appsScriptCode">Loading...</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyAppsScript()">Copy Apps Script</button>
+    </div>
+    <div class="config-step">
+      <div class="config-step-header"><div class="config-step-num">2</div><div class="config-step-title">Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone → Copy URL</div></div>
+    </div>
+    <div class="config-step">
+      <div class="config-step-header"><div class="config-step-num">3</div><div class="config-step-title">Paste your Web App URL here</div></div>
+      <input class="config-input" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="hint" id="gasUrlStatus"></div>
+    </div>
+    <div class="config-step">
+      <div class="config-step-header"><div class="config-step-num">4</div><div class="config-step-title">Set supervisor password</div></div>
+      <input class="config-input" type="password" id="supPassInput" placeholder="Supervisor password">
+      <div class="hint">Used for accounts where Role = "Supervisor" in your Salesperson Details sheet.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideConfig()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveConfig()">Save &amp; Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div id="orderDetailModal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-title" id="odTitle">Order Detail</div>
+    <div class="modal-sub" id="odSub"></div>
+    <div id="odBody"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="document.getElementById('orderDetailModal').style.display='none'">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════
+//  APPS SCRIPT SOURCE
+// ════════════════════════════════
+const APPS_SCRIPT = `const SS = SpreadsheetApp.getActiveSpreadsheet();
+
+function doGet(e)  { return handle(e); }
+function doPost(e) { return handle(e); }
+
+function handle(e) {
+  const p    = e.parameter || {};
+  const body = tryParse(e.postData ? e.postData.contents : '{}');
+  const action = p.action || body.action;
+  try {
+    var res;
+    if      (action === 'getData')      res = getData();
+    else if (action === 'getOrders')    res = getOrders(p, body);
+    else if (action === 'submitOrder')  res = submitOrder(body);
+    else if (action === 'savePassword') res = savePassword(body);
+    else res = { error: 'Unknown action: ' + action };
+    return out(res);
+  } catch(err) { return out({ error: err.message }); }
+}
+
+function tryParse(s) { try { return JSON.parse(s); } catch(e) { return {}; } }
+function out(d) {
+  return ContentService.createTextOutput(JSON.stringify(d))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getData() {
+  return {
+    salespeople: sheetToArr('Salesperson Details'),
+    customers:   sheetToArr('Customers'),
+    products:    sheetToArr('Products_Packaging_Price'),
+    routes:      sheetToArr('Routes')
+  };
+}
+
+function getOrders(p, body) {
+  var rows = sheetToArr('Sales Orders Data');
+  var sp   = (p.salesperson || body.salesperson || '').toLowerCase().trim();
+  var from = p.from || body.from || '';
+  var to   = p.to   || body.to   || '';
+  return rows.filter(function(r) {
+    var matchSP   = !sp   || (r['Salesperson']||'').toLowerCase().trim() === sp;
+    var d         = r['Order Date'] || '';
+    var matchFrom = !from || d >= from;
+    var matchTo   = !to   || d <= to;
+    return matchSP && matchFrom && matchTo;
+  });
+}
+
+function submitOrder(body) {
+  var sheet = SS.getSheetByName('Sales Orders Data');
+  if (!sheet) throw new Error('Sheet "Sales Orders Data" not found');
+  var hdrs    = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+  var orderId = 'ORD-' + new Date().getTime();
+  var items   = body.items || [];
+  var rowsAdded = 0;
+  items.forEach(function(item) {
+    var row = hdrs.map(function(h) {
+      h = String(h).trim();
+      if (h === 'Order ID')      return orderId;
+      if (h === 'Order Date')    return body.orderDate    || '';
+      if (h === 'Delivery Date') return body.deliveryDate || '';
+      if (h === 'Salesperson')   return body.salesperson  || '';
+      if (h === 'Route')         return body.route        || '';
+      if (h === 'Customer')      return body.customer     || '';
+      if (h === 'Product')       return item.product      || '';
+      if (h === 'Packaging')     return item.packaging    || '';
+      if (h === 'Quantity')      return item.qty          || 0;
+      if (h === 'Unit Price')    return item.price        || 0;
+      if (h === 'Line Total')    return item.total        || 0;
+      if (h === 'Notes')         return body.notes        || '';
+      if (h === 'Timestamp')     return new Date().toISOString();
+      return '';
+    });
+    sheet.appendRow(row);
+    rowsAdded++;
+  });
+  return { success: true, orderId: orderId, rowsAdded: rowsAdded };
+}
+
+function savePassword(body) {
+  var name = (body.name || '').trim();
+  var pass = (body.pass || '').trim();
+  if (!name || !pass) throw new Error('Name and password are required');
+  var sheet = SS.getSheetByName('Salesperson Details');
+  if (!sheet) throw new Error('Sheet "Salesperson Details" not found');
+  var data = sheet.getDataRange().getValues();
+  var hdrs = data[0].map(function(h){ return String(h).trim(); });
+
+  // Find or create the Password column
+  var passCol = hdrs.indexOf('Password');
+  if (passCol === -1) {
+    passCol = hdrs.length;
+    sheet.getRange(1, passCol + 1).setValue('Password');
+  }
+
+  // Find the name column
+  var nameCol = -1;
+  ['Name','Salesperson','SALESPERSON','NAME'].forEach(function(k) {
+    if (nameCol === -1) nameCol = hdrs.indexOf(k);
+  });
+  if (nameCol === -1) nameCol = 0;
+
+  // Find and update the row
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][nameCol]).trim() === name) {
+      sheet.getRange(i + 1, passCol + 1).setValue(pass);
+      return { success: true };
+    }
+  }
+  throw new Error('Salesperson "' + name + '" not found');
+}
+
+function sheetToArr(name) {
+  var sh = SS.getSheetByName(name);
+  if (!sh) return [];
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return [];
+  var hdrs = data[0].map(function(h){ return String(h).trim(); });
+  return data.slice(1)
+    .filter(function(r){ return r.some(function(c){ return c !== ''; }); })
+    .map(function(r){
+      var obj = {};
+      hdrs.forEach(function(h,i){
+        obj[h] = (r[i] === null || r[i] === undefined) ? '' : String(r[i]).trim();
+      });
+      return obj;
+    });
+}`;
+
+// ════════════════════════════════
+//  STATE
+// ════════════════════════════════
+let GAS_URL   = localStorage.getItem('gasUrl')  || '';
+let SUP_PASS  = localStorage.getItem('supPass') || 'supervisor123';
+let currentUser = null;
+let allProducts = [], allCustomers = [], allSalespeople = [], allRoutes = [];
+let allOrdersCache = [];
+let selectedSP = null;   // SP object from sheet
+let loginMode  = 'name'; // 'name'|'create'|'login'|'supervisor'
+
+const today = new Date().toISOString().split('T')[0];
+
+document.getElementById('appsScriptCode').textContent = APPS_SCRIPT;
+document.getElementById('gasUrlInput').value  = GAS_URL;
+document.getElementById('supPassInput').value = SUP_PASS;
+document.getElementById('topDate').textContent =
+  new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+['orderDate','orderDelivery','myFromDate','myToDate','filterFrom','filterTo','prodFilterFrom','prodFilterTo']
+  .forEach(id => { const el = document.getElementById(id); if (el) el.value = today; });
+
+// Auto-load salespeople on boot
+(async () => {
+  if (!GAS_URL) return;
+  try { const d = await api('getData'); cacheData(d); populateSPDropdown(); } catch(e) {}
+})();
+
+// ════════════════════════════════
+//  LOGIN FLOW
+// ════════════════════════════════
+async function onUserSelected() {
+  const val = document.getElementById('loginUser').value;
+  clearMsg();
+  if (!val) return;
+  if (!GAS_URL) { showMsg('App not configured. Click Setup below.','warn'); showConfig(); return; }
+  if (!allSalespeople.length) {
+    try { const d = await api('getData'); cacheData(d); populateSPDropdown(); }
+    catch(e) { showMsg('Could not load data: '+e.message,'error'); return; }
+  }
+  selectedSP = allSalespeople.find(s => spName(s) === val) || null;
+  const existPass = selectedSP ? (selectedSP['Password']||selectedSP['PASSWORD']||'').trim() : '';
+  document.getElementById('stepName').style.display = 'none';
+  if (!existPass) {
+    loginMode = 'create';
+    document.getElementById('stepCreate').style.display = 'block';
+    document.getElementById('loginSubText').textContent = 'Welcome, ' + val;
+    document.getElementById('newPass1').focus();
+  } else {
+    loginMode = 'login';
+    document.getElementById('passLabel').textContent = 'Password for ' + val;
+    document.getElementById('loginSubText').textContent = 'Welcome back, ' + val;
+    document.getElementById('stepLogin').style.display = 'block';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+async function doCreatePassword() {
+  const p1 = document.getElementById('newPass1').value.trim();
+  const p2 = document.getElementById('newPass2').value.trim();
+  clearMsg();
+  if (p1.length < 6) { showMsg('Password must be at least 6 characters.','error'); return; }
+  if (p1 !== p2)     { showMsg('Passwords do not match.','error'); return; }
+  const btn = document.getElementById('createBtn');
+  btn.innerHTML = '<span class="spinner"></span> Saving...'; btn.disabled = true;
+  try {
+    await api('savePassword', { name: spName(selectedSP), pass: p1 });
+    if (selectedSP) selectedSP['Password'] = p1;
+    toast('Password created! Signing you in…','success');
+    finishLogin();
+  } catch(e) { showMsg('Could not save password: '+e.message,'error'); }
+  btn.innerHTML = 'Create Password &amp; Sign In'; btn.disabled = false;
+}
+
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value;
+  clearMsg();
+  if (!pass) { showMsg('Please enter your password.','error'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.innerHTML = '<span class="spinner"></span> Signing in…'; btn.disabled = true;
+  if (loginMode === 'supervisor') {
+    if (pass === SUP_PASS) { currentUser = {name:'Supervisor',role:'Supervisor'}; onLoginSuccess(); }
+    else showMsg('Incorrect supervisor password.','error');
+    btn.innerHTML = 'Sign In'; btn.disabled = false;
+    return;
+  }
+  const stored = (selectedSP?.['Password']||selectedSP?.['PASSWORD']||'').trim();
+  if (stored && pass !== stored) { showMsg('Incorrect password.','error'); btn.innerHTML='Sign In'; btn.disabled=false; return; }
+  finishLogin();
+  btn.innerHTML = 'Sign In'; btn.disabled = false;
+}
+
+function finishLogin() {
+  const name = spName(selectedSP);
+  const role = selectedSP?.['Role']||selectedSP?.['ROLE']||'Salesperson';
+  currentUser = { name, role, data: selectedSP };
+  setTimeout(onLoginSuccess, loginMode==='create' ? 700 : 0);
+}
+
+function showSupLogin() {
+  loginMode = 'supervisor'; selectedSP = null;
+  document.getElementById('stepName').style.display   = 'none';
+  document.getElementById('stepCreate').style.display = 'none';
+  document.getElementById('stepLogin').style.display  = 'block';
+  document.getElementById('passLabel').textContent    = 'Supervisor Password';
+  document.getElementById('loginSubText').textContent = 'Supervisor access';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginPass').focus();
+}
+
+function resetLogin() {
+  loginMode = 'name'; selectedSP = null;
+  ['stepCreate','stepLogin'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('stepName').style.display = 'block';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('newPass1').value  = '';
+  document.getElementById('newPass2').value  = '';
+  document.getElementById('loginSubText').textContent = 'Select your name to get started';
+  document.getElementById('strengthFill').style.width = '0';
+  document.getElementById('strengthHint').textContent = 'Minimum 6 characters';
+  clearMsg();
+}
+
+function checkStrength(v) {
+  let s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10) s++;
+  if (/[A-Z]/.test(v)) s++;
+  if (/[0-9]/.test(v)) s++;
+  if (/[^A-Za-z0-9]/.test(v)) s++;
+  const pct = [0,18,36,55,75,100];
+  const col = ['','#C13B2A','#B5620F','#C8A000','#2D8A5A','#1B6B45'];
+  const lbl = ['','Too short','Weak','Fair','Good','Strong'];
+  document.getElementById('strengthFill').style.cssText = `width:${pct[s]}%;background:${col[s]}`;
+  document.getElementById('strengthHint').textContent = lbl[s]||'';
+}
+
+function toggleVis(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  btn.textContent = inp.type==='password' ? '\uD83D\uDC41' : '\uD83D\uDE48';
+}
+
+function onLoginSuccess() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display   = 'flex';
+  document.getElementById('topUserName').textContent   = currentUser.name;
+  document.getElementById('topAvatar').textContent     = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('topRole').textContent       = currentUser.role;
+  document.getElementById('topRole').className = 'badge '+(currentUser.role==='Supervisor'?'badge-blue':'badge-green');
+  if (currentUser.role === 'Supervisor') {
+    document.getElementById('supView').style.display = 'block';
+    loadSupervisorData();
+  } else {
+    document.getElementById('spView').style.display = 'block';
+    loadSalespersonData();
+  }
+}
+
+function doLogout() {
+  currentUser = null; selectedSP = null;
+  document.getElementById('appScreen').style.display   = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('spView').style.display      = 'none';
+  document.getElementById('supView').style.display     = 'none';
+  resetLogin();
+}
+
+// ════════════════════════════════
+//  CONFIG
+// ════════════════════════════════
+function showConfig() { document.getElementById('configModal').style.display='flex'; }
+function hideConfig() { document.getElementById('configModal').style.display='none'; }
+function copyAppsScript() {
+  navigator.clipboard.writeText(APPS_SCRIPT)
+    .then(()=>toast('Copied!','success')).catch(()=>toast('Copy manually','error'));
+}
+async function saveConfig() {
+  const url = document.getElementById('gasUrlInput').value.trim();
+  const sp  = document.getElementById('supPassInput').value.trim();
+  if (!url) { toast('Please enter the URL','error'); return; }
+  GAS_URL = url; SUP_PASS = sp||'supervisor123';
+  localStorage.setItem('gasUrl',GAS_URL); localStorage.setItem('supPass',SUP_PASS);
+  document.getElementById('gasUrlStatus').textContent = 'Testing connection…';
+  try {
+    const d = await api('getData');
+    if (d.salespeople) {
+      cacheData(d); populateSPDropdown();
+      document.getElementById('gasUrlStatus').textContent =
+        `✓ Connected — ${d.salespeople.length} salespeople, ${d.customers.length} customers, ${d.products.length} products`;
+      toast('Connected!','success'); hideConfig();
+    } else document.getElementById('gasUrlStatus').textContent = '✗ '+JSON.stringify(d.error||d);
+  } catch(e) { document.getElementById('gasUrlStatus').textContent = '✗ '+e.message; }
+}
+
+// ════════════════════════════════
+//  SALESPERSON — ORDER FORM
+// ════════════════════════════════
+async function loadSalespersonData() {
+  try {
+    if (!allProducts.length) { const d = await api('getData'); cacheData(d); }
+    populateCustomerDrop(); renderProductsTable(); loadMyOrders();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function populateCustomerDrop() {
+  const sel = document.getElementById('orderCustomer');
+  sel.innerHTML = '<option value="">Select customer...</option>';
+  allCustomers.forEach(c => {
+    const n = c['Customer']||c['CUSTOMER']||c['Name']||Object.values(c)[0]||'';
+    if (n) sel.innerHTML += `<option value="${n}" data-route="${c['Route']||c['ROUTE']||''}">${n}</option>`;
+  });
+}
+function onCustomerChange() {
+  const sel = document.getElementById('orderCustomer');
+  document.getElementById('orderRoute').value = sel.options[sel.selectedIndex]?.dataset?.route||'';
+}
+
+function renderProductsTable(filter='') {
+  const wrap = document.getElementById('productsTableWrap');
+  const prods = allProducts.filter(p => {
+    const n = (p['Product']||p['PRODUCT']||p['Name']||'').toLowerCase();
+    const k = (p['Packaging']||p['PACKAGING']||'').toLowerCase();
+    return !filter || n.includes(filter)||k.includes(filter);
+  });
+  if (!prods.length) { wrap.innerHTML='<div class="empty-state"><p>No products found</p></div>'; return; }
+  let html=`<table class="products-table"><thead><tr><th>Product</th><th>Packaging</th><th>Unit Price (KES)</th><th style="width:90px">Qty</th><th>Line Total</th></tr></thead><tbody>`;
+  prods.forEach((p,i)=>{
+    const n = p['Product']||p['PRODUCT']||p['Name']||Object.values(p)[0]||'';
+    const k = p['Packaging']||p['PACKAGING']||p['Pack']||'';
+    const pr= parseFloat(p['Price']||p['PRICE']||p['Unit Price']||p['UnitPrice']||0)||0;
+    html+=`<tr><td><strong style="font-size:13px">${n}</strong></td>
+      <td><span class="badge badge-orange">${k||'—'}</span></td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(pr)}</span></td>
+      <td><input class="qty-input" type="number" min="0" step="1" id="qty_${i}" data-name="${n}" data-pkg="${k}" data-price="${pr}" placeholder="0" oninput="onQtyChange(this)" onchange="onQtyChange(this)"></td>
+      <td><span id="lt_${i}">—</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html; updateSummary();
+}
+function filterProducts() { renderProductsTable(document.getElementById('productSearch').value.toLowerCase()); }
+function onQtyChange(inp){
+  const q=parseInt(inp.value)||0,pr=parseFloat(inp.dataset.price)||0,idx=inp.id.replace('qty_','');
+  inp.classList.toggle('has-value',q>0);
+  document.getElementById('lt_'+idx).textContent = q>0?'KES '+fmt(q*pr):'—';
+  updateSummary();
+}
+function clearAllQty(){
+  document.querySelectorAll('.qty-input').forEach(i=>{i.value='';i.classList.remove('has-value');});
+  document.querySelectorAll('[id^=lt_]').forEach(l=>l.textContent='—');
+  updateSummary();
+}
+function updateSummary(){
+  const items=getItems(); const sum=document.getElementById('orderSummary');
+  document.getElementById('submitOrderBtn').disabled=!items.length;
+  if(!items.length){sum.style.display='none';return;}
+  sum.style.display='block';
+  const grand=items.reduce((s,i)=>s+i.total,0);
+  document.getElementById('summaryItems').innerHTML=items.map(i=>
+    `<div class="summary-row"><span>${i.product} <span style="color:var(--text3)">(${i.packaging||'—'}) × ${i.qty}</span></span><span style="font-family:'DM Mono',monospace">KES ${fmt(i.total)}</span></div>`
+  ).join('');
+  document.getElementById('summaryGrandTotal').textContent='KES '+fmt(grand);
+}
+function getItems(){
+  const items=[];
+  document.querySelectorAll('.qty-input').forEach(inp=>{
+    const q=parseInt(inp.value)||0;
+    if(q>0) items.push({product:inp.dataset.name,packaging:inp.dataset.pkg,qty:q,price:parseFloat(inp.dataset.price)||0,total:q*(parseFloat(inp.dataset.price)||0)});
+  });
+  return items;
+}
+async function submitOrder(){
+  const customer=document.getElementById('orderCustomer').value;
+  if(!customer){toast('Select a customer','error');return;}
+  const items=getItems();
+  if(!items.length){toast('Add at least one product','error');return;}
+  const payload={action:'submitOrder',salesperson:currentUser.name,route:document.getElementById('orderRoute').value,customer,orderDate:document.getElementById('orderDate').value,deliveryDate:document.getElementById('orderDelivery').value,notes:document.getElementById('orderNotes').value,items};
+  const btn=document.getElementById('submitOrderBtn');
+  btn.innerHTML='<span class="spinner"></span> Submitting…';btn.disabled=true;
+  try{
+    const res=await api('submitOrder',payload);
+    if(res.success){
+      toast(`Order ${res.orderId} saved — ${res.rowsAdded} line(s) written to sheet`,'success');
+      clearAllQty();
+      document.getElementById('orderCustomer').value='';
+      document.getElementById('orderRoute').value='';
+      document.getElementById('orderNotes').value='';
+      document.getElementById('orderDate').value=today;
+      document.getElementById('orderDelivery').value=today;
+      document.getElementById('orderSummary').style.display='none';
+    } else toast('Error: '+(res.error||'Unknown'),'error');
+  }catch(e){toast('Failed: '+e.message,'error');}
+  btn.innerHTML='Submit Order';btn.disabled=false;
+}
+async function loadMyOrders(){
+  const list=document.getElementById('myOrdersList');
+  list.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+  try{
+    const from=document.getElementById('myFromDate').value,to=document.getElementById('myToDate').value;
+    const orders=await api('getOrders',{salesperson:currentUser.name,from,to});
+    allOrdersCache=orders||[];
+    if(!orders?.length){list.innerHTML='<div class="empty-state"><p>No orders found for selected dates</p></div>';return;}
+    const grouped=groupById(orders);
+    list.innerHTML=Object.values(grouped).reverse().map(o=>{
+      const preview=o.items.slice(0,3).map(i=>i['Product']||'').filter(Boolean).join(', ')+(o.items.length>3?` +${o.items.length-3} more`:'');
+      return `<div class="order-card" onclick="showOrderDetail('${o.id}')">
+        <div class="order-card-header">
+          <div><div style="font-weight:600;font-size:14px">${o.customer}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">${o.id} · ${o.date} · ${o.route}</div></div>
+          <div style="font-family:'DM Mono',monospace;font-weight:600;font-size:14px;color:var(--accent)">KES ${fmt(o.total)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">${preview}</div>
+      </div>`;
+    }).join('');
+  }catch(e){list.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
+}
+function showOrderDetail(id){
+  const items=allOrdersCache.filter(r=>(r['Order ID']||r['OrderID']||'—')===id);
+  if(!items.length)return;
+  const f=items[0];
+  document.getElementById('odTitle').textContent='Order: '+id;
+  document.getElementById('odSub').textContent=`${f['Customer']} · ${f['Order Date']} · ${f['Route']}`;
+  let html=`<table class="products-table"><thead><tr><th>Product</th><th>Pkg</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead><tbody>`;
+  let grand=0;
+  items.forEach(i=>{const lt=parseFloat(i['Line Total']||0);grand+=lt;html+=`<tr><td>${i['Product']||'—'}</td><td>${i['Packaging']||'—'}</td><td style="font-family:'DM Mono',monospace">${i['Quantity']||0}</td><td style="font-family:'DM Mono',monospace">KES ${fmt(parseFloat(i['Unit Price']||0))}</td><td style="font-family:'DM Mono',monospace">KES ${fmt(lt)}</td></tr>`;});
+  html+=`</tbody></table><div style="text-align:right;font-weight:600;font-size:15px;color:var(--accent);margin-top:12px">Total: KES ${fmt(grand)}</div>`;
+  if(f['Notes'])html+=`<div style="margin-top:10px;font-size:13px;color:var(--text2)">Notes: ${f['Notes']}</div>`;
+  document.getElementById('odBody').innerHTML=html;
+  document.getElementById('orderDetailModal').style.display='flex';
+}
+
+// ════════════════════════════════
+//  SUPERVISOR
+// ════════════════════════════════
+async function loadSupervisorData(){
+  if(!allProducts.length){try{const d=await api('getData');cacheData(d);}catch(e){}}
+  const spSel=document.getElementById('filterSP');
+  spSel.innerHTML='<option value="">All Salespeople</option>';
+  allSalespeople.forEach(s=>{const n=spName(s);if(n)spSel.innerHTML+=`<option value="${n}">${n}</option>`;});
+  const rSel=document.getElementById('filterRoute');
+  rSel.innerHTML='<option value="">All Routes</option>';
+  allRoutes.forEach(r=>{const n=r['Route']||Object.values(r)[0]||'';if(n)rSel.innerHTML+=`<option value="${n}">${n}</option>`;});
+  await loadDashboard();
+}
+async function loadDashboard(){
+  document.getElementById('spBreakdown').innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+  try{
+    const orders=await api('getOrders',{from:today,to:today});
+    allOrdersCache=orders||[];
+    const grouped=groupById(orders);
+    const rev=orders.reduce((s,r)=>s+(parseFloat(r['Line Total']||0)||0),0);
+    document.getElementById('sTotalOrders').textContent=Object.keys(grouped).length;
+    document.getElementById('sTotalRevenue').textContent=fmtK(rev);
+    document.getElementById('sActiveSP').textContent=new Set(orders.map(r=>r['Salesperson']||'')).size;
+    document.getElementById('sCustomers').textContent=new Set(orders.map(r=>r['Customer']||'')).size;
+    const bySP={};
+    orders.forEach(r=>{
+      const s=r['Salesperson']||'—';
+      if(!bySP[s])bySP[s]={sp:s,orders:new Set(),rev:0,custs:new Set(),items:[]};
+      bySP[s].orders.add(r['Order ID']||Math.random());
+      bySP[s].rev+=parseFloat(r['Line Total']||0)||0;
+      bySP[s].custs.add(r['Customer']||'');
+      bySP[s].items.push(r);
+    });
+    if(!Object.keys(bySP).length){document.getElementById('spBreakdown').innerHTML='<div class="empty-state"><p>No orders today yet</p></div>';return;}
+    let html=`<table class="data-table"><thead><tr><th>Salesperson</th><th>Orders</th><th>Customers</th><th>Revenue (KES)</th><th></th></tr></thead><tbody>`;
+    Object.values(bySP).sort((a,b)=>b.rev-a.rev).forEach(s=>{
+      const k=s.sp.replace(/[^a-zA-Z0-9]/g,'_');
+      html+=`<tr style="cursor:pointer" onclick="toggleSPRow(this,'${k}')">
+        <td><strong>${s.sp}</strong></td><td>${s.orders.size}</td><td>${s.custs.size}</td>
+        <td class="mono">KES ${fmt(s.rev)}</td><td><span id="arr_${k}" style="color:var(--text3);font-size:13px">&#9654;</span></td>
+      </tr>
+      <tr class="expand-row" id="sprow_${k}" style="display:none">
+        <td colspan="5"><div class="expand-inner">${renderSPOrders(s.items)}</div></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+    document.getElementById('spBreakdown').innerHTML=html;
+  }catch(e){document.getElementById('spBreakdown').innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
+}
+function toggleSPRow(tr,k){
+  const row=document.getElementById('sprow_'+k);if(!row)return;
+  const h=row.style.display==='none';row.style.display=h?'table-row':'none';
+  const a=document.getElementById('arr_'+k);if(a)a.innerHTML=h?'&#9660;':'&#9654;';
+}
+function renderSPOrders(items){
+  const g=groupById(items);
+  return Object.values(g).map(o=>`
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div><strong>${o.customer}</strong><span style="color:var(--text3);font-size:12px;margin-left:8px">${o.id}</span></div>
+        <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--accent)">KES ${fmt(o.total)}</span>
+      </div>
+      <div class="product-breakdown">${o.items.map(i=>`<span class="product-chip">${i['Product']||'?'} <strong>×${i['Quantity']||0}</strong></span>`).join('')}</div>
+    </div>`).join('')||'<p style="font-size:13px;color:var(--text2)">No orders</p>';
+}
+async function loadAllOrders(){
+  const wrap=document.getElementById('allOrdersTable');
+  wrap.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+  try{
+    let orders=await api('getOrders',{from:document.getElementById('filterFrom').value,to:document.getElementById('filterTo').value,salesperson:document.getElementById('filterSP').value||''});
+    allOrdersCache=orders||[];
+    const route=document.getElementById('filterRoute').value;
+    if(route)orders=orders.filter(r=>r['Route']===route);
+    if(!orders.length){wrap.innerHTML='<div class="empty-state"><p>No orders found</p></div>';return;}
+    const g=groupById(orders);
+    let html=`<table class="data-table"><thead><tr><th>Order ID</th><th>Date</th><th>Salesperson</th><th>Route</th><th>Customer</th><th>Items</th><th>Total (KES)</th></tr></thead><tbody>`;
+    Object.values(g).reverse().forEach(o=>{
+      html+=`<tr><td class="mono" style="font-size:12px">${o.id}</td><td>${o.date}</td><td><strong>${o.salesperson}</strong></td>
+        <td><span class="badge badge-blue">${o.route||'—'}</span></td><td>${o.customer}</td>
+        <td style="font-size:12px;color:var(--text2)">${o.items.map(i=>i['Product']).slice(0,2).join(', ')}${o.items.length>2?` +${o.items.length-2}`:''}</td>
+        <td class="mono" style="font-weight:600;color:var(--accent)">KES ${fmt(o.total)}</td></tr>`;
+    });
+    html+='</tbody></table>';wrap.innerHTML=html;
+  }catch(e){wrap.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
+}
+async function loadProductSummary(){
+  const wrap=document.getElementById('productSummaryContent');
+  wrap.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+  try{
+    const orders=await api('getOrders',{from:document.getElementById('prodFilterFrom').value,to:document.getElementById('prodFilterTo').value});
+    const pMap={};
+    orders.forEach(r=>{
+      const k=`${r['Product']||'?'}||${r['Packaging']||''}`;
+      if(!pMap[k])pMap[k]={name:r['Product']||'?',pkg:r['Packaging']||'',qty:0,value:0};
+      pMap[k].qty+=parseInt(r['Quantity']||0)||0;
+      pMap[k].value+=parseFloat(r['Line Total']||0)||0;
+    });
+    const items=Object.values(pMap).sort((a,b)=>b.qty-a.qty);
+    if(!items.length){wrap.innerHTML='<div class="empty-state"><p>No orders for this period</p></div>';return;}
+    const totalRev=items.reduce((s,p)=>s+p.value,0);
+    wrap.innerHTML=`<div class="product-summary-grid">${items.map(p=>`
+      <div class="product-sum-card">
+        <div><div class="product-sum-name">${p.name}</div><div class="product-sum-pkg">${p.pkg||'—'}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">KES ${fmt(p.value)}</div></div>
+        <div style="text-align:right"><div class="product-sum-qty">${p.qty}</div><div class="product-sum-pkg">units</div></div>
+      </div>`).join('')}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;font-size:15px;font-weight:600;color:var(--accent)">Grand Total: KES ${fmt(totalRev)}</div>`;
+  }catch(e){wrap.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
+}
+function exportCSV(){
+  if(!allOrdersCache.length){toast('No orders to export','error');return;}
+  const hdrs=Object.keys(allOrdersCache[0]);
+  const rows=[hdrs.join(','),...allOrdersCache.map(r=>hdrs.map(h=>`"${(r[h]||'').replace(/"/g,'""')}"`).join(','))];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download=`orders_${today}.csv`;a.click();toast('Exported!','success');
+}
+function applyFilters(){loadAllOrders();}
+function clearFilters(){
+  document.getElementById('filterSP').value='';document.getElementById('filterRoute').value='';
+  document.getElementById('filterFrom').value=today;document.getElementById('filterTo').value=today;
+  loadAllOrders();
+}
+
+// ════════════════════════════════
+//  TABS
+// ════════════════════════════════
+const TABS=['newOrder','myOrders','supDashboard','supOrders','supProducts'];
+function showTab(id,btn){
+  TABS.forEach(t=>{const el=document.getElementById(t);if(el)el.style.display='none';});
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).style.display='block';btn.classList.add('active');
+  if(id==='myOrders')loadMyOrders();
+  if(id==='supDashboard')loadDashboard();
+  if(id==='supOrders')loadAllOrders();
+  if(id==='supProducts')loadProductSummary();
+}
+
+// ════════════════════════════════
+//  API
+// ════════════════════════════════
+async function api(action,body={}) {
+  if (!GAS_URL) throw new Error('App not configured. Click Setup.');
+  const hasBody = Object.keys(body).length > 0;
+  const opts = hasBody
+    ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body})}
+    : {method:'GET'};
+  const res = await fetch(GAS_URL+'?action='+action, opts);
+  if (!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// ════════════════════════════════
+//  UTILS
+// ════════════════════════════════
+function cacheData(d){allSalespeople=d.salespeople||[];allCustomers=d.customers||[];allProducts=d.products||[];allRoutes=d.routes||[];}
+function populateSPDropdown(){
+  const sel=document.getElementById('loginUser');
+  sel.innerHTML='<option value="">— Select your name —</option>';
+  allSalespeople.forEach(s=>{const n=spName(s);if(n)sel.innerHTML+=`<option value="${n}">${n}</option>`;});
+}
+function spName(s){return s?(s['Name']||s['Salesperson']||s['SALESPERSON']||s['NAME']||Object.values(s)[0]||''):''}
+function groupById(rows){
+  const g={};
+  rows.forEach(r=>{
+    const id=r['Order ID']||r['OrderID']||'—';
+    if(!g[id])g[id]={id,customer:r['Customer']||'',salesperson:r['Salesperson']||'',route:r['Route']||'',date:r['Order Date']||'',items:[],total:0};
+    g[id].items.push(r);g[id].total+=parseFloat(r['Line Total']||0)||0;
+  });
+  return g;
+}
+function fmt(n){return Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtK(n){return n>=1000?(n/1000).toFixed(1)+'K':fmt(n);}
+function showMsg(msg,type){const el=document.getElementById('loginMsg');el.textContent=msg;el.className='login-msg '+type;el.style.display='block';}
+function clearMsg(){const el=document.getElementById('loginMsg');el.style.display='none';el.textContent='';}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3400);
+}
+</script>
+</body>
+</html>
