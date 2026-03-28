@@ -188,7 +188,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="field">
         <label>Name or Payroll Number</label>
         <div style="position:relative">
-          <input type="text" id="spSearchInput" placeholder="Type to search..."
+          <input type="text" id="spSearchInput" placeholder="Enter your payroll number..."
             autocomplete="off"
             oninput="filterSPList(this.value)"
             onfocus="showSPDropdown()"
@@ -202,7 +202,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
       <div style="text-align:center;margin-top:14px;display:flex;gap:8px;justify-content:center">
-        <button class="btn btn-ghost btn-sm" onclick="showConfig()">&#9881; Setup</button>
         <button class="btn btn-ghost btn-sm" onclick="showSupLogin()">&#128272; Supervisor</button>
       </div>
     </div>
@@ -679,14 +678,14 @@ if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFA
 // Boot: load salespeople
 (async () => {
   const inp = document.getElementById('spSearchInput');
-  inp.placeholder = 'Loading salespeople...';
+  inp.placeholder = 'Loading...';
   inp.disabled = true;
   try {
     const d = await api('getData');
     cacheData(d);
-    inp.placeholder = 'Type name or payroll number...';
+    inp.placeholder = 'Enter your payroll number...';
   } catch(e) {
-    inp.placeholder = 'Could not load — check Setup';
+    inp.placeholder = 'Could not load — check connection';
     console.warn('Boot load failed:', e.message);
   }
   inp.disabled = false;
