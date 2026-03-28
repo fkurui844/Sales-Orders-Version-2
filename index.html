@@ -152,6 +152,14 @@
   .code-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'DM Mono',monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;color:var(--text);margin-top:8px;max-height:130px;overflow-y:auto;line-height:1.6}
   .hint{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6}
 
+  /* SP SEARCH DROPDOWN */
+  .sp-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s}
+  .sp-opt:last-child{border-bottom:none}
+  .sp-opt:hover,.sp-opt.hi{background:var(--accent-light)}
+  .sp-opt-name{font-weight:500;color:var(--text)}
+  .sp-opt-payroll{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+  .sp-opt-route{font-size:11px;color:var(--text2)}
+  .sp-search-loading{padding:12px 14px;font-size:13px;color:var(--text2)}
   @media(max-width:640px){
     .stats-grid{grid-template-columns:1fr 1fr}
     .form-grid{grid-template-columns:1fr}
@@ -173,13 +181,20 @@
 
     <div id="loginMsg" class="login-msg"></div>
 
-    <!-- STEP 1: pick name -->
+    <!-- STEP 1: searchable by name or payroll number -->
     <div id="stepName">
       <div class="field">
-        <label>Salesperson</label>
-        <select id="loginUser" onchange="onUserSelected()">
-          <option value="">— Select your name —</option>
-        </select>
+        <label>Name or Payroll Number</label>
+        <div style="position:relative">
+          <input type="text" id="spSearchInput" placeholder="Type to search..." autocomplete="off"
+            oninput="filterSPList(this.value)" onfocus="showSPDropdown()" onkeydown="spSearchKey(event)"
+            style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s">
+          <div id="spDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);max-height:220px;overflow-y:auto;z-index:50;box-shadow:var(--shadow)"></div>
+        </div>
+        <div id="spSelectedBanner" style="display:none;margin-top:8px;background:var(--accent-light);border:1px solid #A8D8BC;border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--accent)">
+          <span id="spSelectedLabel"></span>
+          <button onclick="clearSPSearch()" style="float:right;background:none;border:none;cursor:pointer;color:var(--accent);font-size:16px;padding:0;line-height:1">&#10005;</button>
+        </div>
       </div>
       <div style="text-align:center;margin-top:12px">
         <button class="btn btn-ghost btn-sm" onclick="showConfig()">&#9881; Setup / Configure</button>
@@ -549,43 +564,40 @@ document.getElementById('topDate').textContent =
 // Auto-load salespeople on boot
 (async () => {
   if (!GAS_URL) return;
-  const sel = document.getElementById('loginUser');
-  sel.innerHTML = '<option value="">Loading salespeople...</option>';
-  sel.disabled = true;
+  const inp = document.getElementById('spSearchInput');
+  inp.placeholder = 'Loading salespeople...';
+  inp.disabled = true;
   try {
     const d = await api('getData');
     cacheData(d);
-    populateSPDropdown();
+    inp.placeholder = 'Type name or payroll number...';
   } catch(e) {
-    sel.innerHTML = '<option value="">Could not load — check Setup</option>';
+    inp.placeholder = 'Could not load — check Setup';
   }
-  sel.disabled = false;
+  inp.disabled = false;
 })();
 
 // ════════════════════════════════
 //  LOGIN FLOW
 // ════════════════════════════════
-async function onUserSelected() {
-  const val = document.getElementById('loginUser').value;
+// Called by selectSP() after user picks from the dropdown
+async function onUserSelected(val) {
   clearMsg();
   if (!val) return;
-  if (!GAS_URL) { showMsg('App not configured. Click Setup below.','warn'); showConfig(); return; }
-  if (!allSalespeople.length) {
-    try { const d = await api('getData'); cacheData(d); populateSPDropdown(); }
-    catch(e) { showMsg('Could not load data: '+e.message,'error'); return; }
-  }
-  selectedSP = allSalespeople.find(s => spName(s) === val) || null;
   const existPass = selectedSP ? (selectedSP['Password']||selectedSP['PASSWORD']||'').trim() : '';
   document.getElementById('stepName').style.display = 'none';
+  const displayName = spName(selectedSP);
+  const payroll = spPayroll(selectedSP);
+  const label = displayName + (payroll ? ' (Payroll: '+payroll+')' : '');
   if (!existPass) {
     loginMode = 'create';
     document.getElementById('stepCreate').style.display = 'block';
-    document.getElementById('loginSubText').textContent = 'Welcome, ' + val;
+    document.getElementById('loginSubText').textContent = 'Welcome, ' + displayName;
     document.getElementById('newPass1').focus();
   } else {
     loginMode = 'login';
-    document.getElementById('passLabel').textContent = 'Password for ' + val;
-    document.getElementById('loginSubText').textContent = 'Welcome back, ' + val;
+    document.getElementById('passLabel').textContent = 'Password for ' + label;
+    document.getElementById('loginSubText').textContent = 'Welcome back, ' + displayName;
     document.getElementById('stepLogin').style.display = 'block';
     document.getElementById('loginPass').focus();
   }
@@ -600,7 +612,7 @@ async function doCreatePassword() {
   const btn = document.getElementById('createBtn');
   btn.innerHTML = '<span class="spinner"></span> Saving...'; btn.disabled = true;
   try {
-    await api('savePassword', { name: spName(selectedSP), pass: p1 });
+    await api('savePassword', { name: spName(selectedSP), payroll: spPayroll(selectedSP), pass: p1 });
     if (selectedSP) selectedSP['Password'] = p1;
     toast('Password created! Signing you in…','success');
     finishLogin();
@@ -648,7 +660,9 @@ function resetLogin() {
   loginMode = 'name'; selectedSP = null;
   ['stepCreate','stepLogin'].forEach(id => document.getElementById(id).style.display='none');
   document.getElementById('stepName').style.display = 'block';
-  document.getElementById('loginUser').value = '';
+  document.getElementById('spSearchInput').value = '';
+  document.getElementById('spSelectedBanner').style.display = 'none';
+  document.getElementById('spDropdown').style.display = 'none';
   document.getElementById('loginPass').value = '';
   document.getElementById('newPass1').value  = '';
   document.getElementById('newPass2').value  = '';
@@ -1005,16 +1019,20 @@ function showTab(id,btn){
 // ════════════════════════════════
 //  API
 // ════════════════════════════════
-async function api(action,body={}) {
+async function api(action, body={}) {
   if (!GAS_URL) throw new Error('App not configured. Click Setup.');
-  const hasBody = Object.keys(body).length > 0;
-  const opts = hasBody
-    ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body})}
-    : {method:'GET'};
-  const res = await fetch(GAS_URL+'?action='+action, opts);
-  if (!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  // All requests use GET + URL params to avoid CORS issues with Google Apps Script
+  const params = new URLSearchParams({ action });
+  Object.entries(body).forEach(([k, v]) => {
+    params.set(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+  });
+  const url = GAS_URL + '?' + params.toString();
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  let data;
+  try { data = await res.json(); }
+  catch(e) { throw new Error('Invalid response from server'); }
+  if (data && data.error) throw new Error(data.error);
   return data;
 }
 
@@ -1022,12 +1040,91 @@ async function api(action,body={}) {
 //  UTILS
 // ════════════════════════════════
 function cacheData(d){allSalespeople=d.salespeople||[];allCustomers=d.customers||[];allProducts=d.products||[];allRoutes=d.routes||[];}
-function populateSPDropdown(){
-  const sel=document.getElementById('loginUser');
-  sel.innerHTML='<option value="">— Select your name —</option>';
-  allSalespeople.forEach(s=>{const n=spName(s);if(n)sel.innerHTML+=`<option value="${n}">${n}</option>`;});
+// ── SP helpers ──
+function spName(s){ return s?(s['Name']||s['Salesperson']||s['SALESPERSON']||s['NAME']||''):''; }
+function spPayroll(s){ return s?(s['Payroll No']||s['Payroll']||s['PAYROLL']||s['Payroll Number']||s['PayrollNo']||s['Employee No']||s['Employee Number']||s['EmpNo']||''):''; }
+function spRoute(s){ return s?(s['Route']||s['ROUTE']||''):''; }
+
+// Render the SP dropdown list
+let spHighlightIdx = -1;
+function populateSPDropdown(){ filterSPList(''); }
+
+function renderSPOptions(list){
+  const dd = document.getElementById('spDropdown');
+  if(!list.length){
+    dd.innerHTML='<div class="sp-search-loading" style="color:var(--text3)">No results found</div>';
+    dd.style.display='block'; return;
+  }
+  dd.innerHTML = list.map((s,i)=>{
+    const n = spName(s), p = spPayroll(s), r = spRoute(s);
+    return `<div class="sp-opt" data-idx="${i}" data-name="${n}" onclick="selectSP(this)">
+      <div class="sp-opt-name">${n}</div>
+      ${p?`<div class="sp-opt-payroll">Payroll: ${p}</div>`:''}
+      ${r?`<div class="sp-opt-route">${r}</div>`:''}
+    </div>`;
+  }).join('');
+  dd.style.display = 'block';
+  spHighlightIdx = -1;
 }
-function spName(s){return s?(s['Name']||s['Salesperson']||s['SALESPERSON']||s['NAME']||Object.values(s)[0]||''):''}
+
+function filterSPList(q){
+  const lower = q.toLowerCase().trim();
+  document.getElementById('spDropdown').style.display = 'block';
+  const filtered = !lower ? allSalespeople : allSalespeople.filter(s=>{
+    const n = spName(s).toLowerCase();
+    const p = spPayroll(s).toLowerCase();
+    return n.includes(lower) || p.includes(lower);
+  });
+  renderSPOptions(filtered);
+}
+
+function showSPDropdown(){
+  if(allSalespeople.length) filterSPList(document.getElementById('spSearchInput').value);
+  else document.getElementById('spDropdown').innerHTML='<div class="sp-search-loading">Loading...</div>', document.getElementById('spDropdown').style.display='block';
+  document.getElementById('spSearchInput').style.borderColor='var(--accent)';
+  document.getElementById('spSearchInput').style.boxShadow='0 0 0 3px var(--accent-light)';
+}
+
+function hideSPDropdown(){
+  document.getElementById('spDropdown').style.display='none';
+  document.getElementById('spSearchInput').style.borderColor='var(--border)';
+  document.getElementById('spSearchInput').style.boxShadow='none';
+}
+
+function selectSP(el){
+  const name = el.dataset.name;
+  selectedSP = allSalespeople.find(s=>spName(s)===name)||null;
+  const payroll = spPayroll(selectedSP);
+  document.getElementById('spSearchInput').value = name + (payroll?' ('+payroll+')':'');
+  document.getElementById('spSelectedLabel').textContent = name + (payroll?' — Payroll: '+payroll:'');
+  document.getElementById('spSelectedBanner').style.display = 'block';
+  hideSPDropdown();
+  // Proceed to password step
+  onUserSelected(name);
+}
+
+function clearSPSearch(){
+  selectedSP = null;
+  document.getElementById('spSearchInput').value = '';
+  document.getElementById('spSelectedBanner').style.display = 'none';
+  document.getElementById('spDropdown').style.display = 'none';
+  document.getElementById('loginSubText').textContent = 'Select your name to get started';
+  clearMsg();
+}
+
+function spSearchKey(e){
+  const dd = document.getElementById('spDropdown');
+  const opts = dd.querySelectorAll('.sp-opt');
+  if(!opts.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); spHighlightIdx=Math.min(spHighlightIdx+1,opts.length-1); highlightSPOpt(opts); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); spHighlightIdx=Math.max(spHighlightIdx-1,0); highlightSPOpt(opts); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(spHighlightIdx>=0) opts[spHighlightIdx].click(); }
+  else if(e.key==='Escape'){ hideSPDropdown(); }
+}
+function highlightSPOpt(opts){
+  opts.forEach((o,i)=>o.classList.toggle('hi',i===spHighlightIdx));
+  if(spHighlightIdx>=0) opts[spHighlightIdx].scrollIntoView({block:'nearest'});
+}
 function groupById(rows){
   const g={};
   rows.forEach(r=>{
@@ -1046,6 +1143,10 @@ function toast(msg,type=''){
   t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3400);
 }
+// Close SP dropdown on outside click
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#stepName')) hideSPDropdown();
+});
 </script>
 </body>
 </html>
