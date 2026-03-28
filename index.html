@@ -228,7 +228,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
       <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doCreatePassword()" id="createBtn">
-        Create Password &amp; Sign In
+        Set Password &amp; Continue &#8594;
       </button>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="resetLogin()">&#8592; Back</button>
     </div>
@@ -870,56 +870,42 @@ async function doCreatePassword() {
   if (p1.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); return; }
   if (p1 !== p2)     { showMsg('Passwords do not match.', 'error'); return; }
 
-  // Debug: log all keys in selectedSP so we can see actual column names
-  console.log('selectedSP keys:', selectedSP ? Object.keys(selectedSP) : 'null');
-  console.log('selectedSP data:', JSON.stringify(selectedSP));
-
-  const name    = spName(selectedSP);
-  const payroll = spPayroll(selectedSP);
-
-  // If we still can't get a name, use the first non-empty string value as name
-  // and always send payroll so GAS can match by either
-  const nameToSend = name || spDisplayLabel(selectedSP) ||
+  const name        = spName(selectedSP);
+  const payroll     = spPayroll(selectedSP);
+  const nameToSend  = name || spDisplayLabel(selectedSP) ||
     Object.values(selectedSP || {}).find(v => v && String(v).trim()) || '';
-  const payrollToSend = payroll;
 
-  console.log('Sending savePassword with name:', nameToSend, '| payroll:', payrollToSend);
-
-  if (!nameToSend && !payrollToSend) {
-    showMsg('Could not identify this salesperson. Please check sheet column headers (expected: Name, Payroll No).', 'error');
+  if (!nameToSend && !payroll) {
+    showMsg('Could not identify this salesperson. Please check sheet column headers.', 'error');
     return;
   }
 
-  const btn = document.getElementById('createBtn');
-  btn.innerHTML = '<span class="spinner"></span> Saving...'; btn.disabled = true;
-  try {
-    await api('savePassword', { name: nameToSend, payroll: payrollToSend, pass: p1 });
-    if (selectedSP) selectedSP['Password'] = p1;
-    toast('Password created! Signing you in…', 'success');
-    setTimeout(finishLogin, 700);
-  } catch(e) {
-    // Show the actual column keys so user knows what to fix
-    const keys = selectedSP ? Object.keys(selectedSP).join(', ') : 'none';
-    showMsg(`Could not save password: ${e.message}. Your sheet columns are: [${keys}]`, 'error');
-    btn.innerHTML = 'Create Password &amp; Sign In'; btn.disabled = false;
-  }
+  // ── Save password locally and sign in immediately — no waiting ──
+  if (selectedSP) selectedSP['Password'] = p1;
+  toast('Password set! Signing you in…', 'success');
+  finishLogin();
+
+  // ── Sync to sheet silently in the background ──
+  api('savePassword', { name: nameToSend, payroll, pass: p1 })
+    .then(() => console.log('Password synced to sheet.'))
+    .catch(e => console.warn('Background password sync failed:', e.message));
 }
 
 async function doLogin() {
   const pass = document.getElementById('loginPass').value;
   clearMsg();
   if (!pass) { showMsg('Please enter your password.', 'error'); return; }
-  const btn = document.getElementById('loginBtn');
-  btn.innerHTML = '<span class="spinner"></span> Signing in…'; btn.disabled = true;
+
   if (loginMode === 'supervisor') {
     if (pass === SUP_PASS) { currentUser = { name: 'Supervisor', role: 'Supervisor' }; onLoginSuccess(); }
-    else { showMsg('Incorrect supervisor password.', 'error'); btn.innerHTML = 'Sign In'; btn.disabled = false; }
+    else { showMsg('Incorrect supervisor password.', 'error'); }
     return;
   }
+
   const stored = (selectedSP?.['Password'] || selectedSP?.['PASSWORD'] || selectedSP?.['password'] || '').trim();
   if (stored && pass !== stored) {
     showMsg('Incorrect password.', 'error');
-    btn.innerHTML = 'Sign In'; btn.disabled = false; return;
+    return;
   }
   finishLogin();
 }
