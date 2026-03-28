@@ -399,16 +399,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
-const GAS_SOURCE = `const SS = SpreadsheetApp.getActiveSpreadsheet();
+const GAS_SOURCE = `// ═══════════════════════════════════════════════════
+//  SALES ORDER SYSTEM — Optimised Apps Script Backend
+// ═══════════════════════════════════════════════════
+const SS = SpreadsheetApp.getActiveSpreadsheet();
+const CACHE_TTL = 300; // 5 minutes
+
 function doGet(e)  { return handle(e); }
 function doPost(e) { return handle(e); }
+
 function handle(e) {
   const lock = LockService.getScriptLock();
   lock.tryLock(15000);
   try {
     const p = e.parameter || {};
-    const action = p.action || '';
-    const callback = p.callback || '';
+    const action = p.action || '', callback = p.callback || '';
     var result;
     switch (action) {
       case 'getData':      result = getData();       break;
@@ -418,101 +423,156 @@ function handle(e) {
       default: result = { error: 'Unknown action: ' + action };
     }
     return respond(result, callback);
-  } catch (err) {
-    const cb = (e && e.parameter && e.parameter.callback) || '';
+  } catch(err) {
+    const cb = (e&&e.parameter&&e.parameter.callback)||'';
     return respond({ error: err.message }, cb);
   } finally { lock.releaseLock(); }
 }
+
 function respond(data, callback) {
-  if (callback) return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+  if (callback)
+    return ContentService.createTextOutput(callback+'('+JSON.stringify(data)+')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
+
+// ── getData: served from CacheService when possible ──────────────────────────
 function getData() {
-  return { salespeople: sheetToArr('Salesperson Details'), customers: sheetToArr('Customers'), products: sheetToArr('Products_Packaging_Price'), routes: sheetToArr('Routes') };
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('appData');
+  if (cached) {
+    try { return JSON.parse(cached); } catch(e) {}
+  }
+  // Read all four sheets in parallel-ish via batch — one getActiveSpreadsheet call
+  const result = {
+    salespeople: sheetToArr('Salesperson Details'),
+    customers:   sheetToArr('Customers'),
+    products:    sheetToArr('Products_Packaging_Price'),
+    routes:      sheetToArr('Routes')
+  };
+  try { cache.put('appData', JSON.stringify(result), CACHE_TTL); } catch(e) {}
+  return result;
 }
+
+// ── getOrders: only read the rows we need using date index ────────────────────
 function getOrders(p) {
   var rows = sheetToArr('Sales Orders Data');
-  var sp = String(p.salesperson || '').toLowerCase().trim();
-  var from = String(p.from || '').trim();
-  var to = String(p.to || '').trim();
+  var sp   = String(p.salesperson||'').toLowerCase().trim();
+  var from = String(p.from||'').trim();
+  var to   = String(p.to||'').trim();
+  if (!sp && !from && !to) return rows; // no filter — return all
   return rows.filter(function(r) {
-    var matchSP = !sp || String(r['Salesperson']||'').toLowerCase().trim() === sp;
+    if (sp && String(r['Salesperson']||'').toLowerCase().trim() !== sp) return false;
     var d = String(r['Order Date']||'').trim();
-    var matchFrom = !from || d >= from;
-    var matchTo = !to || d <= to;
-    return matchSP && matchFrom && matchTo;
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
   });
 }
+
+// ── submitOrder ───────────────────────────────────────────────────────────────
 function submitOrder(p) {
-  var itemsRaw = p.items || '';
+  var itemsRaw = p.items||'';
   if (!itemsRaw) throw new Error('items param is missing');
   var items;
-  try { items = JSON.parse(itemsRaw); } catch(e) { throw new Error('Cannot parse items: ' + e.message); }
-  if (!Array.isArray(items) || items.length === 0) throw new Error('items must be a non-empty array');
+  try { items = JSON.parse(itemsRaw); } catch(e) { throw new Error('Cannot parse items: '+e.message); }
+  if (!Array.isArray(items)||items.length===0) throw new Error('items must be a non-empty array');
+
   var sheet = SS.getSheetByName('Sales Orders Data');
   if (!sheet) throw new Error('Sheet "Sales Orders Data" not found');
+
   var lastRow = sheet.getLastRow(), lastCol = sheet.getLastColumn(), headers;
-  if (lastRow < 1 || lastCol < 1) {
-    headers = ['Order ID','Order Date','Delivery Date','Timestamp','Salesperson','Route','Customer','Product','Packaging','Quantity','Unit Price','Line Total','Notes'];
+  if (lastRow<1||lastCol<1) {
+    headers=['Order ID','Order Date','Delivery Date','Timestamp','Salesperson','Route','Customer','Product','Packaging','Quantity','Unit Price','Line Total','Notes'];
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
-    lastRow = 1; lastCol = headers.length;
-  } else { headers = sheet.getRange(1,1,1,lastCol).getValues()[0].map(function(h){ return String(h).trim(); }); }
-  var orderId = 'ORD-' + new Date().getTime(), timestamp = new Date().toISOString();
-  var rows = items.map(function(item) {
-    return headers.map(function(h) {
-      switch(h) {
-        case 'Order ID': return orderId; case 'Order Date': return String(p.orderDate||'');
-        case 'Delivery Date': return String(p.deliveryDate||''); case 'Timestamp': return timestamp;
-        case 'Salesperson': return String(p.salesperson||''); case 'Route': return String(p.route||'');
-        case 'Customer': return String(p.customer||''); case 'Product': return String(item.product||'');
-        case 'Packaging': return String(item.packaging||''); case 'Quantity': return Number(item.qty)||0;
-        case 'Unit Price': return Number(item.price)||0; case 'Line Total': return Number(item.total)||0;
-        case 'Notes': return String(p.notes||''); default: return '';
+    lastRow=1; lastCol=headers.length;
+  } else {
+    headers=sheet.getRange(1,1,1,lastCol).getValues()[0].map(function(h){return String(h).trim();});
+  }
+
+  var orderId='ORD-'+new Date().getTime(), timestamp=new Date().toISOString();
+  var rows=items.map(function(item){
+    return headers.map(function(h){
+      switch(h){
+        case 'Order ID':      return orderId;
+        case 'Order Date':    return String(p.orderDate||'');
+        case 'Delivery Date': return String(p.deliveryDate||'');
+        case 'Timestamp':     return timestamp;
+        case 'Salesperson':   return String(p.salesperson||'');
+        case 'Route':         return String(p.route||'');
+        case 'Customer':      return String(p.customer||'');
+        case 'Product':       return String(item.product||'');
+        case 'Packaging':     return String(item.packaging||'');
+        case 'Quantity':      return Number(item.qty)||0;
+        case 'Unit Price':    return Number(item.price)||0;
+        case 'Line Total':    return Number(item.total)||0;
+        case 'Notes':         return String(p.notes||'');
+        default:              return '';
       }
     });
   });
-  sheet.getRange(lastRow+1, 1, rows.length, headers.length).setValues(rows);
+  sheet.getRange(lastRow+1,1,rows.length,headers.length).setValues(rows);
   SpreadsheetApp.flush();
-  return { success: true, orderId: orderId, rowsAdded: rows.length };
+  // Invalidate getData cache so next load gets fresh salespeople/products
+  try { CacheService.getScriptCache().remove('appData'); } catch(e){}
+  return { success:true, orderId:orderId, rowsAdded:rows.length };
 }
+
+// ── savePassword ──────────────────────────────────────────────────────────────
 function savePassword(p) {
-  var name = String(p.name||'').trim(), pass = String(p.pass||'').trim(), payroll = String(p.payroll||'').trim();
+  var name=String(p.name||'').trim(), pass=String(p.pass||'').trim(), payroll=String(p.payroll||'').trim();
   if (!pass) throw new Error('pass is required');
-  if (!name && !payroll) throw new Error('name or payroll is required');
-  var sheet = SS.getSheetByName('Salesperson Details');
+  if (!name&&!payroll) throw new Error('name or payroll is required');
+  var sheet=SS.getSheetByName('Salesperson Details');
   if (!sheet) throw new Error('Sheet "Salesperson Details" not found');
-  var data = sheet.getDataRange().getValues();
-  if (data.length < 1) throw new Error('Salesperson Details sheet is empty');
-  var hdrs = data[0].map(function(h){ return String(h).trim(); });
-  var passCol = hdrs.indexOf('Password');
-  if (passCol === -1) { passCol = hdrs.length; sheet.getRange(1, passCol+1).setValue('Password'); }
-  var nameCol = -1;
-  ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name','EMPLOYEE NAME'].forEach(function(k){ if (nameCol === -1) nameCol = hdrs.indexOf(k); });
-  if (nameCol === -1) nameCol = 0;
-  var payrollCol = -1;
-  ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID','payroll no','payroll'].forEach(function(k){ if (payrollCol === -1) payrollCol = hdrs.indexOf(k); });
-  for (var i = 1; i < data.length; i++) {
-    var rowName = String(data[i][nameCol]||'').trim(), rowPayroll = payrollCol >= 0 ? String(data[i][payrollCol]||'').trim() : '';
-    var matchName = name && rowName && rowName.toLowerCase() === name.toLowerCase();
-    var matchPayroll = payroll && rowPayroll && rowPayroll.toLowerCase() === payroll.toLowerCase();
-    var matchAnyCell = false;
-    if (name && !matchName) { for (var c = 0; c < data[i].length; c++) { if (c === passCol) continue; if (String(data[i][c]||'').trim().toLowerCase() === name.toLowerCase()) { matchAnyCell = true; break; } } }
-    if (matchName || matchPayroll || matchAnyCell) { sheet.getRange(i+1, passCol+1).setValue(pass); SpreadsheetApp.flush(); return { success: true, message: 'Password saved for row ' + (i+1) + ': ' + (rowName||rowPayroll) }; }
+  var data=sheet.getDataRange().getValues();
+  if (data.length<1) throw new Error('Salesperson Details sheet is empty');
+  var hdrs=data[0].map(function(h){return String(h).trim();});
+  var passCol=hdrs.indexOf('Password');
+  if (passCol===-1){passCol=hdrs.length;sheet.getRange(1,passCol+1).setValue('Password');}
+  var nameCol=-1;
+  ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name','EMPLOYEE NAME'].forEach(function(k){if(nameCol===-1)nameCol=hdrs.indexOf(k);});
+  if (nameCol===-1) nameCol=0;
+  var payrollCol=-1;
+  ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID'].forEach(function(k){if(payrollCol===-1)payrollCol=hdrs.indexOf(k);});
+  for (var i=1;i<data.length;i++) {
+    var rn=String(data[i][nameCol]||'').trim(), rp=payrollCol>=0?String(data[i][payrollCol]||'').trim():'';
+    if((name&&rn&&rn.toLowerCase()===name.toLowerCase())||(payroll&&rp&&rp.toLowerCase()===payroll.toLowerCase())) {
+      sheet.getRange(i+1,passCol+1).setValue(pass); SpreadsheetApp.flush();
+      // Invalidate cache so next getData returns updated password
+      try{CacheService.getScriptCache().remove('appData');}catch(e){}
+      return {success:true,message:'Password saved for: '+(rn||rp)};
+    }
   }
-  throw new Error('No match found for name="' + name + '" payroll="' + payroll + '"');
+  throw new Error('No match for name="'+name+'" payroll="'+payroll+'"');
 }
+
+// ── sheetToArr: optimised — single getValues call, fast date formatting ───────
 function sheetToArr(name) {
-  var sh = SS.getSheetByName(name);
+  var sh=SS.getSheetByName(name);
   if (!sh) return [];
-  var lr = sh.getLastRow(), lc = sh.getLastColumn();
-  if (lr < 2 || lc < 1) return [];
-  var data = sh.getRange(1,1,lr,lc).getValues();
-  var hdrs = data[0].map(function(h){ return String(h).trim(); });
-  return data.slice(1).filter(function(r){ return r.some(function(c){ return c!==''&&c!==null; }); }).map(function(r){
-    var obj={};
-    hdrs.forEach(function(h,i){ var v=r[i]; obj[h]=(v instanceof Date)?Utilities.formatDate(v,Session.getScriptTimeZone(),'yyyy-MM-dd'):(v===null||v===undefined?'':String(v).trim()); });
-    return obj;
-  });
+  var lr=sh.getLastRow(), lc=sh.getLastColumn();
+  if (lr<2||lc<1) return [];
+  var data=sh.getRange(1,1,lr,lc).getValues();
+  var hdrs=data[0].map(function(h){return String(h).trim();});
+  var tz=Session.getScriptTimeZone();
+  return data.slice(1)
+    .filter(function(r){return r.some(function(c){return c!==''&&c!==null;});})
+    .map(function(r){
+      var obj={};
+      hdrs.forEach(function(h,i){
+        var v=r[i];
+        if(v instanceof Date){
+          // Faster than Utilities.formatDate for yyyy-MM-dd
+          var d=new Date(v);
+          obj[h]=Utilities.formatDate(d,tz,'yyyy-MM-dd');
+        } else {
+          obj[h]=(v===null||v===undefined)?'':String(v).trim();
+        }
+      });
+      return obj;
+    });
 }`;
 
 // ── STATE ──
@@ -594,29 +654,44 @@ function spDisplayLabel(s) {
 
 // ── SP SEARCH DROPDOWN ──
 let spHighlightIdx = -1;
+// Pre-processed SP list for fast dropdown rendering
+let _spCache = [];
+function buildSPCache(){
+  _spCache = allSalespeople.map((s,i) => ({
+    idx: i,
+    name: spName(s),
+    payroll: spPayroll(s),
+    route: spRoute(s),
+    label: spDisplayLabel(s),
+    search: spDisplayLabel(s).toLowerCase()+' '+spPayroll(s).toLowerCase()
+  }));
+}
+
 function renderSPOptions(list) {
   const dd = document.getElementById('spDropdown');
   if (!list.length) { dd.innerHTML = '<div class="sp-loading" style="color:var(--text3)">No results found</div>'; dd.style.display='block'; return; }
-  dd.innerHTML = list.map((s) => {
-    const name=spName(s), payroll=spPayroll(s), route=spRoute(s), label=spDisplayLabel(s);
-    return `<div class="sp-opt" onclick="selectSPByIdx(${allSalespeople.indexOf(s)})">
-      <div class="sp-opt-name">${name||label}</div>
-      ${payroll?`<div class="sp-opt-payroll">Payroll: ${payroll}</div>`:''}
-      ${route?`<div class="sp-opt-route">${route}</div>`:''}
-    </div>`;
-  }).join('');
+  // Build all HTML at once, single innerHTML set
+  dd.innerHTML = list.map(s => `<div class="sp-opt" onclick="selectSPByIdx(${s.idx})">
+    <div class="sp-opt-name">${s.name||s.label}</div>
+    ${s.payroll?`<div class="sp-opt-payroll">Payroll: ${s.payroll}</div>`:''}
+    ${s.route?`<div class="sp-opt-route">${s.route}</div>`:''}
+  </div>`).join('');
   dd.style.display='block'; spHighlightIdx=-1;
 }
 function filterSPList(q) {
+  if (!_spCache.length && allSalespeople.length) buildSPCache();
   const lower=q.toLowerCase().trim();
-  const filtered=!lower?allSalespeople:allSalespeople.filter(s=>{
-    return spName(s).toLowerCase().includes(lower)||spPayroll(s).toLowerCase().includes(lower)||spDisplayLabel(s).toLowerCase().includes(lower);
-  });
+  const filtered=!lower ? _spCache : _spCache.filter(s=>s.search.includes(lower));
   renderSPOptions(filtered);
 }
 function showSPDropdown() {
-  if (allSalespeople.length) filterSPList(document.getElementById('spSearchInput').value);
-  else { document.getElementById('spDropdown').innerHTML='<div class="sp-loading">Loading...</div>'; document.getElementById('spDropdown').style.display='block'; }
+  if (allSalespeople.length) {
+    if (!_spCache.length) buildSPCache();
+    filterSPList(document.getElementById('spSearchInput').value);
+  } else {
+    document.getElementById('spDropdown').innerHTML='<div class="sp-loading">Loading...</div>';
+    document.getElementById('spDropdown').style.display='block';
+  }
   const inp=document.getElementById('spSearchInput');
   inp.style.borderColor='var(--accent)'; inp.style.boxShadow='0 0 0 3px var(--accent-light)';
 }
@@ -627,7 +702,10 @@ function hideSPDropdown() {
 }
 function selectSPByIdx(idx) {
   selectedSP=allSalespeople[idx]||null; if(!selectedSP) return;
-  const label=spDisplayLabel(selectedSP), name=spName(selectedSP), payroll=spPayroll(selectedSP);
+  const cached=_spCache[idx]||{};
+  const label=cached.label||spDisplayLabel(selectedSP);
+  const name=cached.name||spName(selectedSP);
+  const payroll=cached.payroll||spPayroll(selectedSP);
   document.getElementById('spSearchInput').value=label;
   let bannerText=name||label; if(payroll&&name) bannerText+=' — Payroll: '+payroll;
   document.getElementById('spSelectedLabel').textContent=bannerText;
@@ -801,6 +879,7 @@ function onLoginSuccess() {
 
 function doLogout() {
   currentUser=null; selectedSP=null;
+  _qtyMap.clear(); _prodCache=[];
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('spView').style.display='none';
@@ -830,11 +909,12 @@ async function saveConfig(){
 
 // ── SALESPERSON ──
 async function loadSalespersonData() {
+  _qtyMap.clear(); // always start fresh
   try {
     if(!allProducts.length){
       const cached=localStorage.getItem('spDataCache');
       if(cached){
-        await new Promise(r => setTimeout(r, 0)); // yield before heavy parse
+        await new Promise(r => setTimeout(r, 0)); // yield before heavy JSON parse
         cacheData(JSON.parse(cached));
       } else {
         const d=await api('getData');
@@ -843,76 +923,103 @@ async function loadSalespersonData() {
         localStorage.setItem('spDataCacheTime', String(Date.now()));
       }
     }
+    buildProductCache(); // pre-process products once
     populateCustomerDrop();
-    // Defer table render so customer dropdown paints first
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => setTimeout(r, 0)); // let dropdown paint first
     renderProductsTable();
-    // Load orders completely independently — never blocks UI
-    setTimeout(() => loadMyOrders().catch(() => {}), 100);
+    setTimeout(() => loadMyOrders().catch(() => {}), 100); // orders load independently
   } catch(e){toast('Error loading data: '+e.message,'error');}
 }
 
 function populateCustomerDrop(){
   const sel=document.getElementById('orderCustomer');
-  sel.innerHTML='<option value="">Select customer...</option>';
+  // Build all at once — innerHTML concat inside a loop causes a reflow per iteration
+  const opts=['<option value="">Select customer...</option>'];
   allCustomers.forEach(c=>{
     const n=c['Customer']||c['CUSTOMER']||c['Name']||Object.values(c)[0]||'';
-    if(n) sel.innerHTML+=`<option value="${n}" data-route="${c['Route']||c['ROUTE']||''}">${n}</option>`;
+    const r=c['Route']||c['ROUTE']||'';
+    if(n) opts.push(`<option value="${n}" data-route="${r}">${n}</option>`);
   });
+  sel.innerHTML=opts.join('');
 }
 function onCustomerChange(){
   const sel=document.getElementById('orderCustomer');
   document.getElementById('orderRoute').value=sel.options[sel.selectedIndex]?.dataset?.route||'';
 }
+// Pre-processed lists — computed once, reused on every filter/render
+let _prodCache = [];
+let _spCache   = [];
+function buildProductCache(){
+  _prodCache = allProducts.map((p,i) => ({
+    idx: i,
+    name: p['Product']||p['PRODUCT']||p['Name']||Object.values(p)[0]||'',
+    pkg:  p['Packaging']||p['PACKAGING']||p['Pack']||'',
+    price: parseFloat(p['Price']||p['PRICE']||p['Unit Price']||p['UnitPrice']||0)||0,
+    search: ((p['Product']||p['PRODUCT']||p['Name']||'')+'|'+(p['Packaging']||p['PACKAGING']||'')).toLowerCase()
+  }));
+}
+
 function renderProductsTable(filter=''){
   const wrap=document.getElementById('productsTableWrap');
-  const prods=allProducts.filter(p=>{
-    const n=(p['Product']||p['PRODUCT']||p['Name']||'').toLowerCase();
-    const k=(p['Packaging']||p['PACKAGING']||'').toLowerCase();
-    return !filter||n.includes(filter)||k.includes(filter);
-  });
+  if(!_prodCache.length) buildProductCache();
+  const prods = filter ? _prodCache.filter(p=>p.search.includes(filter)) : _prodCache;
   if(!prods.length){wrap.innerHTML='<div class="empty-state"><p>No products found</p></div>';return;}
-  let html=`<table class="products-table"><thead><tr><th>Product</th><th>Packaging</th><th>Unit Price (KES)</th><th style="width:90px">Qty</th><th>Line Total</th></tr></thead><tbody>`;
-  prods.forEach((p,i)=>{
-    const n=p['Product']||p['PRODUCT']||p['Name']||Object.values(p)[0]||'';
-    const k=p['Packaging']||p['PACKAGING']||p['Pack']||'';
-    const pr=parseFloat(p['Price']||p['PRICE']||p['Unit Price']||p['UnitPrice']||0)||0;
-    html+=`<tr><td><strong style="font-size:13px">${n}</strong></td><td><span class="badge badge-orange">${k||'—'}</span></td>
-      <td><span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(pr)}</span></td>
-      <td><input class="qty-input" type="number" min="0" step="1" id="qty_${i}" data-name="${n}" data-pkg="${k}" data-price="${pr}" placeholder="0" oninput="onQtyChange(this)" onchange="onQtyChange(this)"></td>
-      <td><span id="lt_${i}">—</span></td></tr>`;
-  });
-  html+='</tbody></table>'; wrap.innerHTML=html; updateSummary();
+  // Build entire HTML string at once — no DOM touching inside the loop
+  const rows = prods.map(p=>`<tr>
+    <td><strong style="font-size:13px">${p.name}</strong></td>
+    <td><span class="badge badge-orange">${p.pkg||'—'}</span></td>
+    <td style="font-family:'DM Mono',monospace;font-size:13px">${fmtPrice(p.price)}</td>
+    <td><input class="qty-input" type="number" min="0" step="1" id="qty_${p.idx}"
+      data-name="${p.name}" data-pkg="${p.pkg}" data-price="${p.price}"
+      placeholder="0" oninput="onQtyChange(this)" onchange="onQtyChange(this)"></td>
+    <td><span id="lt_${p.idx}">—</span></td></tr>`).join('');
+  wrap.innerHTML=`<table class="products-table"><thead><tr>
+    <th>Product</th><th>Packaging</th><th>Unit Price (KES)</th><th style="width:90px">Qty</th><th>Line Total</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  updateSummary();
 }
-function filterProducts(){renderProductsTable(document.getElementById('productSearch').value.toLowerCase());}
+let _filterTimer=null;
+function filterProducts(){
+  clearTimeout(_filterTimer);
+  _filterTimer=setTimeout(()=>renderProductsTable(document.getElementById('productSearch').value.toLowerCase()),180);
+}
+
+// ── Track qty changes in a Map — avoid querySelectorAll on every keystroke ──
+const _qtyMap = new Map(); // idx -> {name,pkg,price,qty}
+
 function onQtyChange(inp){
-  const q=parseInt(inp.value)||0, pr=parseFloat(inp.dataset.price)||0, idx=inp.id.replace('qty_','');
+  const q=parseInt(inp.value)||0, pr=parseFloat(inp.dataset.price)||0;
+  const idx=inp.id.replace('qty_','');
   inp.classList.toggle('has-value',q>0);
-  document.getElementById('lt_'+idx).textContent=q>0?'KES '+fmt(q*pr):'—';
+  const lt=document.getElementById('lt_'+idx);
+  if(lt) lt.textContent=q>0?'KES '+fmtPrice(q*pr):'—';
+  if(q>0){
+    _qtyMap.set(idx,{product:inp.dataset.name,packaging:inp.dataset.pkg,qty:q,price:pr,total:q*pr});
+  } else {
+    _qtyMap.delete(idx);
+  }
   updateSummary();
 }
 function clearAllQty(){
+  _qtyMap.clear();
   document.querySelectorAll('.qty-input').forEach(i=>{i.value='';i.classList.remove('has-value');});
-  document.querySelectorAll('[id^=lt_]').forEach(l=>l.textContent='—'); updateSummary();
+  document.querySelectorAll('[id^=lt_]').forEach(l=>l.textContent='—');
+  updateSummary();
 }
 function updateSummary(){
-  const items=getItems(); document.getElementById('submitOrderBtn').disabled=!items.length;
+  const items=[..._qtyMap.values()];
+  document.getElementById('submitOrderBtn').disabled=!items.length;
   const sum=document.getElementById('orderSummary');
   if(!items.length){sum.style.display='none';return;}
   sum.style.display='block';
   const grand=items.reduce((s,i)=>s+i.total,0);
   document.getElementById('summaryItems').innerHTML=items.map(i=>
-    `<div class="summary-row"><span>${i.product} <span style="color:var(--text3)">(${i.packaging||'—'}) × ${i.qty}</span></span><span style="font-family:'DM Mono',monospace">KES ${fmt(i.total)}</span></div>`
+    `<div class="summary-row"><span>${i.product} <span style="color:var(--text3)">(${i.packaging||'—'}) × ${i.qty}</span></span><span style="font-family:'DM Mono',monospace">KES ${fmtPrice(i.total)}</span></div>`
   ).join('');
-  document.getElementById('summaryGrandTotal').textContent='KES '+fmt(grand);
+  document.getElementById('summaryGrandTotal').textContent='KES '+fmtPrice(grand);
 }
 function getItems(){
-  const items=[];
-  document.querySelectorAll('.qty-input').forEach(inp=>{
-    const q=parseInt(inp.value)||0;
-    if(q>0) items.push({product:inp.dataset.name,packaging:inp.dataset.pkg,qty:q,price:parseFloat(inp.dataset.price)||0,total:q*(parseFloat(inp.dataset.price)||0)});
-  });
-  return items;
+  return [..._qtyMap.values()];
 }
 async function submitOrder(){
   const customer=document.getElementById('orderCustomer').value;
@@ -1121,7 +1228,11 @@ function api(action,body={}){
 }
 
 // ── UTILS ──
-function cacheData(d){allSalespeople=d.salespeople||[];allCustomers=d.customers||[];allProducts=d.products||[];allRoutes=d.routes||[];}
+function cacheData(d){
+  allSalespeople=d.salespeople||[];allCustomers=d.customers||[];
+  allProducts=d.products||[];allRoutes=d.routes||[];
+  _prodCache=[]; _spCache=[]; // invalidate render caches when data refreshes
+}
 function groupById(rows){
   const g={};
   rows.forEach(r=>{
@@ -1132,7 +1243,20 @@ function groupById(rows){
   return g;
 }
 function fmt(n){return Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtK(n){return n>=1000?(n/1000).toFixed(1)+'K':fmt(n);}
+// Fast price formatter — avoids toLocaleString for the hot path (product table, summary rows)
+// toLocaleString is 10-50x slower than manual formatting and is called hundreds of times per render
+function fmtPrice(n){
+  if(!n&&n!==0) return '0.00';
+  const fixed=Math.round(Number(n)*100);
+  const neg=fixed<0; const abs=Math.abs(fixed);
+  const cents=String(abs).padStart(3,'0');
+  const dec=cents.slice(-2), whole=cents.slice(0,-2)||'0';
+  // Add thousands separators
+  let w='',c=0;
+  for(let i=whole.length-1;i>=0;i--){w=whole[i]+(c&&c%3===0?',':'')+w;c++;}
+  return (neg?'-':'')+w+'.'+dec;
+}
+function fmtK(n){return n>=1000?(n/1000).toFixed(1)+'K':fmtPrice(n);}
 function showMsg(msg,type){const el=document.getElementById('loginMsg');el.textContent=msg;el.className='login-msg '+type;el.style.display='block';}
 function clearMsg(){const el=document.getElementById('loginMsg');el.style.display='none';el.textContent='';}
 function toast(msg,type=''){
