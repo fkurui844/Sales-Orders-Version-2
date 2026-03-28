@@ -163,11 +163,121 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .code-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'DM Mono',monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;color:var(--text);margin-top:8px;max-height:130px;overflow-y:auto;line-height:1.6}
 .hint{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6}
 
-@media(max-width:640px){
+/* ── RESPONSIVE — TABLET & MOBILE ── */
+
+/* Tablet (≤ 900px) */
+@media(max-width:900px){
   .stats-grid{grid-template-columns:1fr 1fr}
+  .main{padding:20px 16px}
+  .topbar{padding:0 16px}
+}
+
+/* Mobile (≤ 640px) */
+@media(max-width:640px){
+
+  /* Layout */
+  .main{padding:12px}
+  .topbar{padding:0 12px;height:52px}
+  .brand-sub{display:none}
+  .topbar-right{gap:6px}
+
+  /* Shrink user pill on mobile */
+  .user-pill{padding:4px 8px 4px 4px;font-size:12px;gap:6px}
+  .user-pill span#topUserName{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .btn-ghost.btn-sm{padding:5px 8px;font-size:11px}
+
+  /* Login card — full width, less padding */
+  #loginScreen{padding:12px;align-items:flex-start;padding-top:40px}
+  .login-card{padding:24px 20px;border-radius:var(--radius-lg)}
+  .login-title{font-size:19px}
+
+  /* Tabs — stretch full width */
+  .tabs{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))}
+  .tab-btn{padding:8px 6px;font-size:12px;text-align:center}
+
+  /* Cards */
+  .card{padding:16px;border-radius:var(--radius)}
+  .card-title{font-size:14px}
+  .section-header{flex-direction:column;align-items:flex-start;gap:10px}
+  .section-header > div:last-child{width:100%;display:flex;gap:6px}
+  .section-header input[type=text]{flex:1;width:auto}
+
+  /* Form grid — single column */
   .form-grid{grid-template-columns:1fr}
+  .form-grid .full{grid-column:1}
+
+  /* Stats grid — 2 col on mobile */
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:14px 12px}
+  .stat-value{font-size:20px}
+  .stat-label{font-size:10px}
+
+  /* Products table — horizontal scroll */
+  #productsTableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .products-table{min-width:480px}
+  .products-table th,.products-table td{padding:8px 8px;font-size:12px}
+  .qty-input{width:58px;font-size:12px}
+
+  /* Data table — horizontal scroll */
+  .card > #allOrdersTable,
+  #allOrdersTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .data-table{min-width:560px}
+  .data-table th,.data-table td{padding:8px 10px;font-size:12px}
+
+  /* Supervisor breakdown table */
+  #spBreakdown{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #spBreakdown .data-table{min-width:420px}
+
+  /* Filters bar — wrap and full width inputs */
+  .filters-bar{gap:8px}
+  .filters-bar select,
+  .filters-bar input[type=date]{width:100%;font-size:13px}
+
+  /* My Orders date filter — stack */
+  #myOrders .section-header{flex-direction:column;align-items:flex-start;gap:8px}
+  #myOrders .section-header > div:last-child{display:flex;flex-direction:column;gap:6px;width:100%}
+  #myOrders .section-header input[type=date]{width:100%}
+  #myOrders .section-header .btn{width:100%;justify-content:center}
+
+  /* Product summary — 1 col */
   .product-summary-grid{grid-template-columns:1fr}
-  .main{padding:16px}
+
+  /* Order summary */
+  .summary-row{font-size:12px}
+  .summary-total{font-size:14px}
+
+  /* Order action buttons — stack */
+  .card > div[style*="justify-content:flex-end"]{flex-direction:column}
+  .card > div[style*="justify-content:flex-end"] .btn{width:100%;justify-content:center}
+
+  /* Modal — full screen on mobile */
+  .modal-backdrop{padding:0;align-items:flex-end}
+  .modal{border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-height:92vh;padding:20px 16px}
+  .modal-actions{flex-direction:column-reverse}
+  .modal-actions .btn{width:100%;justify-content:center}
+
+  /* Toast — full width at bottom */
+  .toast{left:12px;right:12px;bottom:16px;text-align:center}
+
+  /* Order cards */
+  .order-card{padding:14px}
+
+  /* Expand inner */
+  .expand-inner{padding:12px}
+
+  /* Bigger tap targets for inputs */
+  .field input,.input-plain,
+  select{min-height:44px;font-size:16px!important} /* 16px prevents iOS zoom */
+  .qty-input{min-height:36px}
+  .btn-lg{min-height:48px;font-size:15px}
+  .btn{min-height:40px}
+}
+
+/* Very small phones (≤ 375px) */
+@media(max-width:375px){
+  .stats-grid{grid-template-columns:1fr}
+  .tabs{grid-template-columns:1fr}
+  .tab-btn{padding:10px}
 }
 </style>
 </head>
@@ -380,7 +490,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Clear</button>
           <button class="btn btn-primary btn-sm" onclick="exportCSV()">Export CSV</button>
         </div>
-        <div class="card" style="padding:0;overflow:hidden">
+        <div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
           <div id="allOrdersTable"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
         </div>
       </div>
@@ -675,14 +785,35 @@ document.getElementById('topDate').textContent =
   .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
 if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
 
-// Boot: load salespeople
+// Boot: load salespeople — cache-first for instant startup
 (async () => {
   const inp = document.getElementById('spSearchInput');
+
+  // ── Step 1: Load from localStorage cache instantly ──
+  const cached = localStorage.getItem('spDataCache');
+  if (cached) {
+    try {
+      cacheData(JSON.parse(cached));
+      inp.placeholder = 'Enter your payroll number...';
+      inp.disabled = false;
+      // Refresh cache silently in background
+      api('getData').then(d => {
+        cacheData(d);
+        localStorage.setItem('spDataCache', JSON.stringify(d));
+      }).catch(e => console.warn('Background refresh failed:', e.message));
+      return; // Done — user can interact immediately
+    } catch(e) {
+      console.warn('Cache parse failed, fetching fresh:', e.message);
+    }
+  }
+
+  // ── Step 2: No cache yet — fetch fresh (first ever load) ──
   inp.placeholder = 'Loading...';
   inp.disabled = true;
   try {
     const d = await api('getData');
     cacheData(d);
+    localStorage.setItem('spDataCache', JSON.stringify(d));
     inp.placeholder = 'Enter your payroll number...';
   } catch(e) {
     inp.placeholder = 'Could not load — check connection';
@@ -1010,6 +1141,7 @@ async function saveConfig() {
     const d = await api('getData');
     if (d.salespeople) {
       cacheData(d);
+      localStorage.setItem('spDataCache', JSON.stringify(d));
       document.getElementById('gasUrlStatus').textContent =
         `✓ Connected — ${d.salespeople.length} salespeople, ${d.customers.length} customers, ${d.products.length} products`;
       toast('Connected!', 'success'); hideConfig();
@@ -1026,7 +1158,11 @@ async function saveConfig() {
 // ══════════════════════════════════════════════════
 async function loadSalespersonData() {
   try {
-    if (!allProducts.length) { const d = await api('getData'); cacheData(d); }
+    if (!allProducts.length) {
+      const cached = localStorage.getItem('spDataCache');
+      if (cached) { cacheData(JSON.parse(cached)); }
+      else { const d = await api('getData'); cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d)); }
+    }
     populateCustomerDrop();
     renderProductsTable();
     loadMyOrders();
