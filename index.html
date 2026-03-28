@@ -531,28 +531,39 @@ document.getElementById('topDate').textContent = new Date().toLocaleDateString('
   .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
 if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
 
-// ── BOOT — load data in background, never blocks login ──
-(async () => {
+// ── BOOT — always deferred so login UI paints first ──
+setTimeout(async () => {
   const inp = document.getElementById('spSearchInput');
   const cached = localStorage.getItem('spDataCache');
   if (cached) {
     try {
+      // Parse in a deferred tick so the page never freezes on large JSON
+      await new Promise(r => setTimeout(r, 0));
       cacheData(JSON.parse(cached));
       inp.placeholder = 'Enter your payroll number...';
       inp.disabled = false;
-      // Refresh cache in background silently
-      api('getData').then(d => { cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d)); }).catch(() => {});
+      // Only refresh cache if last fetch was >5 min ago to avoid hammering GAS
+      const lastFetch = parseInt(localStorage.getItem('spDataCacheTime') || '0');
+      if (Date.now() - lastFetch > 5 * 60 * 1000) {
+        api('getData').then(d => {
+          cacheData(d);
+          localStorage.setItem('spDataCache', JSON.stringify(d));
+          localStorage.setItem('spDataCacheTime', String(Date.now()));
+        }).catch(() => {});
+      }
       return;
-    } catch(e) {}
+    } catch(e) { /* corrupt cache — fall through to fresh load */ }
   }
   inp.placeholder = 'Loading...'; inp.disabled = true;
   try {
     const d = await api('getData');
-    cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d));
+    cacheData(d);
+    localStorage.setItem('spDataCache', JSON.stringify(d));
+    localStorage.setItem('spDataCacheTime', String(Date.now()));
     inp.placeholder = 'Enter your payroll number...';
   } catch(e) { inp.placeholder = 'Could not load — check connection'; }
   inp.disabled = false;
-})();
+}, 0);
 
 // ── SP HELPERS ──
 function getField(obj, candidates) {
@@ -773,15 +784,19 @@ function onLoginSuccess() {
   document.getElementById('topRole').textContent=currentUser.role;
   document.getElementById('topRole').className='badge '+(currentUser.role==='Supervisor'?'badge-blue':'badge-green');
 
-  if(currentUser.role==='Supervisor'){
-    document.getElementById('supView').style.display='block';
-    // Load data after screen is visible
-    loadSupervisorData();
-  } else {
-    document.getElementById('spView').style.display='block';
-    // Load data after screen is visible — non-blocking
-    loadSalespersonData();
-  }
+  // Defer all data loading to AFTER the browser has painted the new screen
+  // This prevents the main thread from freezing during the transition
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if(currentUser.role==='Supervisor'){
+        document.getElementById('supView').style.display='block';
+        loadSupervisorData();
+      } else {
+        document.getElementById('spView').style.display='block';
+        loadSalespersonData();
+      }
+    }, 0);
+  });
 }
 
 function doLogout() {
@@ -818,13 +833,22 @@ async function loadSalespersonData() {
   try {
     if(!allProducts.length){
       const cached=localStorage.getItem('spDataCache');
-      if(cached){cacheData(JSON.parse(cached));}
-      else{const d=await api('getData');cacheData(d);localStorage.setItem('spDataCache',JSON.stringify(d));}
+      if(cached){
+        await new Promise(r => setTimeout(r, 0)); // yield before heavy parse
+        cacheData(JSON.parse(cached));
+      } else {
+        const d=await api('getData');
+        cacheData(d);
+        localStorage.setItem('spDataCache',JSON.stringify(d));
+        localStorage.setItem('spDataCacheTime', String(Date.now()));
+      }
     }
     populateCustomerDrop();
+    // Defer table render so customer dropdown paints first
+    await new Promise(r => setTimeout(r, 0));
     renderProductsTable();
-    // Load orders in background — don't await here
-    loadMyOrders().catch(()=>{});
+    // Load orders completely independently — never blocks UI
+    setTimeout(() => loadMyOrders().catch(() => {}), 100);
   } catch(e){toast('Error loading data: '+e.message,'error');}
 }
 
