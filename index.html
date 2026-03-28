@@ -20,8 +20,6 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
-
-/* ── LAYOUT ── */
 .app{display:flex;flex-direction:column;min-height:100vh}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-brand{display:flex;align-items:center;gap:10px}
@@ -33,8 +31,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .user-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 6px;font-size:13px;color:var(--text2)}
 .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
 .main{flex:1;padding:28px 24px;max-width:1100px;margin:0 auto;width:100%}
-
-/* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;text-decoration:none}
 .btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:var(--accent-mid)}.btn-primary:disabled{background:var(--text3);cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--surface2);border-color:var(--border2)}
@@ -43,8 +39,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .badge-green{background:var(--accent-light);color:var(--accent)}
 .badge-blue{background:var(--blue-light);color:var(--blue)}
 .badge-orange{background:var(--warn-light);color:var(--warn)}
-
-/* ── LOGIN ── */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:16px}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg)}
 .login-logo{width:48px;height:48px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
@@ -64,8 +58,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .strength-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
 .strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
 .strength-hint{font-size:11px;color:var(--text3);margin-top:4px}
-
-/* ── SP SEARCH DROPDOWN ── */
 .sp-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s}
 .sp-opt:last-child{border-bottom:none}
 .sp-opt:hover,.sp-opt.hi{background:var(--accent-light)}
@@ -73,13 +65,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sp-opt-payroll{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
 .sp-opt-route{font-size:11px;color:var(--text2)}
 .sp-loading{padding:12px 14px;font-size:13px;color:var(--text2)}
-
-/* ── TABS ── */
 .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
 .tab-btn{padding:7px 18px;border-radius:7px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
 .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-
-/* ── CARDS ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px}
 .card-title{font-size:15px;font-weight:600;margin-bottom:4px}
 .card-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
@@ -87,8 +75,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .form-grid .full{grid-column:1/-1}
-
-/* ── PRODUCTS TABLE ── */
 .products-table{width:100%;border-collapse:collapse;margin-bottom:12px}
 .products-table th{background:var(--surface2);padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
 .products-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
@@ -97,19 +83,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .qty-input{width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:center;outline:none;background:var(--surface)}
 .qty-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light)}
 .qty-input.has-value{border-color:var(--accent);background:var(--accent-light);font-weight:600;color:var(--accent)}
-
-/* ── ORDER SUMMARY ── */
 .order-summary{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:16px}
 .summary-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text2);margin-bottom:6px}
 .summary-total{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:600;margin-top:10px;padding-top:10px;border-top:2px solid var(--border)}
 .total-amount{font-family:'DM Mono',monospace;color:var(--accent)}
-
-/* ── ORDER CARDS ── */
 .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;cursor:pointer;transition:all .15s}
 .order-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
 .order-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-
-/* ── SUPERVISOR ── */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
 .stat-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
@@ -133,108 +113,71 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .product-sum-name{font-weight:500;font-size:13px}
 .product-sum-pkg{font-size:11px;color:var(--text3)}
 .product-sum-qty{font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)}
-
-/* ── MODAL ── */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{background:var(--surface);border-radius:var(--radius-lg);padding:28px;max-width:560px;width:100%;box-shadow:var(--shadow-lg);max-height:88vh;overflow-y:auto}
 .modal-title{font-size:18px;font-weight:600;margin-bottom:4px}
 .modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-
-/* ── TOAST ── */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:white;padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:300;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{background:var(--accent)}.toast.error{background:var(--danger)}.toast.info{background:var(--blue)}
-
-/* ── LOADING ── */
 .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay{display:flex;align-items:center;justify-content:center;padding:48px;flex-direction:column;gap:12px;color:var(--text2)}
 .loading-spinner-lg{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 .empty-state{text-align:center;padding:48px 24px;color:var(--text2)}
-
-/* ── CONFIG ── */
 .config-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:14px}
 .config-step-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .config-step-num{width:26px;height:26px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
 .config-step-title{font-weight:600;font-size:14px}
-.config-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15px}
+.config-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:13px;color:var(--text);background:var(--surface);outline:none}
 .config-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
 .code-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'DM Mono',monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;color:var(--text);margin-top:8px;max-height:130px;overflow-y:auto;line-height:1.6}
 .hint{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6}
-
-/* ── RESPONSIVE — TABLET & MOBILE ── */
-@media(max-width:900px){
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .main{padding:20px 16px}
-  .topbar{padding:0 16px}
-}
+@media(max-width:900px){.stats-grid{grid-template-columns:1fr 1fr}.main{padding:20px 16px}.topbar{padding:0 16px}}
 @media(max-width:640px){
-  .main{padding:12px}
-  .topbar{padding:0 12px;height:52px}
-  .brand-sub{display:none}
-  .topbar-right{gap:6px}
+  .main{padding:12px}.topbar{padding:0 12px;height:52px}.brand-sub{display:none}.topbar-right{gap:6px}
   .user-pill{padding:4px 8px 4px 4px;font-size:12px;gap:6px}
   .user-pill span#topUserName{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .btn-ghost.btn-sm{padding:5px 8px;font-size:11px}
   #loginScreen{padding:12px;align-items:flex-start;padding-top:40px}
-  .login-card{padding:24px 20px;border-radius:var(--radius-lg)}
-  .login-title{font-size:19px}
+  .login-card{padding:24px 20px;border-radius:var(--radius-lg)}.login-title{font-size:19px}
   .tabs{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))}
   .tab-btn{padding:8px 6px;font-size:12px;text-align:center}
-  .card{padding:16px;border-radius:var(--radius)}
-  .card-title{font-size:14px}
+  .card{padding:16px;border-radius:var(--radius)}.card-title{font-size:14px}
   .section-header{flex-direction:column;align-items:flex-start;gap:10px}
   .section-header > div:last-child{width:100%;display:flex;gap:6px}
   .section-header input[type=text]{flex:1;width:auto}
-  .form-grid{grid-template-columns:1fr}
-  .form-grid .full{grid-column:1}
-  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .stat-card{padding:14px 12px}
-  .stat-value{font-size:20px}
-  .stat-label{font-size:10px}
+  .form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:1}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}.stat-card{padding:14px 12px}.stat-value{font-size:20px}.stat-label{font-size:10px}
   #productsTableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .products-table{min-width:480px}
-  .products-table th,.products-table td{padding:8px 8px;font-size:12px}
-  .qty-input{width:58px;font-size:12px}
+  .products-table{min-width:480px}.products-table th,.products-table td{padding:8px 8px;font-size:12px}.qty-input{width:58px;font-size:12px}
   .card > #allOrdersTable,#allOrdersTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .data-table{min-width:560px}
-  .data-table th,.data-table td{padding:8px 10px;font-size:12px}
+  .data-table{min-width:560px}.data-table th,.data-table td{padding:8px 10px;font-size:12px}
   #spBreakdown{overflow-x:auto;-webkit-overflow-scrolling:touch}
   #spBreakdown .data-table{min-width:420px}
-  .filters-bar{gap:8px}
-  .filters-bar select,.filters-bar input[type=date]{width:100%;font-size:13px}
+  .filters-bar{gap:8px}.filters-bar select,.filters-bar input[type=date]{width:100%;font-size:13px}
   #myOrders .section-header{flex-direction:column;align-items:flex-start;gap:8px}
   #myOrders .section-header > div:last-child{display:flex;flex-direction:column;gap:6px;width:100%}
   #myOrders .section-header input[type=date]{width:100%}
   #myOrders .section-header .btn{width:100%;justify-content:center}
-  .product-summary-grid{grid-template-columns:1fr}
-  .summary-row{font-size:12px}
-  .summary-total{font-size:14px}
+  .product-summary-grid{grid-template-columns:1fr}.summary-row{font-size:12px}.summary-total{font-size:14px}
   .card > div[style*="justify-content:flex-end"]{flex-direction:column}
   .card > div[style*="justify-content:flex-end"] .btn{width:100%;justify-content:center}
   .modal-backdrop{padding:0;align-items:flex-end}
   .modal{border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-height:92vh;padding:20px 16px}
-  .modal-actions{flex-direction:column-reverse}
-  .modal-actions .btn{width:100%;justify-content:center}
+  .modal-actions{flex-direction:column-reverse}.modal-actions .btn{width:100%;justify-content:center}
   .toast{left:12px;right:12px;bottom:16px;text-align:center}
-  .order-card{padding:14px}
-  .expand-inner{padding:12px}
+  .order-card{padding:14px}.expand-inner{padding:12px}
   .field input,.input-plain,select{min-height:44px;font-size:16px!important}
-  .qty-input{min-height:36px}
-  .btn-lg{min-height:48px;font-size:15px}
-  .btn{min-height:40px}
+  .qty-input{min-height:36px}.btn-lg{min-height:48px;font-size:15px}.btn{min-height:40px}
 }
-@media(max-width:375px){
-  .stats-grid{grid-template-columns:1fr}
-  .tabs{grid-template-columns:1fr}
-  .tab-btn{padding:10px}
-}
+@media(max-width:375px){.stats-grid{grid-template-columns:1fr}.tabs{grid-template-columns:1fr}.tab-btn{padding:10px}}
 </style>
 </head>
 <body>
 
-<!-- ══════════ LOGIN ══════════ -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">
@@ -244,16 +187,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="login-sub" id="loginSubText">Select your name to get started</div>
     <div id="loginMsg" class="login-msg"></div>
 
-    <!-- STEP 1: searchable by name or payroll number -->
     <div id="stepName">
       <div class="field">
         <label>Name or Payroll Number</label>
         <div style="position:relative">
           <input type="text" id="spSearchInput" placeholder="Enter your payroll number..."
-            autocomplete="off"
-            oninput="filterSPList(this.value)"
-            onfocus="showSPDropdown()"
-            onkeydown="spSearchKey(event)"
+            autocomplete="off" oninput="filterSPList(this.value)" onfocus="showSPDropdown()" onkeydown="spSearchKey(event)"
             style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s">
           <div id="spDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);max-height:220px;overflow-y:auto;z-index:50;box-shadow:var(--shadow)"></div>
         </div>
@@ -267,11 +206,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
 
-    <!-- STEP 2a: create password (first time) -->
     <div id="stepCreate" style="display:none">
-      <div class="new-pass-banner">
-        &#128075; Welcome! No password set yet.<br>Create one to continue — saved directly to your sheet.
-      </div>
+      <div class="new-pass-banner">&#128075; Welcome! No password set yet.<br>Create one to continue — saved directly to your sheet.</div>
       <div class="field">
         <label>Create Password</label>
         <div class="pass-wrap">
@@ -288,13 +224,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="pass-toggle" onclick="toggleVis('newPass2',this)" tabindex="-1">&#128065;</button>
         </div>
       </div>
-      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doCreatePassword()" id="createBtn">
-        Set Password &amp; Continue &#8594;
-      </button>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doCreatePassword()" id="createBtn">Set Password &amp; Continue &#8594;</button>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="resetLogin()">&#8592; Back</button>
     </div>
 
-    <!-- STEP 2b: enter existing password -->
     <div id="stepLogin" style="display:none">
       <div class="field">
         <label id="passLabel">Password</label>
@@ -303,15 +236,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <button class="pass-toggle" onclick="toggleVis('loginPass',this)" tabindex="-1">&#128065;</button>
         </div>
       </div>
-      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doLogin()" id="loginBtn">
-        Sign In
-      </button>
+      <button class="btn btn-primary btn-lg" style="width:100%;justify-content:center" onclick="doLogin()" id="loginBtn">Sign In</button>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:10px" onclick="resetLogin()">&#8592; Back</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════ MAIN APP ══════════ -->
+<!-- MAIN APP -->
 <div class="app" id="appScreen" style="display:none">
   <div class="topbar">
     <div class="topbar-brand">
@@ -327,17 +258,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
     </div>
   </div>
-
   <div class="main">
-
-    <!-- ══ SALESPERSON VIEW ══ -->
     <div id="spView" style="display:none">
       <div class="tabs">
         <button class="tab-btn active" onclick="showTab('newOrder',this)">New Order</button>
         <button class="tab-btn" onclick="showTab('myOrders',this)">My Orders</button>
       </div>
-
-      <!-- NEW ORDER -->
       <div id="newOrder">
         <div class="card">
           <div class="card-title">Place New Order</div>
@@ -349,37 +275,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
                 <option value="">Select customer...</option>
               </select>
             </div>
-            <div class="field">
-              <label>Route</label>
-              <input id="orderRoute" class="input-plain" readonly style="background:var(--surface2);color:var(--text2)" placeholder="Auto-filled from customer">
-            </div>
-            <div class="field">
-              <label>Order Date</label>
-              <input type="date" id="orderDate" class="input-plain">
-            </div>
-            <div class="field">
-              <label>Delivery Date</label>
-              <input type="date" id="orderDelivery" class="input-plain">
-            </div>
-            <div class="field full">
-              <label>Notes (optional)</label>
-              <input type="text" id="orderNotes" class="input-plain" placeholder="Special instructions...">
-            </div>
+            <div class="field"><label>Route</label><input id="orderRoute" class="input-plain" readonly style="background:var(--surface2);color:var(--text2)" placeholder="Auto-filled from customer"></div>
+            <div class="field"><label>Order Date</label><input type="date" id="orderDate" class="input-plain"></div>
+            <div class="field"><label>Delivery Date</label><input type="date" id="orderDelivery" class="input-plain"></div>
+            <div class="field full"><label>Notes (optional)</label><input type="text" id="orderNotes" class="input-plain" placeholder="Special instructions..."></div>
           </div>
         </div>
-
         <div class="card">
           <div class="section-header">
             <div class="section-title">Products &amp; Quantities</div>
             <div style="display:flex;gap:8px;align-items:center">
-              <input type="text" id="productSearch" placeholder="Search products..." oninput="filterProducts()"
-                style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;width:150px;outline:none;font-family:'DM Sans',sans-serif">
+              <input type="text" id="productSearch" placeholder="Search products..." oninput="filterProducts()" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;width:150px;outline:none;font-family:'DM Sans',sans-serif">
               <button class="btn btn-ghost btn-sm" onclick="clearAllQty()">Clear</button>
             </div>
           </div>
-          <div id="productsTableWrap">
-            <div class="loading-overlay"><div class="loading-spinner-lg"></div><span>Loading products...</span></div>
-          </div>
+          <div id="productsTableWrap"><div class="loading-overlay"><div class="loading-spinner-lg"></div><span>Loading products...</span></div></div>
           <div class="order-summary" id="orderSummary" style="display:none">
             <div id="summaryItems"></div>
             <div class="summary-total"><span>Order Total</span><span class="total-amount" id="summaryGrandTotal">KES 0</span></div>
@@ -390,14 +300,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
         </div>
       </div>
-
-      <!-- MY ORDERS -->
       <div id="myOrders" style="display:none">
         <div class="section-header">
-          <div>
-            <div style="font-size:17px;font-weight:600">My Orders</div>
-            <div style="font-size:13px;color:var(--text2);margin-top:2px">Your submitted orders</div>
-          </div>
+          <div><div style="font-size:17px;font-weight:600">My Orders</div><div style="font-size:13px;color:var(--text2);margin-top:2px">Your submitted orders</div></div>
           <div style="display:flex;gap:8px">
             <input type="date" id="myFromDate" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
             <input type="date" id="myToDate" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
@@ -407,16 +312,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div id="myOrdersList"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
       </div>
     </div>
-
-    <!-- ══ SUPERVISOR VIEW ══ -->
     <div id="supView" style="display:none">
       <div class="tabs">
         <button class="tab-btn active" onclick="showTab('supDashboard',this)">Dashboard</button>
         <button class="tab-btn" onclick="showTab('supOrders',this)">All Orders</button>
         <button class="tab-btn" onclick="showTab('supProducts',this)">Product Summary</button>
       </div>
-
-      <!-- DASHBOARD -->
       <div id="supDashboard">
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value" id="sTotalOrders">—</div><div class="stat-sub">today</div></div>
@@ -430,8 +331,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div id="spBreakdown"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
         </div>
       </div>
-
-      <!-- ALL ORDERS -->
       <div id="supOrders" style="display:none">
         <div class="filters-bar">
           <select id="filterSP" onchange="applyFilters()"><option value="">All Salespeople</option></select>
@@ -445,8 +344,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div id="allOrdersTable"><div class="loading-overlay"><div class="loading-spinner-lg"></div></div></div>
         </div>
       </div>
-
-      <!-- PRODUCT SUMMARY -->
       <div id="supProducts" style="display:none">
         <div class="filters-bar">
           <input type="date" id="prodFilterFrom" onchange="loadProductSummary()">
@@ -459,9 +356,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
       </div>
     </div>
-
-  </div><!-- /main -->
-</div><!-- /app -->
+  </div>
+</div>
 
 <!-- CONFIG MODAL -->
 <div id="configModal" class="modal-backdrop" style="display:none" onclick="if(event.target===this)hideConfig()">
@@ -473,9 +369,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="code-block" id="appsScriptDisplay"></div>
       <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="copyGAS()">Copy Script</button>
     </div>
-    <div class="config-step">
-      <div class="config-step-header"><div class="config-step-num">2</div><div class="config-step-title">Deploy → New deployment → Web app → Execute as: Me → Anyone → Copy URL</div></div>
-    </div>
+    <div class="config-step"><div class="config-step-header"><div class="config-step-num">2</div><div class="config-step-title">Deploy → New deployment → Web app → Execute as: Me → Anyone → Copy URL</div></div></div>
     <div class="config-step">
       <div class="config-step-header"><div class="config-step-num">3</div><div class="config-step-title">Paste your Web App URL</div></div>
       <input class="config-input" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
@@ -498,29 +392,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="modal-title" id="odTitle">Order Detail</div>
     <div class="modal-sub" id="odSub"></div>
     <div id="odBody"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="document.getElementById('orderDetailModal').style.display='none'">Close</button>
-    </div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="document.getElementById('orderDetailModal').style.display='none'">Close</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════
-//  APPS SCRIPT SOURCE
-// ══════════════════════════════════════════════════
 const GAS_SOURCE = `const SS = SpreadsheetApp.getActiveSpreadsheet();
-
 function doGet(e)  { return handle(e); }
 function doPost(e) { return handle(e); }
-
 function handle(e) {
   const lock = LockService.getScriptLock();
   lock.tryLock(15000);
   try {
-    const p        = e.parameter || {};
-    const action   = p.action   || '';
+    const p = e.parameter || {};
+    const action = p.action || '';
     const callback = p.callback || '';
     var result;
     switch (action) {
@@ -534,85 +421,53 @@ function handle(e) {
   } catch (err) {
     const cb = (e && e.parameter && e.parameter.callback) || '';
     return respond({ error: err.message }, cb);
-  } finally {
-    lock.releaseLock();
-  }
+  } finally { lock.releaseLock(); }
 }
-
 function respond(data, callback) {
-  if (callback) {
-    return ContentService
-      .createTextOutput(callback + '(' + JSON.stringify(data) + ')')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  if (callback) return ContentService.createTextOutput(callback + '(' + JSON.stringify(data) + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
-
 function getData() {
-  return {
-    salespeople: sheetToArr('Salesperson Details'),
-    customers:   sheetToArr('Customers'),
-    products:    sheetToArr('Products_Packaging_Price'),
-    routes:      sheetToArr('Routes')
-  };
+  return { salespeople: sheetToArr('Salesperson Details'), customers: sheetToArr('Customers'), products: sheetToArr('Products_Packaging_Price'), routes: sheetToArr('Routes') };
 }
-
 function getOrders(p) {
   var rows = sheetToArr('Sales Orders Data');
-  var sp   = String(p.salesperson || '').toLowerCase().trim();
+  var sp = String(p.salesperson || '').toLowerCase().trim();
   var from = String(p.from || '').trim();
-  var to   = String(p.to   || '').trim();
+  var to = String(p.to || '').trim();
   return rows.filter(function(r) {
-    var matchSP   = !sp   || String(r['Salesperson']||'').toLowerCase().trim() === sp;
-    var d         = String(r['Order Date']||'').trim();
+    var matchSP = !sp || String(r['Salesperson']||'').toLowerCase().trim() === sp;
+    var d = String(r['Order Date']||'').trim();
     var matchFrom = !from || d >= from;
-    var matchTo   = !to   || d <= to;
+    var matchTo = !to || d <= to;
     return matchSP && matchFrom && matchTo;
   });
 }
-
 function submitOrder(p) {
   var itemsRaw = p.items || '';
   if (!itemsRaw) throw new Error('items param is missing');
   var items;
   try { items = JSON.parse(itemsRaw); } catch(e) { throw new Error('Cannot parse items: ' + e.message); }
   if (!Array.isArray(items) || items.length === 0) throw new Error('items must be a non-empty array');
-
   var sheet = SS.getSheetByName('Sales Orders Data');
   if (!sheet) throw new Error('Sheet "Sales Orders Data" not found');
-
-  var lastRow = sheet.getLastRow();
-  var lastCol = sheet.getLastColumn();
-  var headers;
+  var lastRow = sheet.getLastRow(), lastCol = sheet.getLastColumn(), headers;
   if (lastRow < 1 || lastCol < 1) {
     headers = ['Order ID','Order Date','Delivery Date','Timestamp','Salesperson','Route','Customer','Product','Packaging','Quantity','Unit Price','Line Total','Notes'];
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
     lastRow = 1; lastCol = headers.length;
-  } else {
-    headers = sheet.getRange(1,1,1,lastCol).getValues()[0].map(function(h){ return String(h).trim(); });
-  }
-
-  var orderId   = 'ORD-' + new Date().getTime();
-  var timestamp = new Date().toISOString();
+  } else { headers = sheet.getRange(1,1,1,lastCol).getValues()[0].map(function(h){ return String(h).trim(); }); }
+  var orderId = 'ORD-' + new Date().getTime(), timestamp = new Date().toISOString();
   var rows = items.map(function(item) {
     return headers.map(function(h) {
       switch(h) {
-        case 'Order ID':      return orderId;
-        case 'Order Date':    return String(p.orderDate    || '');
-        case 'Delivery Date': return String(p.deliveryDate || '');
-        case 'Timestamp':     return timestamp;
-        case 'Salesperson':   return String(p.salesperson  || '');
-        case 'Route':         return String(p.route        || '');
-        case 'Customer':      return String(p.customer     || '');
-        case 'Product':       return String(item.product   || '');
-        case 'Packaging':     return String(item.packaging || '');
-        case 'Quantity':      return Number(item.qty)   || 0;
-        case 'Unit Price':    return Number(item.price) || 0;
-        case 'Line Total':    return Number(item.total) || 0;
-        case 'Notes':         return String(p.notes     || '');
-        default:              return '';
+        case 'Order ID': return orderId; case 'Order Date': return String(p.orderDate||'');
+        case 'Delivery Date': return String(p.deliveryDate||''); case 'Timestamp': return timestamp;
+        case 'Salesperson': return String(p.salesperson||''); case 'Route': return String(p.route||'');
+        case 'Customer': return String(p.customer||''); case 'Product': return String(item.product||'');
+        case 'Packaging': return String(item.packaging||''); case 'Quantity': return Number(item.qty)||0;
+        case 'Unit Price': return Number(item.price)||0; case 'Line Total': return Number(item.total)||0;
+        case 'Notes': return String(p.notes||''); default: return '';
       }
     });
   });
@@ -620,63 +475,32 @@ function submitOrder(p) {
   SpreadsheetApp.flush();
   return { success: true, orderId: orderId, rowsAdded: rows.length };
 }
-
 function savePassword(p) {
-  var name    = String(p.name    || '').trim();
-  var pass    = String(p.pass    || '').trim();
-  var payroll = String(p.payroll || '').trim();
+  var name = String(p.name||'').trim(), pass = String(p.pass||'').trim(), payroll = String(p.payroll||'').trim();
   if (!pass) throw new Error('pass is required');
   if (!name && !payroll) throw new Error('name or payroll is required');
-
   var sheet = SS.getSheetByName('Salesperson Details');
   if (!sheet) throw new Error('Sheet "Salesperson Details" not found');
-
   var data = sheet.getDataRange().getValues();
   if (data.length < 1) throw new Error('Salesperson Details sheet is empty');
   var hdrs = data[0].map(function(h){ return String(h).trim(); });
-
   var passCol = hdrs.indexOf('Password');
-  if (passCol === -1) {
-    passCol = hdrs.length;
-    sheet.getRange(1, passCol+1).setValue('Password');
-  }
-
+  if (passCol === -1) { passCol = hdrs.length; sheet.getRange(1, passCol+1).setValue('Password'); }
   var nameCol = -1;
-  ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name','EMPLOYEE NAME'].forEach(function(k){
-    if (nameCol === -1) nameCol = hdrs.indexOf(k);
-  });
+  ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name','EMPLOYEE NAME'].forEach(function(k){ if (nameCol === -1) nameCol = hdrs.indexOf(k); });
   if (nameCol === -1) nameCol = 0;
-
   var payrollCol = -1;
-  ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID','payroll no','payroll'].forEach(function(k){
-    if (payrollCol === -1) payrollCol = hdrs.indexOf(k);
-  });
-
+  ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID','payroll no','payroll'].forEach(function(k){ if (payrollCol === -1) payrollCol = hdrs.indexOf(k); });
   for (var i = 1; i < data.length; i++) {
-    var rowName    = String(data[i][nameCol] || '').trim();
-    var rowPayroll = payrollCol >= 0 ? String(data[i][payrollCol] || '').trim() : '';
-    var matchName    = name    && rowName    && rowName.toLowerCase()    === name.toLowerCase();
+    var rowName = String(data[i][nameCol]||'').trim(), rowPayroll = payrollCol >= 0 ? String(data[i][payrollCol]||'').trim() : '';
+    var matchName = name && rowName && rowName.toLowerCase() === name.toLowerCase();
     var matchPayroll = payroll && rowPayroll && rowPayroll.toLowerCase() === payroll.toLowerCase();
     var matchAnyCell = false;
-    if (name && !matchName) {
-      for (var c = 0; c < data[i].length; c++) {
-        if (c === passCol) continue;
-        if (String(data[i][c] || '').trim().toLowerCase() === name.toLowerCase()) {
-          matchAnyCell = true; break;
-        }
-      }
-    }
-    if (matchName || matchPayroll || matchAnyCell) {
-      sheet.getRange(i+1, passCol+1).setValue(pass);
-      SpreadsheetApp.flush();
-      return { success: true, message: 'Password saved for row ' + (i+1) + ': ' + (rowName || rowPayroll) };
-    }
+    if (name && !matchName) { for (var c = 0; c < data[i].length; c++) { if (c === passCol) continue; if (String(data[i][c]||'').trim().toLowerCase() === name.toLowerCase()) { matchAnyCell = true; break; } } }
+    if (matchName || matchPayroll || matchAnyCell) { sheet.getRange(i+1, passCol+1).setValue(pass); SpreadsheetApp.flush(); return { success: true, message: 'Password saved for row ' + (i+1) + ': ' + (rowName||rowPayroll) }; }
   }
-
-  var sampleRow = data.length > 1 ? JSON.stringify(data[1]) : 'no data rows';
-  throw new Error('No match found for name="' + name + '" payroll="' + payroll + '". Headers: [' + hdrs.join(', ') + ']. Sample row: ' + sampleRow);
+  throw new Error('No match found for name="' + name + '" payroll="' + payroll + '"');
 }
-
 function sheetToArr(name) {
   var sh = SS.getSheetByName(name);
   if (!sh) return [];
@@ -684,49 +508,30 @@ function sheetToArr(name) {
   if (lr < 2 || lc < 1) return [];
   var data = sh.getRange(1,1,lr,lc).getValues();
   var hdrs = data[0].map(function(h){ return String(h).trim(); });
-  return data.slice(1)
-    .filter(function(r){ return r.some(function(c){ return c!=='' && c!==null; }); })
-    .map(function(r){
-      var obj={};
-      hdrs.forEach(function(h,i){
-        var v = r[i];
-        obj[h] = (v instanceof Date)
-          ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd')
-          : (v===null||v===undefined ? '' : String(v).trim());
-      });
-      return obj;
-    });
+  return data.slice(1).filter(function(r){ return r.some(function(c){ return c!==''&&c!==null; }); }).map(function(r){
+    var obj={};
+    hdrs.forEach(function(h,i){ var v=r[i]; obj[h]=(v instanceof Date)?Utilities.formatDate(v,Session.getScriptTimeZone(),'yyyy-MM-dd'):(v===null||v===undefined?'':String(v).trim()); });
+    return obj;
+  });
 }`;
 
-// ══════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════
+// ── STATE ──
 const GAS_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbwxBpJHFsfwJWEfkWNixyieFH2dUqx8-H-ITNMS1nIob_jVKcCXgwXGYFQAUnTp4ZlvHg/exec';
 let GAS_URL  = localStorage.getItem('gasUrl')  || GAS_URL_DEFAULT;
 let SUP_PASS = localStorage.getItem('supPass') || 'supervisor123';
-
-let currentUser     = null;
-let selectedSP      = null;
-let loginMode       = 'name';
-let allSalespeople  = [];
-let allCustomers    = [];
-let allProducts     = [];
-let allRoutes       = [];
-let allOrdersCache  = [];
-
+let currentUser = null, selectedSP = null, loginMode = 'name';
+let allSalespeople = [], allCustomers = [], allProducts = [], allRoutes = [], allOrdersCache = [];
 const today = new Date().toISOString().split('T')[0];
 
-// Init
 document.getElementById('appsScriptDisplay').textContent = GAS_SOURCE;
 document.getElementById('gasUrlInput').value  = GAS_URL;
 document.getElementById('supPassInput').value = SUP_PASS;
-document.getElementById('topDate').textContent =
-  new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+document.getElementById('topDate').textContent = new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 ['orderDate','orderDelivery','myFromDate','myToDate','filterFrom','filterTo','prodFilterFrom','prodFilterTo']
   .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
 if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
 
-// Boot
+// ── BOOT — load data in background, never blocks login ──
 (async () => {
   const inp = document.getElementById('spSearchInput');
   const cached = localStorage.getItem('spDataCache');
@@ -735,859 +540,580 @@ if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFA
       cacheData(JSON.parse(cached));
       inp.placeholder = 'Enter your payroll number...';
       inp.disabled = false;
-      api('getData').then(d => {
-        cacheData(d);
-        localStorage.setItem('spDataCache', JSON.stringify(d));
-      }).catch(e => console.warn('Background refresh failed:', e.message));
+      // Refresh cache in background silently
+      api('getData').then(d => { cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d)); }).catch(() => {});
       return;
-    } catch(e) { console.warn('Cache parse failed:', e.message); }
+    } catch(e) {}
   }
-  inp.placeholder = 'Loading...';
-  inp.disabled = true;
+  inp.placeholder = 'Loading...'; inp.disabled = true;
   try {
     const d = await api('getData');
-    cacheData(d);
-    localStorage.setItem('spDataCache', JSON.stringify(d));
+    cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d));
     inp.placeholder = 'Enter your payroll number...';
-  } catch(e) {
-    inp.placeholder = 'Could not load — check connection';
-    console.warn('Boot load failed:', e.message);
-  }
+  } catch(e) { inp.placeholder = 'Could not load — check connection'; }
   inp.disabled = false;
 })();
 
-// ══════════════════════════════════════════════════
-//  SP HELPER FUNCTIONS
-// ══════════════════════════════════════════════════
+// ── SP HELPERS ──
 function getField(obj, candidates) {
   if (!obj) return '';
   for (const key of candidates) {
-    if (obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== '') {
-      return String(obj[key]).trim();
-    }
+    if (obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== '') return String(obj[key]).trim();
   }
   return '';
 }
-
-function spName(s) {
-  return getField(s, ['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name']);
-}
-
-function spPayroll(s) {
-  return getField(s, ['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID']);
-}
-
-function spRoute(s) {
-  return getField(s, ['Route','ROUTE','route','Territory','Region','Area']);
-}
-
+function spName(s)     { return getField(s,['Name','name','NAME','Salesperson','salesperson','SALESPERSON','Full Name','FullName','Employee Name']); }
+function spPayroll(s)  { return getField(s,['Payroll No','Payroll Number','PayrollNo','Payroll','PAYROLL','Employee No','Employee Number','EmpNo','Staff No','StaffNo','ID']); }
+function spRoute(s)    { return getField(s,['Route','ROUTE','route','Territory','Region','Area']); }
 function spPassword(s) {
   if (!s) return '';
-  // Check all common casing variants
   for (const key of ['Password','PASSWORD','password','Pass','PASS','pass']) {
-    if (s[key] !== undefined && s[key] !== null && String(s[key]).trim() !== '') {
-      return String(s[key]).trim();
-    }
+    if (s[key] !== undefined && s[key] !== null && String(s[key]).trim() !== '') return String(s[key]).trim();
   }
   return '';
 }
-
 function spDisplayLabel(s) {
   if (!s) return '';
-  const name    = spName(s);
-  const payroll = spPayroll(s);
+  const name = spName(s), payroll = spPayroll(s);
   if (name)    return name + (payroll ? ' (' + payroll + ')' : '');
   if (payroll) return 'Payroll: ' + payroll;
   const firstVal = Object.values(s).find(v => v && String(v).trim());
   return firstVal ? String(firstVal).trim() : '(Unknown)';
 }
 
-// ══════════════════════════════════════════════════
-//  SP SEARCH DROPDOWN
-// ══════════════════════════════════════════════════
+// ── SP SEARCH DROPDOWN ──
 let spHighlightIdx = -1;
-
 function renderSPOptions(list) {
   const dd = document.getElementById('spDropdown');
-  if (!list.length) {
-    dd.innerHTML = '<div class="sp-loading" style="color:var(--text3)">No results found</div>';
-    dd.style.display = 'block';
-    return;
-  }
-  dd.innerHTML = list.map((s, i) => {
-    const name    = spName(s);
-    const payroll = spPayroll(s);
-    const route   = spRoute(s);
-    const label   = spDisplayLabel(s);
-    return `<div class="sp-opt" data-idx="${i}" onclick="selectSPByIdx(${allSalespeople.indexOf(s)})">
-      <div class="sp-opt-name">${name || label}</div>
-      ${payroll ? `<div class="sp-opt-payroll">Payroll: ${payroll}</div>` : ''}
-      ${route   ? `<div class="sp-opt-route">${route}</div>` : ''}
+  if (!list.length) { dd.innerHTML = '<div class="sp-loading" style="color:var(--text3)">No results found</div>'; dd.style.display='block'; return; }
+  dd.innerHTML = list.map((s) => {
+    const name=spName(s), payroll=spPayroll(s), route=spRoute(s), label=spDisplayLabel(s);
+    return `<div class="sp-opt" onclick="selectSPByIdx(${allSalespeople.indexOf(s)})">
+      <div class="sp-opt-name">${name||label}</div>
+      ${payroll?`<div class="sp-opt-payroll">Payroll: ${payroll}</div>`:''}
+      ${route?`<div class="sp-opt-route">${route}</div>`:''}
     </div>`;
   }).join('');
-  dd.style.display = 'block';
-  spHighlightIdx = -1;
+  dd.style.display='block'; spHighlightIdx=-1;
 }
-
 function filterSPList(q) {
-  const lower = q.toLowerCase().trim();
-  const filtered = !lower
-    ? allSalespeople
-    : allSalespeople.filter(s => {
-        const name    = spName(s).toLowerCase();
-        const payroll = spPayroll(s).toLowerCase();
-        const label   = spDisplayLabel(s).toLowerCase();
-        return name.includes(lower) || payroll.includes(lower) || label.includes(lower);
-      });
+  const lower=q.toLowerCase().trim();
+  const filtered=!lower?allSalespeople:allSalespeople.filter(s=>{
+    return spName(s).toLowerCase().includes(lower)||spPayroll(s).toLowerCase().includes(lower)||spDisplayLabel(s).toLowerCase().includes(lower);
+  });
   renderSPOptions(filtered);
 }
-
 function showSPDropdown() {
-  if (allSalespeople.length) {
-    filterSPList(document.getElementById('spSearchInput').value);
-  } else {
-    document.getElementById('spDropdown').innerHTML = '<div class="sp-loading">Loading...</div>';
-    document.getElementById('spDropdown').style.display = 'block';
-  }
-  const inp = document.getElementById('spSearchInput');
-  inp.style.borderColor = 'var(--accent)';
-  inp.style.boxShadow = '0 0 0 3px var(--accent-light)';
+  if (allSalespeople.length) filterSPList(document.getElementById('spSearchInput').value);
+  else { document.getElementById('spDropdown').innerHTML='<div class="sp-loading">Loading...</div>'; document.getElementById('spDropdown').style.display='block'; }
+  const inp=document.getElementById('spSearchInput');
+  inp.style.borderColor='var(--accent)'; inp.style.boxShadow='0 0 0 3px var(--accent-light)';
 }
-
 function hideSPDropdown() {
-  document.getElementById('spDropdown').style.display = 'none';
-  const inp = document.getElementById('spSearchInput');
-  inp.style.borderColor = 'var(--border)';
-  inp.style.boxShadow = 'none';
+  document.getElementById('spDropdown').style.display='none';
+  const inp=document.getElementById('spSearchInput');
+  inp.style.borderColor='var(--border)'; inp.style.boxShadow='none';
 }
-
 function selectSPByIdx(idx) {
-  selectedSP = allSalespeople[idx] || null;
-  if (!selectedSP) return;
-
-  const label   = spDisplayLabel(selectedSP);
-  const name    = spName(selectedSP);
-  const payroll = spPayroll(selectedSP);
-
-  document.getElementById('spSearchInput').value = label;
-
-  let bannerText = name || label;
-  if (payroll && name) bannerText += ' — Payroll: ' + payroll;
-  document.getElementById('spSelectedLabel').textContent = bannerText;
-  document.getElementById('spSelectedBanner').style.display = 'block';
-
-  hideSPDropdown();
-  onUserSelected(name || label);
+  selectedSP=allSalespeople[idx]||null; if(!selectedSP) return;
+  const label=spDisplayLabel(selectedSP), name=spName(selectedSP), payroll=spPayroll(selectedSP);
+  document.getElementById('spSearchInput').value=label;
+  let bannerText=name||label; if(payroll&&name) bannerText+=' — Payroll: '+payroll;
+  document.getElementById('spSelectedLabel').textContent=bannerText;
+  document.getElementById('spSelectedBanner').style.display='block';
+  hideSPDropdown(); onUserSelected(name||label);
 }
-
 function clearSPSearch() {
-  selectedSP = null;
-  document.getElementById('spSearchInput').value = '';
-  document.getElementById('spSelectedBanner').style.display = 'none';
-  document.getElementById('spDropdown').style.display = 'none';
-  document.getElementById('loginSubText').textContent = 'Select your name to get started';
-  clearMsg();
+  selectedSP=null; document.getElementById('spSearchInput').value='';
+  document.getElementById('spSelectedBanner').style.display='none';
+  document.getElementById('spDropdown').style.display='none';
+  document.getElementById('loginSubText').textContent='Select your name to get started'; clearMsg();
 }
-
 function spSearchKey(e) {
-  const opts = document.getElementById('spDropdown').querySelectorAll('.sp-opt');
-  if (!opts.length) return;
-  if (e.key === 'ArrowDown')  { e.preventDefault(); spHighlightIdx = Math.min(spHighlightIdx + 1, opts.length - 1); hiOpt(opts); }
-  else if (e.key === 'ArrowUp')   { e.preventDefault(); spHighlightIdx = Math.max(spHighlightIdx - 1, 0); hiOpt(opts); }
-  else if (e.key === 'Enter')     { e.preventDefault(); if (spHighlightIdx >= 0) opts[spHighlightIdx].click(); }
-  else if (e.key === 'Escape')    { hideSPDropdown(); }
+  const opts=document.getElementById('spDropdown').querySelectorAll('.sp-opt'); if(!opts.length) return;
+  if(e.key==='ArrowDown'){e.preventDefault();spHighlightIdx=Math.min(spHighlightIdx+1,opts.length-1);hiOpt(opts);}
+  else if(e.key==='ArrowUp'){e.preventDefault();spHighlightIdx=Math.max(spHighlightIdx-1,0);hiOpt(opts);}
+  else if(e.key==='Enter'){e.preventDefault();if(spHighlightIdx>=0)opts[spHighlightIdx].click();}
+  else if(e.key==='Escape'){hideSPDropdown();}
 }
-
 function hiOpt(opts) {
-  opts.forEach((o, i) => o.classList.toggle('hi', i === spHighlightIdx));
-  if (spHighlightIdx >= 0) opts[spHighlightIdx].scrollIntoView({ block: 'nearest' });
+  opts.forEach((o,i)=>o.classList.toggle('hi',i===spHighlightIdx));
+  if(spHighlightIdx>=0) opts[spHighlightIdx].scrollIntoView({block:'nearest'});
 }
+document.addEventListener('click',e=>{ if(!e.target.closest('#stepName')) hideSPDropdown(); });
 
-document.addEventListener('click', e => {
-  if (!e.target.closest('#stepName')) hideSPDropdown();
-});
-
-// ══════════════════════════════════════════════════
-//  LOGIN FLOW  — ALL BUGS FIXED HERE
-// ══════════════════════════════════════════════════
-
+// ── LOGIN FLOW ──
 function onUserSelected(displayName) {
-  clearMsg();
-  if (!displayName) return;
-
-  // Use the centralised spPassword() helper — handles all casing variants
-  const existPass = spPassword(selectedSP);
-
-  document.getElementById('stepName').style.display = 'none';
-
-  if (!existPass) {
-    // First-time user: show create-password form
-    loginMode = 'create';
-    document.getElementById('stepCreate').style.display = 'block';
-    document.getElementById('loginSubText').textContent = 'Welcome, ' + displayName;
-    document.getElementById('newPass1').value = '';
-    document.getElementById('newPass2').value = '';
+  clearMsg(); if(!displayName) return;
+  const existPass=spPassword(selectedSP);
+  document.getElementById('stepName').style.display='none';
+  if(!existPass) {
+    loginMode='create';
+    document.getElementById('stepCreate').style.display='block';
+    document.getElementById('loginSubText').textContent='Welcome, '+displayName;
+    document.getElementById('newPass1').value=''; document.getElementById('newPass2').value='';
     document.getElementById('newPass1').focus();
   } else {
-    // Returning user: show enter-password form
-    loginMode = 'login';
-    document.getElementById('passLabel').textContent = 'Password for ' + displayName;
-    document.getElementById('loginSubText').textContent = 'Welcome back, ' + displayName;
-    document.getElementById('loginPass').value = '';
-    document.getElementById('stepLogin').style.display = 'block';
+    loginMode='login';
+    document.getElementById('passLabel').textContent='Password for '+displayName;
+    document.getElementById('loginSubText').textContent='Welcome back, '+displayName;
+    document.getElementById('loginPass').value='';
+    document.getElementById('stepLogin').style.display='block';
     document.getElementById('loginPass').focus();
   }
 }
 
-// ── FIX: doCreatePassword — button always resets, no silent hang ──
 function doCreatePassword() {
-  const p1  = document.getElementById('newPass1').value.trim();
-  const p2  = document.getElementById('newPass2').value.trim();
-  const btn = document.getElementById('createBtn');
+  const p1=document.getElementById('newPass1').value.trim();
+  const p2=document.getElementById('newPass2').value.trim();
   clearMsg();
-
-  if (p1.length < 6) { showMsg('Password must be at least 6 characters.', 'error'); return; }
-  if (p1 !== p2)     { showMsg('Passwords do not match.', 'error'); return; }
-
-  if (!selectedSP) {
-    showMsg('Session error — please go back and select your name again.', 'error');
-    return;
-  }
-
-  const name        = spName(selectedSP);
-  const payroll     = spPayroll(selectedSP);
-  const nameToSend  = name || spDisplayLabel(selectedSP) ||
-    Object.values(selectedSP || {}).find(v => v && String(v).trim()) || '';
-
-  if (!nameToSend && !payroll) {
-    showMsg('Could not identify this salesperson. Please check sheet column headers.', 'error');
-    return;
-  }
-
-  // Update local cache so password works immediately
-  selectedSP['Password'] = p1;
-
-  // Sign in immediately — no waiting on network
-  toast('Password set! Signing you in…', 'success');
+  if(p1.length<6){showMsg('Password must be at least 6 characters.','error');return;}
+  if(p1!==p2){showMsg('Passwords do not match.','error');return;}
+  if(!selectedSP){showMsg('Session error — please go back and select your name again.','error');return;}
+  const name=spName(selectedSP), payroll=spPayroll(selectedSP);
+  const nameToSend=name||spDisplayLabel(selectedSP)||Object.values(selectedSP||{}).find(v=>v&&String(v).trim())||'';
+  if(!nameToSend&&!payroll){showMsg('Could not identify this salesperson.','error');return;}
+  selectedSP['Password']=p1;
+  toast('Password set! Signing you in…','success');
   finishLogin();
-
-  // Sync to sheet in background — silently, never blocks login
-  api('savePassword', { name: nameToSend, payroll, pass: p1 })
-    .then(() => console.log('Password synced to sheet.'))
-    .catch(e => console.warn('Background password sync failed (non-critical):', e.message));
+  api('savePassword',{name:nameToSend,payroll,pass:p1}).catch(e=>console.warn('Background password sync failed:',e.message));
 }
 
-// ── FIX: doLogin — button always resets on both success and failure ──
+// ── KEY FIX: doLogin is now instant for salesperson — no setTimeout, no spinner ──
 function doLogin() {
-  const pass = document.getElementById('loginPass').value;
-  const btn  = document.getElementById('loginBtn');
+  const pass=document.getElementById('loginPass').value;
+  const btn=document.getElementById('loginBtn');
   clearMsg();
+  if(!pass){showMsg('Please enter your password.','error');return;}
 
-  if (!pass) {
-    showMsg('Please enter your password.', 'error');
+  // Supervisor: keep small delay so spinner paints before sync check
+  if(loginMode==='supervisor'){
+    btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Checking…';
+    setTimeout(()=>{
+      try {
+        if(pass===SUP_PASS){ currentUser={name:'Supervisor',role:'Supervisor'}; onLoginSuccess(); }
+        else showMsg('Incorrect supervisor password.','error');
+      } catch(e){ showMsg('Error: '+e.message,'error'); }
+      finally{ btn.innerHTML='Sign In'; btn.disabled=false; }
+    },80);
     return;
   }
 
-  // ── Supervisor path ──
-  if (loginMode === 'supervisor') {
-    btn.disabled  = true;
-    btn.innerHTML = '<span class="spinner"></span> Checking…';
-    // Use setTimeout to allow spinner to render before sync check
-    setTimeout(() => {
-      if (pass === SUP_PASS) {
-        currentUser = { name: 'Supervisor', role: 'Supervisor' };
-        onLoginSuccess();
-      } else {
-        showMsg('Incorrect supervisor password.', 'error');
-        btn.innerHTML = 'Sign In';
-        btn.disabled  = false;
-      }
-    }, 80);
+  // Salesperson: purely synchronous — compare strings, transition immediately
+  if(!selectedSP){showMsg('Session error — please go back and select your name again.','error');return;}
+  const stored=spPassword(selectedSP);
+  if(!stored){ finishLogin(); return; }  // edge case: no password in cache
+  if(pass!==stored){
+    showMsg('Incorrect password. Please try again.','error');
+    document.getElementById('loginPass').value='';
+    document.getElementById('loginPass').focus();
     return;
   }
-
-  // ── Salesperson path ──
-  if (!selectedSP) {
-    showMsg('Session error — please go back and select your name again.', 'error');
-    return;
-  }
-
-  const stored = spPassword(selectedSP);
-
-  // If no stored password somehow got to this screen, just let them in
-  // (edge case: sheet updated between cache load and login attempt)
-  if (!stored) {
-    finishLogin();
-    return;
-  }
-
-  btn.disabled  = true;
-  btn.innerHTML = '<span class="spinner"></span> Signing in…';
-
-  setTimeout(() => {
-    if (pass !== stored) {
-      showMsg('Incorrect password. Please try again.', 'error');
-      btn.innerHTML = 'Sign In';
-      btn.disabled  = false;
-      document.getElementById('loginPass').value = '';
-      document.getElementById('loginPass').focus();
-    } else {
-      finishLogin();
-      // btn will be hidden with login screen, no need to reset
-    }
-  }, 80);
+  // Correct — sign in immediately with no button state change or delay
+  try { finishLogin(); }
+  catch(e){ showMsg('Login error: '+e.message,'error'); btn.innerHTML='Sign In'; btn.disabled=false; }
 }
 
 function finishLogin() {
-  if (!selectedSP && loginMode !== 'supervisor') {
-    showMsg('Session error — please go back and select your name again.', 'error');
-    return;
-  }
-  if (loginMode === 'supervisor') {
-    currentUser = { name: 'Supervisor', role: 'Supervisor' };
+  if(!selectedSP&&loginMode!=='supervisor'){showMsg('Session error — please go back and select your name again.','error');return;}
+  if(loginMode==='supervisor'){
+    currentUser={name:'Supervisor',role:'Supervisor'};
   } else {
-    currentUser = {
-      name: spDisplayLabel(selectedSP),
-      role: (getField(selectedSP, ['Role','ROLE','role']) || 'Salesperson'),
-      data: selectedSP
-    };
+    currentUser={name:spDisplayLabel(selectedSP),role:(getField(selectedSP,['Role','ROLE','role'])||'Salesperson'),data:selectedSP};
   }
   onLoginSuccess();
 }
 
 function showSupLogin() {
-  loginMode = 'supervisor';
-  selectedSP = null;
-  document.getElementById('stepName').style.display   = 'none';
-  document.getElementById('stepCreate').style.display = 'none';
-  document.getElementById('stepLogin').style.display  = 'block';
-  document.getElementById('passLabel').textContent    = 'Supervisor Password';
-  document.getElementById('loginSubText').textContent = 'Supervisor access';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginBtn').innerHTML = 'Sign In';
-  document.getElementById('loginBtn').disabled  = false;
+  loginMode='supervisor'; selectedSP=null;
+  document.getElementById('stepName').style.display='none';
+  document.getElementById('stepCreate').style.display='none';
+  document.getElementById('stepLogin').style.display='block';
+  document.getElementById('passLabel').textContent='Supervisor Password';
+  document.getElementById('loginSubText').textContent='Supervisor access';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginBtn').innerHTML='Sign In'; document.getElementById('loginBtn').disabled=false;
   document.getElementById('loginPass').focus();
 }
 
 function resetLogin() {
-  loginMode = 'name'; selectedSP = null;
-  ['stepCreate', 'stepLogin'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('stepName').style.display         = 'block';
-  document.getElementById('spSearchInput').value            = '';
-  document.getElementById('spSelectedBanner').style.display = 'none';
-  document.getElementById('spDropdown').style.display       = 'none';
-  document.getElementById('loginPass').value                = '';
-  document.getElementById('newPass1').value                 = '';
-  document.getElementById('newPass2').value                 = '';
-  document.getElementById('loginSubText').textContent       = 'Select your name to get started';
-  document.getElementById('strengthFill').style.width       = '0';
-  document.getElementById('strengthHint').textContent       = 'Minimum 6 characters';
-  // Always fully reset both buttons
-  document.getElementById('loginBtn').innerHTML  = 'Sign In';
-  document.getElementById('loginBtn').disabled   = false;
-  document.getElementById('createBtn').innerHTML = 'Set Password &amp; Continue &#8594;';
-  document.getElementById('createBtn').disabled  = false;
+  loginMode='name'; selectedSP=null;
+  ['stepCreate','stepLogin'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('stepName').style.display='block';
+  document.getElementById('spSearchInput').value='';
+  document.getElementById('spSelectedBanner').style.display='none';
+  document.getElementById('spDropdown').style.display='none';
+  document.getElementById('loginPass').value=''; document.getElementById('newPass1').value=''; document.getElementById('newPass2').value='';
+  document.getElementById('loginSubText').textContent='Select your name to get started';
+  document.getElementById('strengthFill').style.width='0'; document.getElementById('strengthHint').textContent='Minimum 6 characters';
+  document.getElementById('loginBtn').innerHTML='Sign In'; document.getElementById('loginBtn').disabled=false;
+  document.getElementById('createBtn').innerHTML='Set Password &amp; Continue &#8594;'; document.getElementById('createBtn').disabled=false;
   clearMsg();
 }
 
 function checkStrength(v) {
-  let s = 0;
-  if (v.length >= 6) s++; if (v.length >= 10) s++;
-  if (/[A-Z]/.test(v)) s++; if (/[0-9]/.test(v)) s++; if (/[^A-Za-z0-9]/.test(v)) s++;
-  const pct = ['0','18%','36%','55%','75%','100%'];
-  const col = ['','#C13B2A','#B5620F','#C8A000','#2D8A5A','#1B6B45'];
-  const lbl = ['','Too short','Weak','Fair','Good','Strong'];
-  document.getElementById('strengthFill').style.cssText = `width:${pct[s]};background:${col[s]}`;
-  document.getElementById('strengthHint').textContent = lbl[s] || '';
+  let s=0;
+  if(v.length>=6)s++;if(v.length>=10)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  const pct=['0','18%','36%','55%','75%','100%'],col=['','#C13B2A','#B5620F','#C8A000','#2D8A5A','#1B6B45'],lbl=['','Too short','Weak','Fair','Good','Strong'];
+  document.getElementById('strengthFill').style.cssText=`width:${pct[s]};background:${col[s]}`;
+  document.getElementById('strengthHint').textContent=lbl[s]||'';
+}
+function toggleVis(id,btn) {
+  const inp=document.getElementById(id); inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'\uD83D\uDC41':'\uD83D\uDE48';
 }
 
-function toggleVis(id, btn) {
-  const inp = document.getElementById(id);
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? '\uD83D\uDC41' : '\uD83D\uDE48';
-}
-
+// ── KEY FIX: onLoginSuccess transitions immediately, loads data AFTER screen swap ──
 function onLoginSuccess() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display   = 'flex';
-  document.getElementById('topUserName').textContent   = currentUser.name;
-  document.getElementById('topAvatar').textContent     = currentUser.name.charAt(0).toUpperCase();
-  document.getElementById('topRole').textContent       = currentUser.role;
-  document.getElementById('topRole').className         = 'badge ' + (currentUser.role === 'Supervisor' ? 'badge-blue' : 'badge-green');
-  if (currentUser.role === 'Supervisor') {
-    document.getElementById('supView').style.display = 'block';
+  // Swap screens first — user sees the app instantly
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='flex';
+  document.getElementById('topUserName').textContent=currentUser.name;
+  document.getElementById('topAvatar').textContent=currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('topRole').textContent=currentUser.role;
+  document.getElementById('topRole').className='badge '+(currentUser.role==='Supervisor'?'badge-blue':'badge-green');
+
+  if(currentUser.role==='Supervisor'){
+    document.getElementById('supView').style.display='block';
+    // Load data after screen is visible
     loadSupervisorData();
   } else {
-    document.getElementById('spView').style.display = 'block';
+    document.getElementById('spView').style.display='block';
+    // Load data after screen is visible — non-blocking
     loadSalespersonData();
   }
 }
 
 function doLogout() {
-  currentUser = null; selectedSP = null;
-  document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('spView').style.display = 'none';
-  document.getElementById('supView').style.display = 'none';
+  currentUser=null; selectedSP=null;
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('spView').style.display='none';
+  document.getElementById('supView').style.display='none';
   resetLogin();
 }
 
-// ══════════════════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════════════════
-function showConfig() { document.getElementById('configModal').style.display = 'flex'; }
-function hideConfig() { document.getElementById('configModal').style.display = 'none'; }
-function copyGAS() {
-  navigator.clipboard.writeText(GAS_SOURCE)
-    .then(() => toast('Copied!', 'success')).catch(() => toast('Copy manually from the box', 'error'));
-}
-async function saveConfig() {
-  const url = document.getElementById('gasUrlInput').value.trim();
-  const sp  = document.getElementById('supPassInput').value.trim();
-  if (!url) { toast('Please enter the URL', 'error'); return; }
-  GAS_URL = url; SUP_PASS = sp || 'supervisor123';
-  localStorage.setItem('gasUrl', GAS_URL); localStorage.setItem('supPass', SUP_PASS);
-  document.getElementById('gasUrlStatus').textContent = 'Testing connection…';
+// ── CONFIG ──
+function showConfig(){document.getElementById('configModal').style.display='flex';}
+function hideConfig(){document.getElementById('configModal').style.display='none';}
+function copyGAS(){navigator.clipboard.writeText(GAS_SOURCE).then(()=>toast('Copied!','success')).catch(()=>toast('Copy manually from the box','error'));}
+async function saveConfig(){
+  const url=document.getElementById('gasUrlInput').value.trim(), sp=document.getElementById('supPassInput').value.trim();
+  if(!url){toast('Please enter the URL','error');return;}
+  GAS_URL=url; SUP_PASS=sp||'supervisor123';
+  localStorage.setItem('gasUrl',GAS_URL); localStorage.setItem('supPass',SUP_PASS);
+  document.getElementById('gasUrlStatus').textContent='Testing connection…';
   try {
-    const d = await api('getData');
-    if (d.salespeople) {
-      cacheData(d);
-      localStorage.setItem('spDataCache', JSON.stringify(d));
-      document.getElementById('gasUrlStatus').textContent =
-        `✓ Connected — ${d.salespeople.length} salespeople, ${d.customers.length} customers, ${d.products.length} products`;
-      toast('Connected!', 'success'); hideConfig();
-    } else {
-      document.getElementById('gasUrlStatus').textContent = '✗ Error: ' + JSON.stringify(d);
-    }
-  } catch(e) {
-    document.getElementById('gasUrlStatus').textContent = '✗ ' + e.message;
-  }
+    const d=await api('getData');
+    if(d.salespeople){
+      cacheData(d); localStorage.setItem('spDataCache',JSON.stringify(d));
+      document.getElementById('gasUrlStatus').textContent=`✓ Connected — ${d.salespeople.length} salespeople, ${d.customers.length} customers, ${d.products.length} products`;
+      toast('Connected!','success'); hideConfig();
+    } else { document.getElementById('gasUrlStatus').textContent='✗ Error: '+JSON.stringify(d); }
+  } catch(e){ document.getElementById('gasUrlStatus').textContent='✗ '+e.message; }
 }
 
-// ══════════════════════════════════════════════════
-//  SALESPERSON — ORDER FORM
-// ══════════════════════════════════════════════════
+// ── SALESPERSON ──
 async function loadSalespersonData() {
   try {
-    if (!allProducts.length) {
-      const cached = localStorage.getItem('spDataCache');
-      if (cached) { cacheData(JSON.parse(cached)); }
-      else { const d = await api('getData'); cacheData(d); localStorage.setItem('spDataCache', JSON.stringify(d)); }
+    if(!allProducts.length){
+      const cached=localStorage.getItem('spDataCache');
+      if(cached){cacheData(JSON.parse(cached));}
+      else{const d=await api('getData');cacheData(d);localStorage.setItem('spDataCache',JSON.stringify(d));}
     }
     populateCustomerDrop();
     renderProductsTable();
-    loadMyOrders();
-  } catch(e) { toast('Error loading data: ' + e.message, 'error'); }
+    // Load orders in background — don't await here
+    loadMyOrders().catch(()=>{});
+  } catch(e){toast('Error loading data: '+e.message,'error');}
 }
 
-function populateCustomerDrop() {
-  const sel = document.getElementById('orderCustomer');
-  sel.innerHTML = '<option value="">Select customer...</option>';
-  allCustomers.forEach(c => {
-    const n = c['Customer'] || c['CUSTOMER'] || c['Name'] || Object.values(c)[0] || '';
-    if (n) sel.innerHTML += `<option value="${n}" data-route="${c['Route'] || c['ROUTE'] || ''}">${n}</option>`;
+function populateCustomerDrop(){
+  const sel=document.getElementById('orderCustomer');
+  sel.innerHTML='<option value="">Select customer...</option>';
+  allCustomers.forEach(c=>{
+    const n=c['Customer']||c['CUSTOMER']||c['Name']||Object.values(c)[0]||'';
+    if(n) sel.innerHTML+=`<option value="${n}" data-route="${c['Route']||c['ROUTE']||''}">${n}</option>`;
   });
 }
-
-function onCustomerChange() {
-  const sel = document.getElementById('orderCustomer');
-  document.getElementById('orderRoute').value = sel.options[sel.selectedIndex]?.dataset?.route || '';
+function onCustomerChange(){
+  const sel=document.getElementById('orderCustomer');
+  document.getElementById('orderRoute').value=sel.options[sel.selectedIndex]?.dataset?.route||'';
 }
-
-function renderProductsTable(filter = '') {
-  const wrap = document.getElementById('productsTableWrap');
-  const prods = allProducts.filter(p => {
-    const n = (p['Product'] || p['PRODUCT'] || p['Name'] || '').toLowerCase();
-    const k = (p['Packaging'] || p['PACKAGING'] || '').toLowerCase();
-    return !filter || n.includes(filter) || k.includes(filter);
+function renderProductsTable(filter=''){
+  const wrap=document.getElementById('productsTableWrap');
+  const prods=allProducts.filter(p=>{
+    const n=(p['Product']||p['PRODUCT']||p['Name']||'').toLowerCase();
+    const k=(p['Packaging']||p['PACKAGING']||'').toLowerCase();
+    return !filter||n.includes(filter)||k.includes(filter);
   });
-  if (!prods.length) { wrap.innerHTML = '<div class="empty-state"><p>No products found</p></div>'; return; }
-  let html = `<table class="products-table"><thead><tr>
-    <th>Product</th><th>Packaging</th><th>Unit Price (KES)</th><th style="width:90px">Qty</th><th>Line Total</th>
-  </tr></thead><tbody>`;
-  prods.forEach((p, i) => {
-    const n  = p['Product'] || p['PRODUCT'] || p['Name'] || Object.values(p)[0] || '';
-    const k  = p['Packaging'] || p['PACKAGING'] || p['Pack'] || '';
-    const pr = parseFloat(p['Price'] || p['PRICE'] || p['Unit Price'] || p['UnitPrice'] || 0) || 0;
-    html += `<tr>
-      <td><strong style="font-size:13px">${n}</strong></td>
-      <td><span class="badge badge-orange">${k || '—'}</span></td>
+  if(!prods.length){wrap.innerHTML='<div class="empty-state"><p>No products found</p></div>';return;}
+  let html=`<table class="products-table"><thead><tr><th>Product</th><th>Packaging</th><th>Unit Price (KES)</th><th style="width:90px">Qty</th><th>Line Total</th></tr></thead><tbody>`;
+  prods.forEach((p,i)=>{
+    const n=p['Product']||p['PRODUCT']||p['Name']||Object.values(p)[0]||'';
+    const k=p['Packaging']||p['PACKAGING']||p['Pack']||'';
+    const pr=parseFloat(p['Price']||p['PRICE']||p['Unit Price']||p['UnitPrice']||0)||0;
+    html+=`<tr><td><strong style="font-size:13px">${n}</strong></td><td><span class="badge badge-orange">${k||'—'}</span></td>
       <td><span style="font-family:'DM Mono',monospace;font-size:13px">${fmt(pr)}</span></td>
-      <td><input class="qty-input" type="number" min="0" step="1" id="qty_${i}"
-           data-name="${n}" data-pkg="${k}" data-price="${pr}"
-           placeholder="0" oninput="onQtyChange(this)" onchange="onQtyChange(this)"></td>
-      <td><span id="lt_${i}">—</span></td>
-    </tr>`;
+      <td><input class="qty-input" type="number" min="0" step="1" id="qty_${i}" data-name="${n}" data-pkg="${k}" data-price="${pr}" placeholder="0" oninput="onQtyChange(this)" onchange="onQtyChange(this)"></td>
+      <td><span id="lt_${i}">—</span></td></tr>`;
   });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
+  html+='</tbody></table>'; wrap.innerHTML=html; updateSummary();
+}
+function filterProducts(){renderProductsTable(document.getElementById('productSearch').value.toLowerCase());}
+function onQtyChange(inp){
+  const q=parseInt(inp.value)||0, pr=parseFloat(inp.dataset.price)||0, idx=inp.id.replace('qty_','');
+  inp.classList.toggle('has-value',q>0);
+  document.getElementById('lt_'+idx).textContent=q>0?'KES '+fmt(q*pr):'—';
   updateSummary();
 }
-
-function filterProducts() { renderProductsTable(document.getElementById('productSearch').value.toLowerCase()); }
-
-function onQtyChange(inp) {
-  const q = parseInt(inp.value) || 0, pr = parseFloat(inp.dataset.price) || 0, idx = inp.id.replace('qty_', '');
-  inp.classList.toggle('has-value', q > 0);
-  document.getElementById('lt_' + idx).textContent = q > 0 ? 'KES ' + fmt(q * pr) : '—';
-  updateSummary();
+function clearAllQty(){
+  document.querySelectorAll('.qty-input').forEach(i=>{i.value='';i.classList.remove('has-value');});
+  document.querySelectorAll('[id^=lt_]').forEach(l=>l.textContent='—'); updateSummary();
 }
-
-function clearAllQty() {
-  document.querySelectorAll('.qty-input').forEach(i => { i.value = ''; i.classList.remove('has-value'); });
-  document.querySelectorAll('[id^=lt_]').forEach(l => l.textContent = '—');
-  updateSummary();
-}
-
-function updateSummary() {
-  const items = getItems();
-  document.getElementById('submitOrderBtn').disabled = !items.length;
-  const sum = document.getElementById('orderSummary');
-  if (!items.length) { sum.style.display = 'none'; return; }
-  sum.style.display = 'block';
-  const grand = items.reduce((s, i) => s + i.total, 0);
-  document.getElementById('summaryItems').innerHTML = items.map(i =>
-    `<div class="summary-row"><span>${i.product} <span style="color:var(--text3)">(${i.packaging || '—'}) × ${i.qty}</span></span>
-     <span style="font-family:'DM Mono',monospace">KES ${fmt(i.total)}</span></div>`
+function updateSummary(){
+  const items=getItems(); document.getElementById('submitOrderBtn').disabled=!items.length;
+  const sum=document.getElementById('orderSummary');
+  if(!items.length){sum.style.display='none';return;}
+  sum.style.display='block';
+  const grand=items.reduce((s,i)=>s+i.total,0);
+  document.getElementById('summaryItems').innerHTML=items.map(i=>
+    `<div class="summary-row"><span>${i.product} <span style="color:var(--text3)">(${i.packaging||'—'}) × ${i.qty}</span></span><span style="font-family:'DM Mono',monospace">KES ${fmt(i.total)}</span></div>`
   ).join('');
-  document.getElementById('summaryGrandTotal').textContent = 'KES ' + fmt(grand);
+  document.getElementById('summaryGrandTotal').textContent='KES '+fmt(grand);
 }
-
-function getItems() {
-  const items = [];
-  document.querySelectorAll('.qty-input').forEach(inp => {
-    const q = parseInt(inp.value) || 0;
-    if (q > 0) items.push({ product: inp.dataset.name, packaging: inp.dataset.pkg, qty: q, price: parseFloat(inp.dataset.price) || 0, total: q * (parseFloat(inp.dataset.price) || 0) });
+function getItems(){
+  const items=[];
+  document.querySelectorAll('.qty-input').forEach(inp=>{
+    const q=parseInt(inp.value)||0;
+    if(q>0) items.push({product:inp.dataset.name,packaging:inp.dataset.pkg,qty:q,price:parseFloat(inp.dataset.price)||0,total:q*(parseFloat(inp.dataset.price)||0)});
   });
   return items;
 }
-
-async function submitOrder() {
-  const customer = document.getElementById('orderCustomer').value;
-  if (!customer) { toast('Please select a customer', 'error'); return; }
-  const items = getItems();
-  if (!items.length) { toast('Please add at least one product', 'error'); return; }
-  const payload = {
-    salesperson: currentUser.name,
-    route: document.getElementById('orderRoute').value,
-    customer,
-    orderDate: document.getElementById('orderDate').value,
-    deliveryDate: document.getElementById('orderDelivery').value,
-    notes: document.getElementById('orderNotes').value,
-    items
-  };
-  const btn = document.getElementById('submitOrderBtn');
-  btn.innerHTML = '<span class="spinner"></span> Submitting…'; btn.disabled = true;
+async function submitOrder(){
+  const customer=document.getElementById('orderCustomer').value;
+  if(!customer){toast('Please select a customer','error');return;}
+  const items=getItems(); if(!items.length){toast('Please add at least one product','error');return;}
+  const payload={salesperson:currentUser.name,route:document.getElementById('orderRoute').value,customer,
+    orderDate:document.getElementById('orderDate').value,deliveryDate:document.getElementById('orderDelivery').value,
+    notes:document.getElementById('orderNotes').value,items};
+  const btn=document.getElementById('submitOrderBtn');
+  btn.innerHTML='<span class="spinner"></span> Submitting…'; btn.disabled=true;
   try {
-    const res = await api('submitOrder', payload);
-    if (res.success) {
-      toast(`Order ${res.orderId} saved — ${res.rowsAdded} line(s) written to sheet`, 'success');
+    const res=await api('submitOrder',payload);
+    if(res.success){
+      toast(`Order ${res.orderId} saved — ${res.rowsAdded} line(s) written to sheet`,'success');
       clearAllQty();
-      document.getElementById('orderCustomer').value = '';
-      document.getElementById('orderRoute').value    = '';
-      document.getElementById('orderNotes').value    = '';
-      document.getElementById('orderDate').value     = today;
-      document.getElementById('orderDelivery').value = today;
-      document.getElementById('orderSummary').style.display = 'none';
-    } else toast('Error: ' + (res.error || 'Unknown error'), 'error');
-  } catch(e) { toast('Submit failed: ' + e.message, 'error'); }
-  btn.innerHTML = 'Submit Order'; btn.disabled = false;
+      document.getElementById('orderCustomer').value=''; document.getElementById('orderRoute').value='';
+      document.getElementById('orderNotes').value=''; document.getElementById('orderDate').value=today;
+      document.getElementById('orderDelivery').value=today; document.getElementById('orderSummary').style.display='none';
+    } else toast('Error: '+(res.error||'Unknown error'),'error');
+  } catch(e){toast('Submit failed: '+e.message,'error');}
+  btn.innerHTML='Submit Order'; btn.disabled=false;
 }
-
-async function loadMyOrders() {
-  const list = document.getElementById('myOrdersList');
-  list.innerHTML = '<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+async function loadMyOrders(){
+  const list=document.getElementById('myOrdersList');
+  list.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
   try {
-    const from   = document.getElementById('myFromDate').value;
-    const to     = document.getElementById('myToDate').value;
-    const orders = await api('getOrders', { salesperson: currentUser.name, from, to });
-    allOrdersCache = orders || [];
-    if (!orders?.length) { list.innerHTML = '<div class="empty-state"><p>No orders found for selected dates</p></div>'; return; }
-    const grouped = groupById(orders);
-    list.innerHTML = Object.values(grouped).reverse().map(o => {
-      const preview = o.items.slice(0, 3).map(i => i['Product'] || '').filter(Boolean).join(', ') + (o.items.length > 3 ? ` +${o.items.length - 3} more` : '');
+    const from=document.getElementById('myFromDate').value, to=document.getElementById('myToDate').value;
+    const orders=await api('getOrders',{salesperson:currentUser.name,from,to});
+    allOrdersCache=orders||[];
+    if(!orders?.length){list.innerHTML='<div class="empty-state"><p>No orders found for selected dates</p></div>';return;}
+    const grouped=groupById(orders);
+    list.innerHTML=Object.values(grouped).reverse().map(o=>{
+      const preview=o.items.slice(0,3).map(i=>i['Product']||'').filter(Boolean).join(', ')+(o.items.length>3?` +${o.items.length-3} more`:'');
       return `<div class="order-card" onclick="showOrderDetail('${o.id}')">
         <div class="order-card-header">
           <div><div style="font-weight:600;font-size:14px">${o.customer}</div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px">${o.id} · ${o.date} · ${o.route}</div></div>
           <div style="font-family:'DM Mono',monospace;font-weight:600;font-size:14px;color:var(--accent)">KES ${fmt(o.total)}</div>
-        </div>
-        <div style="font-size:12px;color:var(--text2)">${preview}</div>
-      </div>`;
+        </div><div style="font-size:12px;color:var(--text2)">${preview}</div></div>`;
     }).join('');
-  } catch(e) { list.innerHTML = '<div class="empty-state"><p>Error: ' + e.message + '</p></div>'; }
+  } catch(e){list.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
 }
-
-function showOrderDetail(id) {
-  const items = allOrdersCache.filter(r => (r['Order ID'] || r['OrderID'] || '—') === id);
-  if (!items.length) return;
-  const f = items[0];
-  document.getElementById('odTitle').textContent = 'Order: ' + id;
-  document.getElementById('odSub').textContent   = `${f['Customer']} · ${f['Order Date']} · ${f['Route']}`;
-  let html = `<table class="products-table"><thead><tr><th>Product</th><th>Pkg</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead><tbody>`;
-  let grand = 0;
-  items.forEach(i => {
-    const lt = parseFloat(i['Line Total'] || 0); grand += lt;
-    html += `<tr><td>${i['Product'] || '—'}</td><td>${i['Packaging'] || '—'}</td>
-      <td style="font-family:'DM Mono',monospace">${i['Quantity'] || 0}</td>
-      <td style="font-family:'DM Mono',monospace">KES ${fmt(parseFloat(i['Unit Price'] || 0))}</td>
+function showOrderDetail(id){
+  const items=allOrdersCache.filter(r=>(r['Order ID']||r['OrderID']||'—')===id); if(!items.length) return;
+  const f=items[0];
+  document.getElementById('odTitle').textContent='Order: '+id;
+  document.getElementById('odSub').textContent=`${f['Customer']} · ${f['Order Date']} · ${f['Route']}`;
+  let html=`<table class="products-table"><thead><tr><th>Product</th><th>Pkg</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead><tbody>`;
+  let grand=0;
+  items.forEach(i=>{
+    const lt=parseFloat(i['Line Total']||0); grand+=lt;
+    html+=`<tr><td>${i['Product']||'—'}</td><td>${i['Packaging']||'—'}</td>
+      <td style="font-family:'DM Mono',monospace">${i['Quantity']||0}</td>
+      <td style="font-family:'DM Mono',monospace">KES ${fmt(parseFloat(i['Unit Price']||0))}</td>
       <td style="font-family:'DM Mono',monospace">KES ${fmt(lt)}</td></tr>`;
   });
-  html += `</tbody></table><div style="text-align:right;font-weight:600;font-size:15px;color:var(--accent);margin-top:12px">Total: KES ${fmt(grand)}</div>`;
-  if (f['Notes']) html += `<div style="margin-top:10px;font-size:13px;color:var(--text2)">Notes: ${f['Notes']}</div>`;
-  document.getElementById('odBody').innerHTML = html;
-  document.getElementById('orderDetailModal').style.display = 'flex';
+  html+=`</tbody></table><div style="text-align:right;font-weight:600;font-size:15px;color:var(--accent);margin-top:12px">Total: KES ${fmt(grand)}</div>`;
+  if(f['Notes']) html+=`<div style="margin-top:10px;font-size:13px;color:var(--text2)">Notes: ${f['Notes']}</div>`;
+  document.getElementById('odBody').innerHTML=html;
+  document.getElementById('orderDetailModal').style.display='flex';
 }
 
-// ══════════════════════════════════════════════════
-//  SUPERVISOR
-// ══════════════════════════════════════════════════
-async function loadSupervisorData() {
-  if (!allProducts.length) { try { const d = await api('getData'); cacheData(d); } catch(e) {} }
-  const spSel = document.getElementById('filterSP');
-  spSel.innerHTML = '<option value="">All Salespeople</option>';
-  allSalespeople.forEach(s => { const n = spName(s) || spDisplayLabel(s); if (n) spSel.innerHTML += `<option value="${n}">${n}</option>`; });
-  const rSel = document.getElementById('filterRoute');
-  rSel.innerHTML = '<option value="">All Routes</option>';
-  allRoutes.forEach(r => { const n = r['Route'] || Object.values(r)[0] || ''; if (n) rSel.innerHTML += `<option value="${n}">${n}</option>`; });
+// ── SUPERVISOR ──
+async function loadSupervisorData(){
+  if(!allProducts.length){try{const d=await api('getData');cacheData(d);}catch(e){}}
+  const spSel=document.getElementById('filterSP');
+  spSel.innerHTML='<option value="">All Salespeople</option>';
+  allSalespeople.forEach(s=>{const n=spName(s)||spDisplayLabel(s);if(n) spSel.innerHTML+=`<option value="${n}">${n}</option>`;});
+  const rSel=document.getElementById('filterRoute');
+  rSel.innerHTML='<option value="">All Routes</option>';
+  allRoutes.forEach(r=>{const n=r['Route']||Object.values(r)[0]||'';if(n) rSel.innerHTML+=`<option value="${n}">${n}</option>`;});
   await loadDashboard();
 }
-
-async function loadDashboard() {
-  document.getElementById('spBreakdown').innerHTML = '<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+async function loadDashboard(){
+  document.getElementById('spBreakdown').innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
   try {
-    const orders = await api('getOrders', { from: today, to: today });
-    allOrdersCache = orders || [];
-    const grouped = groupById(orders);
-    const rev = orders.reduce((s, r) => s + (parseFloat(r['Line Total'] || 0) || 0), 0);
-    document.getElementById('sTotalOrders').textContent  = Object.keys(grouped).length;
-    document.getElementById('sTotalRevenue').textContent = fmtK(rev);
-    document.getElementById('sActiveSP').textContent     = new Set(orders.map(r => r['Salesperson'] || '')).size;
-    document.getElementById('sCustomers').textContent    = new Set(orders.map(r => r['Customer'] || '')).size;
-    const bySP = {};
-    orders.forEach(r => {
-      const s = r['Salesperson'] || '—';
-      if (!bySP[s]) bySP[s] = { sp: s, orders: new Set(), rev: 0, custs: new Set(), items: [] };
-      bySP[s].orders.add(r['Order ID'] || Math.random());
-      bySP[s].rev += parseFloat(r['Line Total'] || 0) || 0;
-      bySP[s].custs.add(r['Customer'] || '');
-      bySP[s].items.push(r);
+    const orders=await api('getOrders',{from:today,to:today});
+    allOrdersCache=orders||[];
+    const grouped=groupById(orders);
+    const rev=orders.reduce((s,r)=>s+(parseFloat(r['Line Total']||0)||0),0);
+    document.getElementById('sTotalOrders').textContent=Object.keys(grouped).length;
+    document.getElementById('sTotalRevenue').textContent=fmtK(rev);
+    document.getElementById('sActiveSP').textContent=new Set(orders.map(r=>r['Salesperson']||'')).size;
+    document.getElementById('sCustomers').textContent=new Set(orders.map(r=>r['Customer']||'')).size;
+    const bySP={};
+    orders.forEach(r=>{
+      const s=r['Salesperson']||'—';
+      if(!bySP[s]) bySP[s]={sp:s,orders:new Set(),rev:0,custs:new Set(),items:[]};
+      bySP[s].orders.add(r['Order ID']||Math.random()); bySP[s].rev+=parseFloat(r['Line Total']||0)||0;
+      bySP[s].custs.add(r['Customer']||''); bySP[s].items.push(r);
     });
-    if (!Object.keys(bySP).length) { document.getElementById('spBreakdown').innerHTML = '<div class="empty-state"><p>No orders today yet</p></div>'; return; }
-    let html = `<table class="data-table"><thead><tr><th>Salesperson</th><th>Orders</th><th>Customers</th><th>Revenue (KES)</th><th></th></tr></thead><tbody>`;
-    Object.values(bySP).sort((a, b) => b.rev - a.rev).forEach(s => {
-      const k = s.sp.replace(/[^a-zA-Z0-9]/g, '_');
-      html += `<tr style="cursor:pointer" onclick="toggleSPRow(this,'${k}')">
+    if(!Object.keys(bySP).length){document.getElementById('spBreakdown').innerHTML='<div class="empty-state"><p>No orders today yet</p></div>';return;}
+    let html=`<table class="data-table"><thead><tr><th>Salesperson</th><th>Orders</th><th>Customers</th><th>Revenue (KES)</th><th></th></tr></thead><tbody>`;
+    Object.values(bySP).sort((a,b)=>b.rev-a.rev).forEach(s=>{
+      const k=s.sp.replace(/[^a-zA-Z0-9]/g,'_');
+      html+=`<tr style="cursor:pointer" onclick="toggleSPRow(this,'${k}')">
         <td><strong>${s.sp}</strong></td><td>${s.orders.size}</td><td>${s.custs.size}</td>
-        <td class="mono">KES ${fmt(s.rev)}</td>
-        <td><span id="arr_${k}" style="color:var(--text3);font-size:13px">&#9654;</span></td>
-      </tr>
-      <tr class="expand-row" id="sprow_${k}" style="display:none">
-        <td colspan="5"><div class="expand-inner">${renderSPOrders(s.items)}</div></td>
-      </tr>`;
+        <td class="mono">KES ${fmt(s.rev)}</td><td><span id="arr_${k}" style="color:var(--text3);font-size:13px">&#9654;</span></td></tr>
+      <tr class="expand-row" id="sprow_${k}" style="display:none"><td colspan="5"><div class="expand-inner">${renderSPOrders(s.items)}</div></td></tr>`;
     });
-    html += '</tbody></table>';
-    document.getElementById('spBreakdown').innerHTML = html;
-  } catch(e) { document.getElementById('spBreakdown').innerHTML = '<div class="empty-state"><p>Error: ' + e.message + '</p></div>'; }
+    html+='</tbody></table>'; document.getElementById('spBreakdown').innerHTML=html;
+  } catch(e){document.getElementById('spBreakdown').innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
 }
-
-function toggleSPRow(tr, k) {
-  const row = document.getElementById('sprow_' + k); if (!row) return;
-  const h = row.style.display === 'none';
-  row.style.display = h ? 'table-row' : 'none';
-  const a = document.getElementById('arr_' + k); if (a) a.innerHTML = h ? '&#9660;' : '&#9654;';
+function toggleSPRow(tr,k){
+  const row=document.getElementById('sprow_'+k); if(!row) return;
+  const h=row.style.display==='none'; row.style.display=h?'table-row':'none';
+  const a=document.getElementById('arr_'+k); if(a) a.innerHTML=h?'&#9660;':'&#9654;';
 }
-
-function renderSPOrders(items) {
-  const g = groupById(items);
-  return Object.values(g).map(o => `
+function renderSPOrders(items){
+  const g=groupById(items);
+  return Object.values(g).map(o=>`
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <div><strong>${o.customer}</strong><span style="color:var(--text3);font-size:12px;margin-left:8px">${o.id}</span></div>
         <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--accent)">KES ${fmt(o.total)}</span>
       </div>
-      <div class="product-breakdown">${o.items.map(i => `<span class="product-chip">${i['Product'] || '?'} <strong>×${i['Quantity'] || 0}</strong></span>`).join('')}</div>
-    </div>`).join('') || '<p style="font-size:13px;color:var(--text2)">No orders</p>';
+      <div class="product-breakdown">${o.items.map(i=>`<span class="product-chip">${i['Product']||'?'} <strong>×${i['Quantity']||0}</strong></span>`).join('')}</div>
+    </div>`).join('')||'<p style="font-size:13px;color:var(--text2)">No orders</p>';
 }
-
-async function loadAllOrders() {
-  const wrap = document.getElementById('allOrdersTable');
-  wrap.innerHTML = '<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+async function loadAllOrders(){
+  const wrap=document.getElementById('allOrdersTable');
+  wrap.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
   try {
-    let orders = await api('getOrders', {
-      from: document.getElementById('filterFrom').value,
-      to:   document.getElementById('filterTo').value,
-      salesperson: document.getElementById('filterSP').value || ''
+    let orders=await api('getOrders',{from:document.getElementById('filterFrom').value,to:document.getElementById('filterTo').value,salesperson:document.getElementById('filterSP').value||''});
+    allOrdersCache=orders||[];
+    const route=document.getElementById('filterRoute').value;
+    if(route) orders=orders.filter(r=>r['Route']===route);
+    if(!orders.length){wrap.innerHTML='<div class="empty-state"><p>No orders found</p></div>';return;}
+    const g=groupById(orders);
+    let html=`<table class="data-table"><thead><tr><th>Order ID</th><th>Date</th><th>Salesperson</th><th>Route</th><th>Customer</th><th>Items</th><th>Total (KES)</th></tr></thead><tbody>`;
+    Object.values(g).reverse().forEach(o=>{
+      html+=`<tr><td class="mono" style="font-size:12px">${o.id}</td><td>${o.date}</td><td><strong>${o.salesperson}</strong></td>
+        <td><span class="badge badge-blue">${o.route||'—'}</span></td><td>${o.customer}</td>
+        <td style="font-size:12px;color:var(--text2)">${o.items.map(i=>i['Product']).slice(0,2).join(', ')}${o.items.length>2?` +${o.items.length-2}`:''}</td>
+        <td class="mono" style="font-weight:600;color:var(--accent)">KES ${fmt(o.total)}</td></tr>`;
     });
-    allOrdersCache = orders || [];
-    const route = document.getElementById('filterRoute').value;
-    if (route) orders = orders.filter(r => r['Route'] === route);
-    if (!orders.length) { wrap.innerHTML = '<div class="empty-state"><p>No orders found</p></div>'; return; }
-    const g = groupById(orders);
-    let html = `<table class="data-table"><thead><tr>
-      <th>Order ID</th><th>Date</th><th>Salesperson</th><th>Route</th><th>Customer</th><th>Items</th><th>Total (KES)</th>
-    </tr></thead><tbody>`;
-    Object.values(g).reverse().forEach(o => {
-      html += `<tr>
-        <td class="mono" style="font-size:12px">${o.id}</td>
-        <td>${o.date}</td><td><strong>${o.salesperson}</strong></td>
-        <td><span class="badge badge-blue">${o.route || '—'}</span></td>
-        <td>${o.customer}</td>
-        <td style="font-size:12px;color:var(--text2)">${o.items.map(i => i['Product']).slice(0, 2).join(', ')}${o.items.length > 2 ? ` +${o.items.length - 2}` : ''}</td>
-        <td class="mono" style="font-weight:600;color:var(--accent)">KES ${fmt(o.total)}</td>
-      </tr>`;
-    });
-    html += '</tbody></table>';
-    wrap.innerHTML = html;
-  } catch(e) { wrap.innerHTML = '<div class="empty-state"><p>Error: ' + e.message + '</p></div>'; }
+    html+='</tbody></table>'; wrap.innerHTML=html;
+  } catch(e){wrap.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
 }
-
-async function loadProductSummary() {
-  const wrap = document.getElementById('productSummaryContent');
-  wrap.innerHTML = '<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
+async function loadProductSummary(){
+  const wrap=document.getElementById('productSummaryContent');
+  wrap.innerHTML='<div class="loading-overlay"><div class="loading-spinner-lg"></div></div>';
   try {
-    const orders = await api('getOrders', {
-      from: document.getElementById('prodFilterFrom').value,
-      to:   document.getElementById('prodFilterTo').value
+    const orders=await api('getOrders',{from:document.getElementById('prodFilterFrom').value,to:document.getElementById('prodFilterTo').value});
+    const pMap={};
+    orders.forEach(r=>{
+      const k=`${r['Product']||'?'}||${r['Packaging']||''}`;
+      if(!pMap[k]) pMap[k]={name:r['Product']||'?',pkg:r['Packaging']||'',qty:0,value:0};
+      pMap[k].qty+=parseInt(r['Quantity']||0)||0; pMap[k].value+=parseFloat(r['Line Total']||0)||0;
     });
-    const pMap = {};
-    orders.forEach(r => {
-      const k = `${r['Product'] || '?'}||${r['Packaging'] || ''}`;
-      if (!pMap[k]) pMap[k] = { name: r['Product'] || '?', pkg: r['Packaging'] || '', qty: 0, value: 0 };
-      pMap[k].qty   += parseInt(r['Quantity'] || 0) || 0;
-      pMap[k].value += parseFloat(r['Line Total'] || 0) || 0;
-    });
-    const items = Object.values(pMap).sort((a, b) => b.qty - a.qty);
-    if (!items.length) { wrap.innerHTML = '<div class="empty-state"><p>No orders for this period</p></div>'; return; }
-    const totalRev = items.reduce((s, p) => s + p.value, 0);
-    wrap.innerHTML = `
-      <div class="product-summary-grid">${items.map(p => `
-        <div class="product-sum-card">
-          <div>
-            <div class="product-sum-name">${p.name}</div>
-            <div class="product-sum-pkg">${p.pkg || '—'}</div>
-            <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">KES ${fmt(p.value)}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="product-sum-qty">${p.qty}</div>
-            <div class="product-sum-pkg">units</div>
-          </div>
-        </div>`).join('')}
-      </div>
-      <div style="display:flex;justify-content:flex-end;margin-top:20px;font-size:15px;font-weight:600;color:var(--accent)">
-        Grand Total: KES ${fmt(totalRev)}
-      </div>`;
-  } catch(e) { wrap.innerHTML = '<div class="empty-state"><p>Error: ' + e.message + '</p></div>'; }
+    const items=Object.values(pMap).sort((a,b)=>b.qty-a.qty);
+    if(!items.length){wrap.innerHTML='<div class="empty-state"><p>No orders for this period</p></div>';return;}
+    const totalRev=items.reduce((s,p)=>s+p.value,0);
+    wrap.innerHTML=`<div class="product-summary-grid">${items.map(p=>`
+      <div class="product-sum-card">
+        <div><div class="product-sum-name">${p.name}</div><div class="product-sum-pkg">${p.pkg||'—'}</div>
+        <div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">KES ${fmt(p.value)}</div></div>
+        <div style="text-align:right"><div class="product-sum-qty">${p.qty}</div><div class="product-sum-pkg">units</div></div>
+      </div>`).join('')}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;font-size:15px;font-weight:600;color:var(--accent)">Grand Total: KES ${fmt(totalRev)}</div>`;
+  } catch(e){wrap.innerHTML='<div class="empty-state"><p>Error: '+e.message+'</p></div>';}
 }
-
-function exportCSV() {
-  if (!allOrdersCache.length) { toast('No orders to export', 'error'); return; }
-  const hdrs = Object.keys(allOrdersCache[0]);
-  const rows = [hdrs.join(','), ...allOrdersCache.map(r => hdrs.map(h => `"${(r[h] || '').replace(/"/g, '""')}"`).join(','))];
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.join('\n')], { type: 'text/csv' }));
-  a.download = `orders_${today}.csv`; a.click();
-  toast('Exported!', 'success');
+function exportCSV(){
+  if(!allOrdersCache.length){toast('No orders to export','error');return;}
+  const hdrs=Object.keys(allOrdersCache[0]);
+  const rows=[hdrs.join(','),...allOrdersCache.map(r=>hdrs.map(h=>`"${(r[h]||'').replace(/"/g,'""')}"`).join(','))];
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download=`orders_${today}.csv`; a.click(); toast('Exported!','success');
 }
-
-function applyFilters() { loadAllOrders(); }
-function clearFilters() {
-  document.getElementById('filterSP').value    = '';
-  document.getElementById('filterRoute').value = '';
-  document.getElementById('filterFrom').value  = today;
-  document.getElementById('filterTo').value    = today;
+function applyFilters(){loadAllOrders();}
+function clearFilters(){
+  document.getElementById('filterSP').value=''; document.getElementById('filterRoute').value='';
+  document.getElementById('filterFrom').value=today; document.getElementById('filterTo').value=today;
   loadAllOrders();
 }
 
-// ══════════════════════════════════════════════════
-//  TABS
-// ══════════════════════════════════════════════════
-const TABS = ['newOrder','myOrders','supDashboard','supOrders','supProducts'];
-function showTab(id, btn) {
-  TABS.forEach(t => { const el = document.getElementById(t); if (el) el.style.display = 'none'; });
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).style.display = 'block';
-  btn.classList.add('active');
-  if (id === 'myOrders')     loadMyOrders();
-  if (id === 'supDashboard') loadDashboard();
-  if (id === 'supOrders')    loadAllOrders();
-  if (id === 'supProducts')  loadProductSummary();
+// ── TABS ──
+const TABS=['newOrder','myOrders','supDashboard','supOrders','supProducts'];
+function showTab(id,btn){
+  TABS.forEach(t=>{const el=document.getElementById(t);if(el) el.style.display='none';});
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).style.display='block'; btn.classList.add('active');
+  if(id==='myOrders')    loadMyOrders();
+  if(id==='supDashboard') loadDashboard();
+  if(id==='supOrders')   loadAllOrders();
+  if(id==='supProducts') loadProductSummary();
 }
 
-// ══════════════════════════════════════════════════
-//  API — JSONP
-// ══════════════════════════════════════════════════
-function api(action, body = {}) {
-  return new Promise((resolve, reject) => {
-    if (!GAS_URL) { reject(new Error('App not configured. Click Setup.')); return; }
-    const params = new URLSearchParams({ action });
-    Object.entries(body).forEach(([k, v]) => {
-      params.set(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
-    });
-    const cbName = '_cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
-    params.set('callback', cbName);
-    const timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('Request timed out after 30s. Check your Apps Script deployment.'));
-    }, 30000);
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      const el = document.getElementById(cbName);
-      if (el) el.remove();
-    }
-    window[cbName] = function(data) {
-      cleanup();
-      if (data && data.error) reject(new Error(data.error));
-      else resolve(data);
-    };
-    const script = document.createElement('script');
-    script.id   = cbName;
-    script.src  = GAS_URL + '?' + params.toString();
-    script.onerror = function() {
-      cleanup();
-      reject(new Error('Network error. Check your Apps Script URL and deployment.'));
-    };
+// ── API — JSONP ──
+function api(action,body={}){
+  return new Promise((resolve,reject)=>{
+    if(!GAS_URL){reject(new Error('App not configured. Click Setup.'));return;}
+    const params=new URLSearchParams({action});
+    Object.entries(body).forEach(([k,v])=>params.set(k,typeof v==='object'?JSON.stringify(v):String(v)));
+    const cbName='_cb_'+Date.now()+'_'+Math.floor(Math.random()*99999);
+    params.set('callback',cbName);
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Request timed out after 30s.'));},30000);
+    function cleanup(){clearTimeout(timer);delete window[cbName];const el=document.getElementById(cbName);if(el)el.remove();}
+    window[cbName]=function(data){cleanup();if(data&&data.error)reject(new Error(data.error));else resolve(data);};
+    const script=document.createElement('script');
+    script.id=cbName; script.src=GAS_URL+'?'+params.toString();
+    script.onerror=function(){cleanup();reject(new Error('Network error. Check your Apps Script URL.'));};
     document.head.appendChild(script);
   });
 }
 
-// ══════════════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════════════
-function cacheData(d) {
-  allSalespeople = d.salespeople || [];
-  allCustomers   = d.customers   || [];
-  allProducts    = d.products    || [];
-  allRoutes      = d.routes      || [];
-}
-
-function groupById(rows) {
-  const g = {};
-  rows.forEach(r => {
-    const id = r['Order ID'] || r['OrderID'] || '—';
-    if (!g[id]) g[id] = { id, customer: r['Customer'] || '', salesperson: r['Salesperson'] || '', route: r['Route'] || '', date: r['Order Date'] || '', items: [], total: 0 };
-    g[id].items.push(r);
-    g[id].total += parseFloat(r['Line Total'] || 0) || 0;
+// ── UTILS ──
+function cacheData(d){allSalespeople=d.salespeople||[];allCustomers=d.customers||[];allProducts=d.products||[];allRoutes=d.routes||[];}
+function groupById(rows){
+  const g={};
+  rows.forEach(r=>{
+    const id=r['Order ID']||r['OrderID']||'—';
+    if(!g[id]) g[id]={id,customer:r['Customer']||'',salesperson:r['Salesperson']||'',route:r['Route']||'',date:r['Order Date']||'',items:[],total:0};
+    g[id].items.push(r); g[id].total+=parseFloat(r['Line Total']||0)||0;
   });
   return g;
 }
-
-function fmt(n)  { return Number(n).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function fmtK(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : fmt(n); }
-
-function showMsg(msg, type) {
-  const el = document.getElementById('loginMsg');
-  el.textContent = msg; el.className = 'login-msg ' + type; el.style.display = 'block';
-}
-function clearMsg() {
-  const el = document.getElementById('loginMsg');
-  el.style.display = 'none'; el.textContent = '';
-}
-function toast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast ' + (type || ''); t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3400);
+function fmt(n){return Number(n).toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtK(n){return n>=1000?(n/1000).toFixed(1)+'K':fmt(n);}
+function showMsg(msg,type){const el=document.getElementById('loginMsg');el.textContent=msg;el.className='login-msg '+type;el.style.display='block';}
+function clearMsg(){const el=document.getElementById('loginMsg');el.style.display='none';el.textContent='';}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3400);
 }
 </script>
 </body>
