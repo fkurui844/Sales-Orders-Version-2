@@ -65,6 +65,35 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .logo span{color:var(--accent)}
 .logo-sub{color:var(--muted);font-size:13px;margin-bottom:32px}
 .err-msg{color:#C62828;font-size:12px;margin-top:10px;display:none;font-weight:500}
+.ok-msg{color:var(--ok);font-size:12px;margin-top:10px;display:none;font-weight:500;display:flex;align-items:center;gap:6px}
+
+/* ── LOGIN PANEL TRANSITIONS ── */
+.login-panel{transition:opacity .22s,transform .22s}
+.login-panel.hidden{opacity:0;transform:translateY(8px);pointer-events:none;position:absolute;width:100%}
+.login-card{position:relative;overflow:hidden}
+
+/* ── PASSWORD STRENGTH ── */
+.pw-strength{margin-top:8px;display:flex;gap:4px;height:3px}
+.pw-strength span{flex:1;border-radius:99px;background:var(--border);transition:background .3s}
+.pw-strength.s1 span:nth-child(1){background:#E53935}
+.pw-strength.s2 span:nth-child(1),.pw-strength.s2 span:nth-child(2){background:#FB8C00}
+.pw-strength.s3 span:nth-child(-n+3){background:#43A047}
+.pw-strength.s4 span{background:var(--ok)}
+.pw-hint{font-size:11px;color:var(--muted);margin-top:5px}
+
+/* ── PW INPUT WRAPPER ── */
+.pw-wrap{position:relative}
+.pw-wrap .inp{padding-right:44px}
+.pw-eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;line-height:1;padding:2px}
+.pw-eye:hover{color:var(--text)}
+
+/* ── DIVIDER ── */
+.divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── SET-PW BACK LINK ── */
+.back-link{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;cursor:pointer;border:none;background:none;font-family:inherit;padding:0;margin-bottom:20px;transition:color .15s}
+.back-link:hover{color:var(--text)}
 
 /* ── APP SHELL ── */
 #app{display:none;flex-direction:column;min-height:100vh}
@@ -169,28 +198,84 @@ textarea.inp{resize:vertical;min-height:80px}
 <!-- ══════════════ LOGIN ══════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="logo">SALES<span>ORDER</span></div>
-    <div class="logo-sub">Sign in to place orders</div>
 
-    <div class="fg">
-      <label class="lbl">Your Name</label>
-      <div class="dd-wrap" id="ln-wrap">
-        <input class="inp" id="ln-inp" placeholder="Type to search your name…" autocomplete="off">
-        <div class="dd-list" id="ln-list"></div>
+    <!-- ── PANEL A: SIGN IN ── -->
+    <div id="panel-signin" class="login-panel">
+      <div class="logo">SALES<span>ORDER</span></div>
+      <div class="logo-sub">Sign in to place orders</div>
+
+      <div class="fg">
+        <label class="lbl">Your Name</label>
+        <div class="dd-wrap" id="ln-wrap">
+          <input class="inp" id="ln-inp" placeholder="Type to search your name…" autocomplete="off">
+          <div class="dd-list" id="ln-list"></div>
+        </div>
       </div>
+
+      <div class="fg">
+        <label class="lbl">Password</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
+          <button class="pw-eye" tabindex="-1" onclick="toggleEye('pw-inp',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="err-msg" id="login-err"></div>
+      <button class="btn-dark" style="margin-top:6px" onclick="doLogin()">Sign In →</button>
+
+      <div class="divider">or</div>
+
+      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
+        🔑 Set / Change My Password
+      </button>
     </div>
 
-    <div class="fg">
-      <label class="lbl">Password</label>
-      <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
+    <!-- ── PANEL B: SET PASSWORD ── -->
+    <div id="panel-set" class="login-panel hidden">
+      <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
+
+      <div class="logo" style="font-size:26px">Set Password</div>
+      <div class="logo-sub">Choose a password for your account</div>
+
+      <div class="fg">
+        <label class="lbl">Your Name</label>
+        <div class="dd-wrap" id="sp-wrap">
+          <input class="inp" id="sp-inp" placeholder="Type to search your name…" autocomplete="off">
+          <div class="dd-list" id="sp-list"></div>
+        </div>
+      </div>
+
+      <div id="sp-payroll-row" class="fg" style="display:none">
+        <label class="lbl">Payroll No.</label>
+        <input class="inp" id="sp-payroll" readonly>
+      </div>
+
+      <div class="fg">
+        <label class="lbl">New Password</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="sp-pw1" placeholder="Enter new password" oninput="checkStrength()">
+          <button class="pw-eye" tabindex="-1" onclick="toggleEye('sp-pw1',this)">👁</button>
+        </div>
+        <div class="pw-strength" id="pw-str"><span></span><span></span><span></span><span></span></div>
+        <div class="pw-hint" id="pw-hint">Use 6+ characters for a strong password</div>
+      </div>
+
+      <div class="fg">
+        <label class="lbl">Confirm Password</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="sp-pw2" placeholder="Repeat new password">
+          <button class="pw-eye" tabindex="-1" onclick="toggleEye('sp-pw2',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="err-msg" id="sp-err"></div>
+      <div class="ok-msg" id="sp-ok" style="display:none">✅ Password saved! You can now sign in.</div>
+
+      <button class="btn-accent" style="width:100%;margin-top:6px" id="sp-btn" onclick="doSetPassword()">
+        Save Password →
+      </button>
     </div>
 
-    <div class="err-msg" id="login-err">Incorrect name or password.</div>
-    <button class="btn-dark" style="margin-top:6px" onclick="doLogin()">Sign In →</button>
-
-    <p style="text-align:center;margin-top:18px;font-size:12px;color:var(--muted)">
-      No password set? Contact your supervisor.
-    </p>
   </div>
 </div>
 
@@ -366,7 +451,7 @@ textarea.inp{resize:vertical;min-height:80px}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzfSNs6Qi1DoKpT9f46g_7UiKVozdRPGWtmKmGckBwa8MXJ9xpf6CZiXl7zxR2t8ImC/exec';
+const GAS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
 
 // ══════════════════════════════════════════
 //  STATE
@@ -420,6 +505,181 @@ function findKey(obj, candidates, fallback) {
     if (low.includes(k.toLowerCase())) return k;
   }
   return fallback || Object.keys(obj)[0] || '';
+}
+
+// ══════════════════════════════════════════
+//  PANEL SWITCHING
+// ══════════════════════════════════════════
+function showPanel(which) {
+  const signin = document.getElementById('panel-signin');
+  const set    = document.getElementById('panel-set');
+  if (which === 'set') {
+    signin.classList.add('hidden');
+    set.classList.remove('hidden');
+    clearSetPwForm();
+    initSetPwSearch();
+  } else {
+    set.classList.add('hidden');
+    signin.classList.remove('hidden');
+    document.getElementById('sp-err').style.display = 'none';
+    document.getElementById('sp-ok').style.display  = 'none';
+  }
+}
+
+// ══════════════════════════════════════════
+//  TOGGLE PASSWORD EYE
+// ══════════════════════════════════════════
+function toggleEye(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+
+// ══════════════════════════════════════════
+//  PASSWORD STRENGTH
+// ══════════════════════════════════════════
+function checkStrength() {
+  const v   = document.getElementById('sp-pw1').value;
+  const str = document.getElementById('pw-str');
+  const hint = document.getElementById('pw-hint');
+  let score = 0;
+  if (v.length >= 6)  score++;
+  if (v.length >= 10) score++;
+  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+  if (/\d/.test(v) || /[^A-Za-z0-9]/.test(v)) score++;
+  str.className = 'pw-strength' + (score ? ' s'+score : '');
+  const labels = ['','Weak','Fair','Good','Strong'];
+  hint.textContent = score ? labels[score] : 'Use 6+ characters for a strong password';
+  hint.style.color = ['','#E53935','#FB8C00','#43A047',getComputedStyle(document.documentElement).getPropertyValue('--ok').trim()][score] || 'var(--muted)';
+}
+
+// ══════════════════════════════════════════
+//  SET-PASSWORD SEARCH
+// ══════════════════════════════════════════
+let selSetSP = null;
+
+function initSetPwSearch() {
+  const inp  = document.getElementById('sp-inp');
+  const list = document.getElementById('sp-list');
+  // clone to remove old listeners
+  const fresh = inp.cloneNode(true);
+  inp.parentNode.replaceChild(fresh, inp);
+  fresh.value = '';
+
+  fresh.addEventListener('focus', () => { renderSetList(fresh.value); list.classList.add('open'); });
+  fresh.addEventListener('input', () => { renderSetList(fresh.value); selSetSP = null; list.classList.add('open'); });
+  document.addEventListener('click', function spClose(e) {
+    if (!document.getElementById('sp-wrap').contains(e.target)) list.classList.remove('open');
+  });
+}
+
+function renderSetList(q) {
+  const list = document.getElementById('sp-list');
+  if (!S.data) { list.innerHTML = '<div class="dd-empty">Loading…</div>'; return; }
+  const nk = findKey(S.data.salespeople[0]||{}, ['Name','Salesperson','SALESPERSON','NAME']);
+  const pk = findKey(S.data.salespeople[0]||{}, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+
+  const matches = S.data.salespeople
+    .filter(sp => (sp[nk]||'').toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 40);
+
+  list.innerHTML = '';
+  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match</div>'; return; }
+  matches.forEach(sp => {
+    const name = sp[nk]||'', pay = sp[pk]||'';
+    const d = document.createElement('div');
+    d.className = 'dd-item';
+    d.innerHTML = `${name}${pay ? `<span class="sub">Payroll: ${pay}</span>` : ''}`;
+    d.onclick = () => {
+      selSetSP = sp;
+      document.getElementById('sp-inp').value = name;
+      const payRow = document.getElementById('sp-payroll-row');
+      const payInp = document.getElementById('sp-payroll');
+      if (pay) { payInp.value = pay; payRow.style.display = 'block'; }
+      else      { payRow.style.display = 'none'; }
+      list.classList.remove('open');
+    };
+    list.appendChild(d);
+  });
+}
+
+function clearSetPwForm() {
+  selSetSP = null;
+  ['sp-inp','sp-pw1','sp-pw2','sp-payroll'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+    if (id === 'sp-pw1') { el.type = 'password'; }
+    if (id === 'sp-pw2') { el.type = 'password'; }
+  });
+  document.getElementById('sp-payroll-row').style.display = 'none';
+  document.getElementById('pw-str').className = 'pw-strength';
+  document.getElementById('pw-hint').textContent = 'Use 6+ characters for a strong password';
+  document.getElementById('pw-hint').style.color = '';
+  document.getElementById('sp-err').style.display = 'none';
+  document.getElementById('sp-ok').style.display  = 'none';
+}
+
+async function doSetPassword() {
+  const errEl = document.getElementById('sp-err');
+  const okEl  = document.getElementById('sp-ok');
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  if (!selSetSP) {
+    errEl.textContent = 'Please select your name from the list.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const pw1 = document.getElementById('sp-pw1').value;
+  const pw2 = document.getElementById('sp-pw2').value;
+
+  if (pw1.length < 4) {
+    errEl.textContent = 'Password must be at least 4 characters.';
+    errEl.style.display = 'block'; return;
+  }
+  if (pw1 !== pw2) {
+    errEl.textContent = 'Passwords do not match. Please try again.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const nk   = findKey(selSetSP, ['Name','Salesperson','SALESPERSON']);
+  const pk   = findKey(selSetSP, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const name = selSetSP[nk]||'';
+  const pay  = selSetSP[pk]||'';
+
+  const btn = document.getElementById('sp-btn');
+  btn.disabled = true;
+  showLoad('Saving password…');
+  try {
+    const res = await gas({ action: 'savePassword', name, pass: pw1, payroll: pay });
+    if (res.success) {
+      // Update local copy so sign-in works immediately without reload
+      selSetSP['Password'] = pw1;
+      const spInData = (S.data.salespeople||[]).find(s => (s[nk]||'') === name);
+      if (spInData) spInData['Password'] = pw1;
+
+      okEl.style.display  = 'flex';
+      errEl.style.display = 'none';
+      // After 2s bounce back to sign-in with name pre-filled
+      setTimeout(() => {
+        showPanel('signin');
+        selSP = selSetSP;
+        const payLabel = pay ? ` (${pay})` : '';
+        document.getElementById('ln-inp').value = name + payLabel;
+        document.getElementById('pw-inp').focus();
+      }, 2000);
+    } else {
+      errEl.textContent = res.error || 'Could not save password. Try again.';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error — please try again.';
+    errEl.style.display = 'block';
+  } finally {
+    hideLoad();
+    btn.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════
@@ -477,10 +737,16 @@ function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  const pw = document.getElementById('pw-inp').value;
+  const pw     = document.getElementById('pw-inp').value;
   const stored = selSP['Password'] || '';
 
-  if (stored && pw !== stored) {
+  if (!stored) {
+    // No password set yet — nudge them to set one
+    err.textContent = 'No password set yet. Please use "Set / Change My Password" below.';
+    err.style.display = 'block'; return;
+  }
+
+  if (pw !== stored) {
     err.textContent = 'Incorrect password. Please try again.';
     err.style.display = 'block'; return;
   }
@@ -510,6 +776,7 @@ function logout() {
   document.getElementById('ln-inp').value = '';
   document.getElementById('pw-inp').value = '';
   document.getElementById('login-err').style.display = 'none';
+  showPanel('signin');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
