@@ -180,6 +180,60 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .cust-code{font-size:11px;color:var(--muted)}
 
 textarea.inp{resize:vertical;min-height:80px}
+
+/* ── DASHBOARD BUTTON on login ── */
+.btn-dash{width:100%;padding:14px;background:linear-gradient(135deg,#1A1714 0%,#2d2a27 100%);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-dash:hover{opacity:.88}
+.btn-dash:active{transform:scale(.98)}
+
+/* ── DASHBOARD APP SHELL ── */
+#dash-app{display:none;flex-direction:column;min-height:100vh;background:var(--bg)}
+.dash-head{background:var(--text);color:#fff;padding:0 18px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.dash-head-logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800}
+.dash-head-logo span{color:var(--accent)}
+.dash-head-right{display:flex;align-items:center;gap:10px;font-size:12px;opacity:.8}
+
+/* ── DASHBOARD PANEL C login ── */
+#panel-dash{display:none}
+#panel-dash.active{display:block}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);text-align:center}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);line-height:1}
+.stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.filter-bar .fg{margin-bottom:0;flex:1;min-width:140px}
+.filter-bar .fg label{margin-bottom:4px}
+
+/* ── ORDERS TABLE ── */
+.orders-table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px}
+.orders-table-head{display:grid;grid-template-columns:90px 1fr 1fr 80px 90px 80px;gap:0;background:var(--bg);border-bottom:2px solid var(--border);padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.order-row{display:grid;grid-template-columns:90px 1fr 1fr 80px 90px 80px;gap:0;padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;align-items:center;transition:background .1s;cursor:pointer}
+.order-row:last-child{border-bottom:none}
+.order-row:hover{background:var(--accent-lt)}
+.or-date{color:var(--muted);font-size:11px}
+.or-sp{font-weight:600}
+.or-cust{color:var(--text)}
+.or-qty{text-align:center;font-weight:600}
+.or-amt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--accent)}
+.or-type{text-align:center}
+.tag-proj{display:inline-block;background:#E8F5E9;color:#2E7D32;border-radius:5px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.tag-full{display:inline-block;background:var(--accent-lt);color:var(--accent);border-radius:5px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.no-orders{padding:44px 20px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ── ORDER DETAIL MODAL ── */
+#order-modal{position:fixed;inset:0;background:rgba(26,23,20,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+#order-modal.open{display:flex}
+.modal-card{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;padding:0 0 24px}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:14px auto 18px}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;padding:0 20px;margin-bottom:14px}
+.modal-close{position:absolute;top:14px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+
+/* ── SP SELECTOR on dashboard login ── */
+.dash-sp-pill{display:inline-flex;align-items:center;gap:6px;background:var(--ok-lt);border:1.5px solid var(--ok);color:var(--ok);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -226,8 +280,46 @@ textarea.inp{resize:vertical;min-height:80px}
 
       <div class="divider">or</div>
 
-      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
+      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px;margin-bottom:10px" onclick="showPanel('set')">
         🔑 Set / Change My Password
+      </button>
+
+      <button class="btn-dash" onclick="showPanel('dash')">
+        📊 View Dashboard
+      </button>
+    </div>
+
+    <!-- ── PANEL C: DASHBOARD LOGIN ── -->
+    <div id="panel-dash" class="login-panel hidden">
+      <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
+
+      <div class="logo" style="font-size:26px">Dashboard</div>
+      <div class="logo-sub">Supervisor access — view all orders</div>
+
+      <div class="fg">
+        <label class="lbl">Your Payroll Number</label>
+        <div class="dd-wrap" id="dp-wrap">
+          <input class="inp" id="dp-inp" placeholder="Type payroll number to search…" autocomplete="off">
+          <div class="dd-list" id="dp-list"></div>
+        </div>
+      </div>
+
+      <div id="dp-name-row" class="fg" style="display:none">
+        <label class="lbl">Name</label>
+        <input class="inp" id="dp-name-disp" readonly>
+      </div>
+
+      <div class="fg">
+        <label class="lbl">Dashboard Password</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="dp-pw" placeholder="Enter dashboard password">
+          <button class="pw-eye" tabindex="-1" onclick="toggleEye('dp-pw',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="err-msg" id="dp-err"></div>
+      <button class="btn-accent" style="width:100%;margin-top:6px" onclick="doDashLogin()">
+        Open Dashboard →
       </button>
     </div>
 
@@ -449,11 +541,89 @@ textarea.inp{resize:vertical;min-height:80px}
 
 </div><!-- #app -->
 
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div id="dash-app">
+
+  <div class="dash-head">
+    <div class="dash-head-logo">SALES<span>ORDER</span> <span style="font-size:13px;opacity:.5;font-weight:400;letter-spacing:.1em">DASHBOARD</span></div>
+    <div class="dash-head-right">
+      <span id="dash-hdr-name"></span>
+      <button class="head-out" onclick="dashLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="content" style="max-width:900px">
+
+    <!-- Stats -->
+    <div class="stats-row" id="dash-stats">
+      <div class="stat-card"><div class="stat-val" id="ds-orders">—</div><div class="stat-lbl">Orders</div></div>
+      <div class="stat-card"><div class="stat-val" id="ds-amount">—</div><div class="stat-lbl">Total (KES)</div></div>
+      <div class="stat-card"><div class="stat-val" id="ds-sps">—</div><div class="stat-lbl">Salespeople</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="fg">
+        <label class="lbl">Salesperson</label>
+        <select class="inp" id="df-sp" onchange="applyDashFilters()">
+          <option value="">All Salespeople</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="lbl">Order Type</label>
+        <select class="inp" id="df-type" onchange="applyDashFilters()">
+          <option value="">All Types</option>
+          <option value="Morning Projection">Morning Projection</option>
+          <option value="Full Order">Full Order</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="lbl">From Date</label>
+        <input class="inp" type="date" id="df-from" onchange="applyDashFilters()">
+      </div>
+      <div class="fg">
+        <label class="lbl">To Date</label>
+        <input class="inp" type="date" id="df-to" onchange="applyDashFilters()">
+      </div>
+      <div class="fg" style="flex:0 0 auto">
+        <label class="lbl" style="visibility:hidden">.</label>
+        <button class="btn-ghost" style="padding:12px 18px;font-size:14px" onclick="clearDashFilters()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="orders-table-wrap">
+      <div class="orders-table-head">
+        <div>Date</div>
+        <div>Salesperson</div>
+        <div>Customer</div>
+        <div style="text-align:center">Lines</div>
+        <div>Amount</div>
+        <div style="text-align:center">Type</div>
+      </div>
+      <div id="dash-orders-body">
+        <div class="no-orders">Loading orders…</div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- #dash-app -->
+
+<!-- ══════════════ ORDER DETAIL MODAL ══════════════ -->
+<div id="order-modal">
+  <div class="modal-card" style="position:relative">
+    <div class="modal-handle"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title">Order Detail</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyslnlgi6ugijxfOErWGyTAQAPUnw0Vc2cDBb2Rw_3F3_7YqLdK6MxgwLj6VW1xrcSKMQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzfSNs6Qi1DoKpT9f46g_7UiKVozdRPGWtmKmGckBwa8MXJ9xpf6CZiXl7zxR2t8ImC/exec';
 
 // ══════════════════════════════════════════
 //  STATE
@@ -513,25 +683,6 @@ function findKey(obj, candidates, fallback) {
     if (low.includes(k.toLowerCase())) return k;
   }
   return fallback || Object.keys(obj)[0] || '';
-}
-
-// ══════════════════════════════════════════
-//  PANEL SWITCHING
-// ══════════════════════════════════════════
-function showPanel(which) {
-  const signin = document.getElementById('panel-signin');
-  const set    = document.getElementById('panel-set');
-  if (which === 'set') {
-    signin.classList.add('hidden');
-    set.classList.remove('hidden');
-    clearSetPwForm();
-    initSetPwSearch();
-  } else {
-    set.classList.add('hidden');
-    signin.classList.remove('hidden');
-    document.getElementById('sp-err').style.display = 'none';
-    document.getElementById('sp-ok').style.display  = 'none';
-  }
 }
 
 // ══════════════════════════════════════════
@@ -1333,6 +1484,367 @@ function toast(msg) {
   el.classList.add('show');
   clearTimeout(_tt);
   _tt = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD — constants & state
+// ══════════════════════════════════════════
+const DASH_PASSWORD = '123123';
+let   dashUser      = null;   // { name, payroll }
+let   allOrders     = [];     // raw from GAS
+let   filteredOrders = [];    // after filters
+
+// ══════════════════════════════════════════
+//  PANEL SWITCHING — extended for 'dash'
+// ══════════════════════════════════════════
+function showPanel(which) {
+  const panels = ['panel-signin','panel-set','panel-dash'];
+  panels.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+
+  const target = which === 'set'  ? 'panel-set'
+               : which === 'dash' ? 'panel-dash'
+               :                    'panel-signin';
+
+  document.getElementById(target).classList.remove('hidden');
+
+  // Clear errors
+  ['login-err','sp-err','dp-err'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const spOk = document.getElementById('sp-ok');
+  if (spOk) spOk.style.display = 'none';
+
+  if (which === 'set')  { clearSetPwForm(); initSetPwSearch(); }
+  if (which === 'dash') { initDashPayrollSearch(); }
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD LOGIN — payroll search
+// ══════════════════════════════════════════
+let selDashSP = null;
+
+function initDashPayrollSearch() {
+  const old  = document.getElementById('dp-inp');
+  const inp  = old.cloneNode(true);
+  old.parentNode.replaceChild(inp, old);
+  inp.value  = '';
+  selDashSP  = null;
+
+  const list = document.getElementById('dp-list');
+
+  inp.addEventListener('click',  () => { renderDashPayrollList(inp.value); list.classList.add('open'); });
+  inp.addEventListener('focus',  () => { renderDashPayrollList(inp.value); list.classList.add('open'); });
+  inp.addEventListener('input',  () => { renderDashPayrollList(inp.value); selDashSP = null; list.classList.add('open'); document.getElementById('dp-name-row').style.display='none'; });
+  document.addEventListener('click', e => {
+    if (!document.getElementById('dp-wrap').contains(e.target)) list.classList.remove('open');
+  });
+  document.getElementById('dp-pw').value = '';
+  document.getElementById('dp-name-row').style.display = 'none';
+}
+
+function renderDashPayrollList(q) {
+  const list = document.getElementById('dp-list');
+  if (!S.data) { list.innerHTML = '<div class="dd-empty">Loading…</div>'; return; }
+
+  const sample = S.data.salespeople[0] || {};
+  const nk = findKey(sample, NAME_KEYS);
+  const pk = findKey(sample, PAYROLL_KEYS);
+
+  const lq = (q || '').toLowerCase().trim();
+  const matches = S.data.salespeople
+    .filter(sp => {
+      const pay  = (sp[pk]||'').toLowerCase();
+      const name = (sp[nk]||'').toLowerCase();
+      return pay.includes(lq) || name.includes(lq);
+    })
+    .slice(0, 40);
+
+  list.innerHTML = '';
+  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match found</div>'; return; }
+
+  matches.forEach(sp => {
+    const name = sp[nk] || '';
+    const pay  = sp[pk] || '';
+    const d = document.createElement('div');
+    d.className = 'dd-item';
+    d.innerHTML = `<span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px">${pay}</span>${name ? `<span class="sub">${name}</span>` : ''}`;
+    d.onclick = () => {
+      selDashSP = sp;
+      document.getElementById('dp-inp').value = pay;
+      const nameRow = document.getElementById('dp-name-row');
+      document.getElementById('dp-name-disp').value = name;
+      nameRow.style.display = 'block';
+      list.classList.remove('open');
+      document.getElementById('dp-pw').focus();
+    };
+    list.appendChild(d);
+  });
+}
+
+function doDashLogin() {
+  const errEl = document.getElementById('dp-err');
+  errEl.style.display = 'none';
+
+  if (!selDashSP) {
+    errEl.textContent = 'Please select your payroll number from the list.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const pw = document.getElementById('dp-pw').value;
+  if (!pw) {
+    errEl.textContent = 'Please enter the dashboard password.';
+    errEl.style.display = 'block'; return;
+  }
+
+  if (pw !== DASH_PASSWORD) {
+    errEl.textContent = 'Incorrect dashboard password. Please try again.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const nk = findKey(selDashSP, NAME_KEYS);
+  const pk = findKey(selDashSP, PAYROLL_KEYS);
+  dashUser = { name: selDashSP[nk]||'', payroll: selDashSP[pk]||'' };
+
+  openDashboard();
+}
+
+// ══════════════════════════════════════════
+//  OPEN DASHBOARD
+// ══════════════════════════════════════════
+async function openDashboard() {
+  document.getElementById('login-screen').style.display  = 'none';
+  document.getElementById('app').style.display           = 'none';
+  document.getElementById('dash-app').style.display      = 'flex';
+  document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
+
+  // Set today as default date range (last 30 days)
+  const today = new Date();
+  const from  = new Date(today); from.setDate(from.getDate() - 30);
+  const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('df-to').value   = fmt(today);
+  document.getElementById('df-from').value = fmt(from);
+
+  await loadDashOrders();
+}
+
+async function loadDashOrders() {
+  showLoad('Loading orders…');
+  try {
+    const rows = await gas({ action: 'getOrders' });
+    allOrders = Array.isArray(rows) ? rows : [];
+    populateSPFilter();
+    applyDashFilters();
+  } catch(e) {
+    toast('Could not load orders: ' + e.message);
+    allOrders = [];
+    renderDashTable([]);
+  } finally {
+    hideLoad();
+  }
+}
+
+function populateSPFilter() {
+  const sel = document.getElementById('df-sp');
+  const cur = sel.value;
+  // Unique salesperson names from orders
+  const names = [...new Set(allOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Salespeople</option>';
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.value = o.textContent = n;
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+}
+
+function applyDashFilters() {
+  const sp   = document.getElementById('df-sp').value.trim().toLowerCase();
+  const type = document.getElementById('df-type').value.trim().toLowerCase();
+  const from = document.getElementById('df-from').value.trim();
+  const to   = document.getElementById('df-to').value.trim();
+
+  filteredOrders = allOrders.filter(r => {
+    const rSP   = (r['Salesman']||r['Salesperson']||'').trim().toLowerCase();
+    const rType = (r['Order Type']||'').trim().toLowerCase();
+    const rDate = (r['Date']||r['Order Date']||'').trim();
+    const mSP   = !sp   || rSP.includes(sp);
+    const mType = !type || rType.includes(type);
+    const mFrom = !from || rDate >= from;
+    const mTo   = !to   || rDate <= to;
+    return mSP && mType && mFrom && mTo;
+  });
+
+  updateDashStats();
+  renderDashTable(filteredOrders);
+}
+
+function clearDashFilters() {
+  document.getElementById('df-sp').value   = '';
+  document.getElementById('df-type').value = '';
+  document.getElementById('df-from').value = '';
+  document.getElementById('df-to').value   = '';
+  applyDashFilters();
+}
+
+// ══════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════
+function updateDashStats() {
+  // Group by order-id equivalent: date+salesman+customer = one "order"
+  const orderGroups = {};
+  filteredOrders.forEach(r => {
+    const key = (r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
+    if (!orderGroups[key]) orderGroups[key] = { lines: 0, total: 0 };
+    orderGroups[key].lines++;
+    orderGroups[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+  });
+
+  const orderCount = Object.keys(orderGroups).length;
+  const totalAmt   = Object.values(orderGroups).reduce((s, g) => s + g.total, 0);
+  const spSet      = new Set(filteredOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean));
+
+  document.getElementById('ds-orders').textContent = orderCount;
+  document.getElementById('ds-amount').textContent = totalAmt >= 1000
+    ? (totalAmt/1000).toFixed(1) + 'K'
+    : totalAmt.toLocaleString();
+  document.getElementById('ds-sps').textContent = spSet.size;
+}
+
+// ══════════════════════════════════════════
+//  RENDER TABLE
+// ══════════════════════════════════════════
+function renderDashTable(rows) {
+  const body = document.getElementById('dash-orders-body');
+  if (!rows.length) {
+    body.innerHTML = '<div class="no-orders">📭 No orders found for the selected filters.</div>';
+    return;
+  }
+
+  // Group rows into logical orders (date+salesman+customer)
+  const orderMap = {};
+  const orderKeys = [];
+  rows.forEach(r => {
+    const sp   = r['Salesman']||r['Salesperson']||'';
+    const cust = r['Customer Name']||r['Customer']||'';
+    const date = r['Date']||r['Order Date']||'';
+    const type = r['Order Type']||'';
+    const key  = date + '||' + sp + '||' + cust;
+    if (!orderMap[key]) {
+      orderMap[key] = { date, sp, cust, type, lines: 0, total: 0, kg: 0, items: [] };
+      orderKeys.push(key);
+    }
+    orderMap[key].lines++;
+    orderMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+    orderMap[key].kg    += parseFloat(r['Total (KG)']||0) || 0;
+    orderMap[key].items.push(r);
+  });
+
+  // Sort by date desc
+  orderKeys.sort((a, b) => {
+    const da = orderMap[a].date, db = orderMap[b].date;
+    return da < db ? 1 : da > db ? -1 : 0;
+  });
+
+  body.innerHTML = '';
+  orderKeys.forEach(key => {
+    const o   = orderMap[key];
+    const row = document.createElement('div');
+    row.className = 'order-row';
+
+    const typeTag = (o.type||'').toLowerCase().includes('projection')
+      ? `<span class="tag-proj">Projection</span>`
+      : `<span class="tag-full">Full</span>`;
+
+    row.innerHTML = `
+      <div class="or-date">${fmtDate(o.date)}</div>
+      <div class="or-sp">${o.sp}</div>
+      <div class="or-cust">${o.cust}</div>
+      <div class="or-qty">${o.lines}</div>
+      <div class="or-amt">KES ${o.total.toLocaleString()}</div>
+      <div class="or-type">${typeTag}</div>
+    `;
+    row.onclick = () => openModal(o);
+    body.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════
+//  ORDER DETAIL MODAL
+// ══════════════════════════════════════════
+function openModal(order) {
+  document.getElementById('modal-title').textContent =
+    order.cust + ' — ' + fmtDate(order.date);
+
+  const body = document.getElementById('modal-body');
+
+  const summaryRows = [
+    ['Salesperson', order.sp],
+    ['Date',        fmtDate(order.date)],
+    ['Order Type',  order.type],
+    ['Total (KES)', 'KES ' + order.total.toLocaleString()],
+    ['Total (KG)',  order.kg.toFixed(2) + ' KG'],
+    ['Line Items',  order.lines],
+  ];
+
+  let html = '<div style="border-top:1px solid var(--border);margin-bottom:4px">';
+  summaryRows.forEach(([k, v]) => {
+    html += `<div class="sum-row"><span class="sum-k">${k}</span><span class="sum-v">${v}</span></div>`;
+  });
+  html += '</div>';
+
+  // Line items table
+  html += '<div style="padding:10px 20px 4px"><div class="lbl">Line Items</div></div>';
+  html += '<div style="border-top:1px solid var(--border)">';
+  order.items.forEach(item => {
+    const desc  = item['Description']||item['Product']||'';
+    const code  = item['Product Code']||'';
+    const pack  = item['Packaging']||'';
+    const qty   = item['Qty']||0;
+    const price = parseFloat(item['Unit Price (KES)']||item['Unit Price']||0)||0;
+    const total = parseFloat(item['Total (KES)']||item['Line Total']||0)||0;
+    html += `
+      <div class="cart-line">
+        <div class="cl-info">
+          <div class="cl-prod">${desc} ${code ? `<span class="badge">${code}</span>` : ''}</div>
+          <div class="cl-det">${pack} · Qty: ${qty} · KES ${price.toLocaleString()}/unit</div>
+        </div>
+        <div class="cl-total">KES ${total.toLocaleString()}</div>
+      </div>`;
+  });
+  html += '</div>';
+
+  // Notes
+  const notes = order.items[0] ? (order.items[0]['Notes']||'') : '';
+  if (notes) {
+    html += `<div style="padding:12px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)">
+      <strong>Notes:</strong> ${notes}</div>`;
+  }
+
+  body.innerHTML = html;
+  document.getElementById('order-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('order-modal').classList.remove('open');
+}
+
+// Close modal on backdrop click
+document.getElementById('order-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ══════════════════════════════════════════
+//  DASHBOARD LOGOUT
+// ══════════════════════════════════════════
+function dashLogout() {
+  dashUser = null; allOrders = []; filteredOrders = [];
+  document.getElementById('dash-app').style.display  = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  showPanel('signin');
 }
 
 function fmtDate(d) {
