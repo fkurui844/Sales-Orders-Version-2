@@ -453,7 +453,7 @@ textarea.inp{resize:vertical;min-height:80px}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz3scIhgFKb40aogNso61O20CN0eThv0W-ng5nLwF0UXDcczr6tgk3GSWhv1Ov-OEK2pA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyslnlgi6ugijxfOErWGyTAQAPUnw0Vc2cDBb2Rw_3F3_7YqLdK6MxgwLj6VW1xrcSKMQ/exec';
 
 // ══════════════════════════════════════════
 //  STATE
@@ -910,11 +910,16 @@ function initCustomerSearch() {
   const inp  = old.cloneNode(true);
   old.parentNode.replaceChild(inp, old);
   inp.value = S.customer ? S.customer.name : '';
+  inp.readOnly = false;
 
   const list = document.getElementById('cust-list');
 
-  inp.addEventListener('focus', () => { renderCustList(inp.value); list.classList.add('open'); });
-  inp.addEventListener('input', () => { renderCustList(inp.value); list.classList.add('open'); });
+  // Show full list immediately on click/focus
+  inp.addEventListener('click',  () => { renderCustList(inp.value); list.classList.add('open'); });
+  inp.addEventListener('focus',  () => { renderCustList(inp.value); list.classList.add('open'); });
+  // Filter as user types
+  inp.addEventListener('input',  () => { renderCustList(inp.value); list.classList.add('open'); });
+  // Close when clicking outside
   document.addEventListener('click', e => {
     if (!document.getElementById('cust-wrap').contains(e.target)) list.classList.remove('open');
   });
@@ -923,41 +928,89 @@ function initCustomerSearch() {
 }
 
 // Customer column key constants (matches "Customers" sheet headers)
-const CUST_NAME_KEYS = ['Customer Name','CustomerName','Name','Customer','CUSTOMER NAME','CUSTOMER','customer name','Client Name','CLIENT NAME'];
-const CUST_CODE_KEYS = ['Customer Code','CustomerCode','Code','Acc Code','ACC CODE','Account Code','ACCOUNT CODE','Account No','Account No.','Acc No','ACC NO','ACCOUNT NO','customer code','acc code','account no'];
+const CUST_NAME_KEYS  = ['Customer Name','CustomerName','Name','Customer','CUSTOMER NAME','CUSTOMER','customer name','Client Name','CLIENT NAME'];
+const CUST_CODE_KEYS  = ['Customer Code','CustomerCode','Code','Acc Code','ACC CODE','Account Code','ACCOUNT CODE','Account No','Account No.','Acc No','ACC NO','ACCOUNT NO','customer code','acc code','account no'];
 const CUST_ROUTE_KEYS = ['Route','ROUTE','route','Route Name','ROUTE NAME'];
+
+// Highlight matching text in a string
+function highlight(text, q) {
+  if (!q) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp('(' + escaped + ')', 'gi'),
+    '<mark style="background:var(--accent-lt);color:var(--accent);border-radius:2px;padding:0 1px">$1</mark>');
+}
 
 function renderCustList(q) {
   const list = document.getElementById('cust-list');
   const custs = S.data.customers || [];
-  if (!custs.length) { list.innerHTML = '<div class="dd-empty">No customers loaded</div>'; return; }
+
+  if (!custs.length) {
+    list.innerHTML = '<div class="dd-empty">No customers loaded from sheet</div>';
+    return;
+  }
 
   const c0 = custs[0];
   const nk = findKey(c0, CUST_NAME_KEYS);
   const ck = findKey(c0, CUST_CODE_KEYS);
   const rk = findKey(c0, CUST_ROUTE_KEYS);
 
-  const lq = q.toLowerCase();
+  const lq = (q || '').toLowerCase().trim();
+
+  // Filter: if no query show all (up to 80); otherwise match name OR account number
   const filtered = custs.filter(c => {
-    const rVal = rk ? (c[rk]||'').toLowerCase() : '';
-    const rMatch = !S.route || !rVal || rVal === S.route.toLowerCase();
+    // Route soft-filter: still show customer even if route doesn't match,
+    // but route-matched ones will appear first (sorted below)
+    if (!lq) return true;
     const nameMatch = (c[nk]||'').toLowerCase().includes(lq);
     const codeMatch = ck ? (c[ck]||'').toLowerCase().includes(lq) : false;
-    return rMatch && (nameMatch || codeMatch);
-  }).slice(0, 50);
+    return nameMatch || codeMatch;
+  });
+
+  // Sort: route-matching customers first when a route is selected
+  filtered.sort((a, b) => {
+    if (!S.route || !rk) return 0;
+    const aMatch = (a[rk]||'').toLowerCase() === S.route.toLowerCase() ? 0 : 1;
+    const bMatch = (b[rk]||'').toLowerCase() === S.route.toLowerCase() ? 0 : 1;
+    return aMatch - bMatch;
+  });
+
+  const display = filtered.slice(0, 80);
 
   list.innerHTML = '';
-  if (!filtered.length) {
-    list.innerHTML = `<div class="dd-empty">No customers found${q ? ' for "' + q + '"' : ''}</div>`;
+
+  if (!display.length) {
+    list.innerHTML = `<div class="dd-empty">No customers found for "<strong>${q}</strong>"</div>`;
     return;
   }
 
-  filtered.forEach(c => {
-    const name = c[nk] || '';
-    const code = ck ? (c[ck] || '') : '';
+  // Count label
+  if (filtered.length > 80) {
+    const info = document.createElement('div');
+    info.style.cssText = 'padding:6px 16px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)';
+    info.textContent = `Showing 80 of ${filtered.length} — type to narrow down`;
+    list.appendChild(info);
+  } else if (!lq) {
+    const info = document.createElement('div');
+    info.style.cssText = 'padding:6px 16px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)';
+    info.textContent = `${filtered.length} customer${filtered.length !== 1 ? 's' : ''} — type to filter`;
+    list.appendChild(info);
+  }
+
+  display.forEach(c => {
+    const name    = c[nk] || '';
+    const code    = ck ? (c[ck] || '') : '';
+    const route   = rk ? (c[rk] || '') : '';
+    const isRoute = S.route && route.toLowerCase() === S.route.toLowerCase();
+
     const d = document.createElement('div');
-    d.className = 'dd-item';
-    d.innerHTML = `${name}${code ? `<span class="sub">Acc No: ${code}</span>` : ''}`;
+    d.className = 'dd-item' + (isRoute ? ' sel' : '');
+    d.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span>${highlight(name, lq)}</span>
+        ${code ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.03em">${highlight(code, lq)}</span>` : ''}
+      </div>
+      ${route ? `<span class="sub">${route}</span>` : ''}
+    `;
     d.onclick = () => {
       S.customer = { name, code, raw: c };
       document.getElementById('cust-inp').value = name;
