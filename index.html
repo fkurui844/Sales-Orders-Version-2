@@ -126,6 +126,20 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .ot-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:3px}
 .ot-desc{font-size:11px;color:var(--muted);line-height:1.4}
 
+/* ── PRODUCT SEARCH BAR ── */
+.prod-search-bar{padding:10px 12px;background:#fff;border-bottom:2px solid var(--border);display:flex;gap:8px;align-items:center;position:sticky;top:52px;z-index:50}
+.prod-search-inp{flex:1;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238E8880' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;transition:border-color .2s}
+.prod-search-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
+.prod-search-inp::placeholder{color:#bbb}
+.prod-cat-sel{padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;color:var(--text);background:#fff;cursor:pointer;min-width:110px;transition:border-color .2s}
+.prod-cat-sel:focus{outline:none;border-color:var(--accent)}
+.prod-clear-btn{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);background:#fff;cursor:pointer;white-space:nowrap;transition:all .15s;display:none}
+.prod-clear-btn.vis{display:block}
+.prod-clear-btn:hover{border-color:var(--accent);color:var(--accent)}
+.prod-count-lbl{padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border)}
+.prod-row.hidden{display:none}
+.cat-header.hidden{display:none}
+
 /* ── PRODUCT LIST ── */
 .prod-header{padding:11px 16px;background:var(--bg);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .cat-header{padding:7px 16px;background:#FAF7F4;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
@@ -433,6 +447,20 @@ textarea.inp{resize:vertical;min-height:80px}
       <!-- Products -->
       <div class="card" style="padding:0;overflow:hidden">
         <div class="prod-header">Select Products</div>
+
+        <!-- Search / filter bar (shown after customer selected) -->
+        <div class="prod-search-bar" id="prod-search-bar" style="display:none">
+          <input class="prod-search-inp" id="prod-search" type="text"
+            placeholder="Search by name or product code…"
+            oninput="filterProducts()">
+          <select class="prod-cat-sel" id="prod-cat-sel" onchange="filterProducts()">
+            <option value="">All Categories</option>
+          </select>
+          <button class="prod-clear-btn" id="prod-clear-btn" onclick="clearProductSearch()">✕ Clear</button>
+        </div>
+
+        <div class="prod-count-lbl" id="prod-count-lbl" style="display:none"></div>
+
         <div id="prod-list">
           <div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">
             Select a customer to load products
@@ -1221,10 +1249,26 @@ function buildProductUI() {
     (groups[cat] = groups[cat]||[]).push(p);
   });
 
+  // Populate category dropdown
+  const catSel = document.getElementById('prod-cat-sel');
+  catSel.innerHTML = '<option value="">All Categories</option>';
+  Object.keys(groups).forEach(cat => {
+    const o = document.createElement('option');
+    o.value = o.textContent = cat;
+    catSel.appendChild(o);
+  });
+
+  // Show search bar
+  document.getElementById('prod-search-bar').style.display = 'flex';
+  document.getElementById('prod-search').value = '';
+  document.getElementById('prod-clear-btn').classList.remove('vis');
+  document.getElementById('prod-count-lbl').style.display = 'none';
+
   container.innerHTML = '';
   Object.entries(groups).forEach(([cat, items]) => {
     const ch = document.createElement('div');
     ch.className = 'cat-header';
+    ch.dataset.cat = cat;
     ch.textContent = cat;
     container.appendChild(ch);
 
@@ -1241,6 +1285,9 @@ function buildProductUI() {
 
       const row = document.createElement('div');
       row.className = 'prod-row';
+      row.dataset.cat  = cat;
+      row.dataset.code = code.toLowerCase();
+      row.dataset.desc = desc.toLowerCase();
       row.innerHTML = `
         <div>
           <div class="prod-name">${desc}</div>
@@ -1265,6 +1312,55 @@ function buildProductUI() {
   });
 
   renderCart();
+}
+
+// ── PRODUCT SEARCH / FILTER ──────────────────────────────────────────────────
+function filterProducts() {
+  const q      = (document.getElementById('prod-search').value || '').toLowerCase().trim();
+  const selCat = (document.getElementById('prod-cat-sel').value || '').toLowerCase().trim();
+  const rows   = document.querySelectorAll('#prod-list .prod-row');
+  const heads  = document.querySelectorAll('#prod-list .cat-header');
+
+  let visible = 0;
+  const catsWithVisible = new Set();
+
+  rows.forEach(row => {
+    const desc    = row.dataset.desc || '';
+    const code    = row.dataset.code || '';
+    const rowCat  = (row.dataset.cat || '').toLowerCase();
+    const matchQ   = !q   || desc.includes(q) || code.includes(q);
+    const matchCat = !selCat || rowCat === selCat;
+    const show = matchQ && matchCat;
+    row.classList.toggle('hidden', !show);
+    if (show) { visible++; catsWithVisible.add(row.dataset.cat); }
+  });
+
+  // Hide category headers that have no visible rows
+  heads.forEach(h => {
+    h.classList.toggle('hidden', !catsWithVisible.has(h.dataset.cat));
+  });
+
+  // Show/hide clear button
+  const hasFilter = q || selCat;
+  document.getElementById('prod-clear-btn').classList.toggle('vis', !!hasFilter);
+
+  // Count label
+  const total = rows.length;
+  const lbl = document.getElementById('prod-count-lbl');
+  if (hasFilter) {
+    lbl.style.display = 'block';
+    lbl.textContent = visible === total
+      ? `All ${total} products`
+      : `${visible} of ${total} products`;
+  } else {
+    lbl.style.display = 'none';
+  }
+}
+
+function clearProductSearch() {
+  document.getElementById('prod-search').value = '';
+  document.getElementById('prod-cat-sel').value = '';
+  filterProducts();
 }
 
 function changeQty(code, pack, price, kg, desc, cat, delta) {
