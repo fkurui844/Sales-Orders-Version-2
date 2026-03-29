@@ -1290,18 +1290,31 @@ window.addEventListener('DOMContentLoaded', () => {
   loadData();
 });
 
+// ── Normalise master data from Firebase ───────────────────────────────────────
+// Firebase REST (used by GAS) stores JS arrays as integer-keyed objects.
+// The JS SDK usually re-converts them, but this is not guaranteed for large
+// arrays or when stored via PUT. We always force proper arrays here.
+function normaliseData(data) {
+  if (!data || typeof data !== 'object') return data;
+  ['salespeople','customers','products','routes'].forEach(k => {
+    const v = data[k];
+    if (!v) { data[k] = []; return; }
+    if (!Array.isArray(v) && typeof v === 'object') {
+      data[k] = Object.values(v);
+    }
+  });
+  return data;
+}
+
 async function loadData() {
   showLoad('Loading data…');
+  let usedFirebase = false;
   try {
     // Try Firebase first (~0ms if synced)
     const snap = await db.ref('/masterData').get();
     if (snap.exists()) {
-      S.data = snap.val();
-      // Ensure arrays (Firebase omits empty arrays)
-      S.data.salespeople = S.data.salespeople || [];
-      S.data.customers   = S.data.customers   || [];
-      S.data.products    = S.data.products    || [];
-      S.data.routes      = S.data.routes      || [];
+      S.data = normaliseData(snap.val());
+      usedFirebase = true;
     } else {
       // Firebase not yet populated — fall back to GAS and trigger a sync
       S.data = await gas({ action: 'getData' });
@@ -1316,6 +1329,43 @@ async function loadData() {
     }
   } finally {
     hideLoad();
+  }
+
+  // ── Background GAS refresh ───────────────────────────────────────────────
+  // Firebase master data may be seconds or minutes behind the sheet,
+  // which means recently-set passwords won't be in Firebase yet.
+  // We fire a silent GAS fetch right after the fast Firebase load so that
+  // by the time the user finishes typing their password the data is fresh.
+  if (usedFirebase) {
+    gas({ action: 'getData' }).then(fresh => {
+      if (!fresh || !fresh.salespeople) return;
+      S.data = normaliseData(fresh);
+
+      // If the user already selected themselves in the login dropdown,
+      // update selSP to the fresh object so the password field is current.
+      if (selSP) {
+        const nk   = findKey(selSP, NAME_KEYS);
+        const pk   = findKey(selSP, PAYROLL_KEYS);
+        const name = (selSP[nk] || '').trim();
+        const pay  = (selSP[pk] || '').trim();
+        const refreshed = (S.data.salespeople || []).find(s => {
+          const snk = findKey(s, NAME_KEYS);
+          const spk = findKey(s, PAYROLL_KEYS);
+          return (s[snk]||'').trim() === name || (pay && (s[spk]||'').trim() === pay);
+        });
+        if (refreshed) selSP = refreshed;
+      }
+      // Same update for the set-password panel
+      if (selSetSP) {
+        const nk   = findKey(selSetSP, NAME_KEYS);
+        const name = (selSetSP[nk] || '').trim();
+        const refreshed = (S.data.salespeople || []).find(s => {
+          const snk = findKey(s, NAME_KEYS);
+          return (s[snk]||'').trim() === name;
+        });
+        if (refreshed) selSetSP = refreshed;
+      }
+    }).catch(() => { /* silent — Firebase data is still usable */ });
   }
 }
 
@@ -1552,7 +1602,7 @@ function renderLoginList(q) {
   });
 }
 
-function doLogin() {
+async function doLogin() {
   const err = document.getElementById('login-err');
   err.style.display = 'none';
 
@@ -1561,8 +1611,33 @@ function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  const pw     = document.getElementById('pw-inp').value;
-  const stored = selSP['Password'] || '';
+  const pw      = document.getElementById('pw-inp').value;
+  let   stored  = selSP['Password'] || '';
+
+  // ── Live fallback ────────────────────────────────────────────────────────
+  // If the cached data has no password for this person (e.g. Firebase was
+  // synced before the password was first set, or the background refresh
+  // hasn't finished yet), do one live GAS fetch before failing.
+  if (!stored) {
+    showLoad('Checking credentials…');
+    try {
+      const fresh = await gas({ action: 'getData' });
+      if (fresh && fresh.salespeople) {
+        S.data = normaliseData(fresh);
+        const nk   = findKey(selSP, NAME_KEYS);
+        const pk   = findKey(selSP, PAYROLL_KEYS);
+        const name = (selSP[nk] || '').trim();
+        const pay  = (selSP[pk] || '').trim();
+        const updated = (S.data.salespeople || []).find(s => {
+          const snk = findKey(s, NAME_KEYS);
+          const spk = findKey(s, PAYROLL_KEYS);
+          return (s[snk]||'').trim() === name || (pay && (s[spk]||'').trim() === pay);
+        });
+        if (updated) { selSP = updated; stored = updated['Password'] || ''; }
+      }
+    } catch(e) { /* fall through — show "no password" below */ }
+    finally { hideLoad(); }
+  }
 
   if (!stored) {
     err.textContent = 'No password set yet. Please use "Set / Change My Password" below.';
@@ -2279,36 +2354,37 @@ async function submitOrder() {
         .substring(0, 120)
         + '-' + items.reduce((s,i) => s + i.qty, 0);
 
-     try {
-  // Write to Firebase queue instantly (works offline)
-  await db.ref('/queue/' + clientOrderId.replace(/[.#$/\[\]]/g,'_')).set({
-    clientOrderId, orderId: 'ORD-' + Date.now(),
-    status: 'PENDING',
-    timestamp: new Date().toISOString(),
-    date: S.orderDate, salesman: name, payroll: pay,
-    route: S.route, location: S.location, orderType: otLbl,
-    customer: co.customer, customerCode: co.custCode,
-    itemsJson: JSON.stringify(items), notes
-  });
+      try {
+        // Write to Firebase queue instantly (works offline)
+        await db.ref('/queue/' + clientOrderId.replace(/[.#$/\[\]]/g,'_')).set({
+          clientOrderId, orderId: 'ORD-' + Date.now(),
+          status: 'PENDING',
+          timestamp: new Date().toISOString(),
+          date: S.orderDate, salesman: name, payroll: pay,
+          route: S.route, location: S.location, orderType: otLbl,
+          customer: co.customer, customerCode: co.custCode,
+          itemsJson: JSON.stringify(items), notes
+        });
 
-  // Also call GAS (non-blocking belt-and-suspenders write to sheet)
-  const res = await gas({
-    action: 'submitOrder',
-    clientOrderId,
-    salesperson: name, payroll: pay,
-    route: S.route, location: S.location, orderType: otLbl,
-    customer: co.customer, customerCode: co.custCode,
-    orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
-    items: JSON.stringify(items)
-  }, { maxRetries: 4, timeoutMs: 35000 });
+        // Also call GAS (non-blocking belt-and-suspenders write to sheet)
+        const res = await gas({
+          action: 'submitOrder',
+          clientOrderId,
+          salesperson: name, payroll: pay,
+          route: S.route, location: S.location, orderType: otLbl,
+          customer: co.customer, customerCode: co.custCode,
+          orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
+          items: JSON.stringify(items)
+        }, { maxRetries: 4, timeoutMs: 35000 });
 
-  if (!res.success) throw new Error(res.error || 'Unknown error');
-  results.push(res.orderId);
+        if (!res.success) throw new Error(res.error || 'Unknown error');
+        results.push(res.orderId);
 
-} catch(coErr) {
-  failed.push({ customer: co.customer, error: coErr.message });
-  results.push(null);
-}
+      } catch(coErr) {
+        failed.push({ customer: co.customer, error: coErr.message });
+        results.push(null);
+      }
+    } // end for loop
 
     // ── All attempts done ──
     const succeeded = results.filter(Boolean);
