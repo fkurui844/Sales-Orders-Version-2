@@ -205,17 +205,23 @@ textarea.inp{resize:vertical;min-height:80px}
 #panel-dash.active{display:block}
 
 /* ── STATS ROW ── */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
 .stat-card{background:#fff;border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);text-align:center}
+.stat-card-kg{border:1.5px solid #d1fae5}
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);line-height:1}
+.stat-val-kg{color:var(--ok)}
 .stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 
 /* ── CHART SECTION ── */
 .charts-section{margin-bottom:14px}
-.chart-tabs{display:flex;gap:6px;margin-bottom:10px}
+.chart-tabs{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
 .chart-tab{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
 .chart-tab:hover{border-color:var(--accent);color:var(--accent)}
 .chart-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.metric-toggle{display:flex;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
+.metric-toggle-btn{padding:7px 14px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.metric-toggle-btn:hover{color:var(--text)}
+.metric-toggle-btn.active{background:var(--ok);color:#fff}
 .chart-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
 .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .chart-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
@@ -617,7 +623,8 @@ textarea.inp{resize:vertical;min-height:80px}
     <!-- Stats -->
     <div class="stats-row" id="dash-stats">
       <div class="stat-card"><div class="stat-val" id="ds-orders">—</div><div class="stat-lbl">Orders</div></div>
-      <div class="stat-card"><div class="stat-val" id="ds-amount">—</div><div class="stat-lbl">Total (KES)</div></div>
+      <div class="stat-card"><div class="stat-val" id="ds-amount">—</div><div class="stat-lbl">Revenue (KES)</div></div>
+      <div class="stat-card stat-card-kg"><div class="stat-val stat-val-kg" id="ds-weight">—</div><div class="stat-lbl">Total Weight (KG)</div></div>
       <div class="stat-card"><div class="stat-val" id="ds-sps">—</div><div class="stat-lbl">Salespeople</div></div>
     </div>
 
@@ -679,6 +686,11 @@ textarea.inp{resize:vertical;min-height:80px}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
           Split
         </button>
+        <div style="flex:1"></div>
+        <div class="metric-toggle">
+          <button class="metric-toggle-btn active" id="metric-revenue" onclick="switchMetric('revenue')">💰 Revenue</button>
+          <button class="metric-toggle-btn" id="metric-weight" onclick="switchMetric('weight')">⚖️ Weight</button>
+        </div>
       </div>
       <div class="chart-card">
         <div class="chart-header">
@@ -1969,12 +1981,16 @@ function updateDashStats() {
 
   const orderCount = Object.keys(orderGroups).length;
   const totalAmt   = Object.values(orderGroups).reduce((s, g) => s + g.total, 0);
+  const totalKg    = filteredOrders.reduce((s, r) => s + (parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0), 0);
   const spSet      = new Set(filteredOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean));
 
   document.getElementById('ds-orders').textContent = orderCount;
   document.getElementById('ds-amount').textContent = totalAmt >= 1000
     ? (totalAmt/1000).toFixed(1) + 'K'
     : totalAmt.toLocaleString();
+  document.getElementById('ds-weight').textContent = totalKg >= 1000
+    ? (totalKg/1000).toFixed(1) + 'T'
+    : totalKg.toFixed(1);
   document.getElementById('ds-sps').textContent = spSet.size;
 }
 
@@ -2095,6 +2111,7 @@ document.getElementById('order-modal').addEventListener('click', function(e) {
 // ══════════════════════════════════════════
 let mainChart = null;
 let currentChartType = 'bar';
+let currentMetric = 'revenue'; // 'revenue' | 'weight'
 
 const CHART_COLORS = ['#C45B00','#1B6B3A','#2563EB','#9333EA','#D97706','#0891B2','#BE185D','#4F46E5'];
 
@@ -2102,6 +2119,13 @@ function switchChart(type) {
   currentChartType = type;
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + type).classList.add('active');
+  renderChart();
+}
+
+function switchMetric(metric) {
+  currentMetric = metric;
+  document.querySelectorAll('.metric-toggle-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('metric-' + metric).classList.add('active');
   renderChart();
 }
 
@@ -2124,7 +2148,6 @@ function renderChart() {
 }
 
 function getOrderTotals(rows) {
-  // Group by date+salesman+customer, return per-group totals
   const map = {};
   rows.forEach(r => {
     const date  = (r['Date']||r['Order Date']||'').trim();
@@ -2132,25 +2155,36 @@ function getOrderTotals(rows) {
     const cust  = (r['Customer Name']||r['Customer']||'').trim();
     const key   = date + '||' + sp + '||' + cust;
     const amt   = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
-    if (!map[key]) map[key] = { date, sp, cust, total: 0 };
+    const kg    = parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+    if (!map[key]) map[key] = { date, sp, cust, total: 0, kg: 0 };
     map[key].total += amt;
+    map[key].kg    += kg;
   });
   return Object.values(map);
 }
 
+function metricVal(g)    { return currentMetric === 'weight' ? g.kg    : g.total; }
+function metricFmt(v)    { return currentMetric === 'weight' ? v.toFixed(1) + ' KG' : 'KES ' + v.toLocaleString(); }
+function metricAxisFmt(v){ return currentMetric === 'weight'
+  ? (v >= 1000 ? (v/1000).toFixed(1)+'T' : v.toFixed(0)+' KG')
+  : (v >= 1000 ? (v/1000).toFixed(0)+'K' : v); }
+
 function renderBarChart(canvas) {
-  document.getElementById('chart-title').textContent = 'Revenue by Salesperson';
-  document.getElementById('chart-subtitle').textContent = 'Total KES per salesperson in filtered period';
+  const isKg = currentMetric === 'weight';
+  document.getElementById('chart-title').textContent = isKg ? 'Weight by Salesperson' : 'Revenue by Salesperson';
+  document.getElementById('chart-subtitle').textContent = isKg
+    ? 'Total KG dispatched per salesperson'
+    : 'Total KES per salesperson in filtered period';
 
   const groups = getOrderTotals(filteredOrders);
   const spMap = {};
   groups.forEach(g => {
     if (!spMap[g.sp]) spMap[g.sp] = 0;
-    spMap[g.sp] += g.total;
+    spMap[g.sp] += metricVal(g);
   });
   const labels = Object.keys(spMap).sort((a,b) => spMap[b]-spMap[a]).slice(0,10);
   const data   = labels.map(l => spMap[l]);
-  const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+  const colors = labels.map((_, i) => isKg ? CHART_COLORS[(i+1) % CHART_COLORS.length] : CHART_COLORS[i % CHART_COLORS.length]);
 
   document.getElementById('chart-legend').innerHTML = labels.slice(0,5).map((l,i) =>
     `<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l}</div>`
@@ -2161,7 +2195,7 @@ function renderBarChart(canvas) {
     data: {
       labels,
       datasets: [{
-        label: 'KES',
+        label: isKg ? 'KG' : 'KES',
         data,
         backgroundColor: colors,
         borderRadius: 6,
@@ -2172,90 +2206,138 @@ function renderBarChart(canvas) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ' KES ' + ctx.raw.toLocaleString() }
+        callbacks: { label: ctx => ' ' + metricFmt(ctx.raw) }
       }},
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880', maxRotation: 30 } },
         y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880',
-          callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+          callback: metricAxisFmt } }
       }
     }
   });
 }
 
 function renderLineChart(canvas) {
-  document.getElementById('chart-title').textContent = 'Daily Revenue Trend';
-  document.getElementById('chart-subtitle').textContent = 'KES collected per day over selected period';
+  const isKg = currentMetric === 'weight';
+  document.getElementById('chart-title').textContent = isKg ? 'Daily Weight Trend' : 'Daily Revenue Trend';
+  document.getElementById('chart-subtitle').textContent = isKg
+    ? 'Total KG dispatched per day'
+    : 'KES collected per day over selected period';
 
   const groups = getOrderTotals(filteredOrders);
-  const dateMap = {};
+  const dateRevMap = {}, dateKgMap = {};
   groups.forEach(g => {
-    if (!dateMap[g.date]) dateMap[g.date] = 0;
-    dateMap[g.date] += g.total;
+    if (!dateRevMap[g.date]) { dateRevMap[g.date] = 0; dateKgMap[g.date] = 0; }
+    dateRevMap[g.date] += g.total;
+    dateKgMap[g.date]  += g.kg;
   });
-  const dates = Object.keys(dateMap).sort();
-  const vals  = dates.map(d => dateMap[d]);
+  const dates   = Object.keys(dateRevMap).sort();
+  const revVals = dates.map(d => dateRevMap[d]);
+  const kgVals  = dates.map(d => dateKgMap[d]);
 
-  document.getElementById('chart-legend').innerHTML =
-    `<div class="legend-item"><div class="legend-dot" style="background:${CHART_COLORS[0]}"></div>Daily Revenue</div>`;
+  const showBoth = !isKg; // On revenue tab, show both lines; on weight tab, show just KG
+  const datasets = [];
+
+  if (!isKg) {
+    datasets.push({
+      label: 'KES',
+      data: revVals,
+      borderColor: CHART_COLORS[0],
+      backgroundColor: 'rgba(196,91,0,0.08)',
+      borderWidth: 2.5,
+      pointRadius: dates.length > 20 ? 2 : 4,
+      pointBackgroundColor: CHART_COLORS[0],
+      tension: 0.35,
+      fill: true,
+      yAxisID: 'yRev',
+    });
+    datasets.push({
+      label: 'KG',
+      data: kgVals,
+      borderColor: CHART_COLORS[1],
+      backgroundColor: 'rgba(27,107,58,0.06)',
+      borderWidth: 2,
+      pointRadius: dates.length > 20 ? 2 : 3,
+      pointBackgroundColor: CHART_COLORS[1],
+      tension: 0.35,
+      fill: false,
+      yAxisID: 'yKg',
+      borderDash: [5,3],
+    });
+  } else {
+    datasets.push({
+      label: 'KG',
+      data: kgVals,
+      borderColor: CHART_COLORS[1],
+      backgroundColor: 'rgba(27,107,58,0.08)',
+      borderWidth: 2.5,
+      pointRadius: dates.length > 20 ? 2 : 4,
+      pointBackgroundColor: CHART_COLORS[1],
+      tension: 0.35,
+      fill: true,
+      yAxisID: 'yKg',
+    });
+  }
+
+  document.getElementById('chart-legend').innerHTML = datasets.map(ds =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${ds.borderColor};${ds.borderDash?'border:2px dashed '+ds.borderColor+';background:transparent':''}"></div>${ds.label}</div>`
+  ).join('');
+
+  const scalesConfig = isKg ? {
+    x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'", size: 10 }, color: '#8E8880', maxRotation: 40, autoSkip: true, maxTicksLimit: 10 } },
+    yKg: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: CHART_COLORS[1],
+      callback: v => v >= 1000 ? (v/1000).toFixed(1)+'T' : v.toFixed(0)+' KG' } }
+  } : {
+    x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'", size: 10 }, color: '#8E8880', maxRotation: 40, autoSkip: true, maxTicksLimit: 10 } },
+    yRev: { position: 'left', grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: CHART_COLORS[0],
+      callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } },
+    yKg: { position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: "'DM Sans'" }, color: CHART_COLORS[1],
+      callback: v => v >= 1000 ? (v/1000).toFixed(1)+'T' : v.toFixed(0)+' KG' } }
+  };
 
   mainChart = new Chart(canvas, {
     type: 'line',
-    data: {
-      labels: dates.map(d => fmtDate(d)),
-      datasets: [{
-        label: 'KES',
-        data: vals,
-        borderColor: CHART_COLORS[0],
-        backgroundColor: 'rgba(196,91,0,0.08)',
-        borderWidth: 2.5,
-        pointRadius: dates.length > 20 ? 2 : 4,
-        pointBackgroundColor: CHART_COLORS[0],
-        tension: 0.35,
-        fill: true,
-      }]
-    },
+    data: { labels: dates.map(d => fmtDate(d)), datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ' KES ' + ctx.raw.toLocaleString() }
+        callbacks: { label: ctx => ctx.dataset.label === 'KES'
+          ? ' KES ' + ctx.raw.toLocaleString()
+          : ' ' + ctx.raw.toFixed(1) + ' KG' }
       }},
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'", size: 10 }, color: '#8E8880', maxRotation: 40, autoSkip: true, maxTicksLimit: 10 } },
-        y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880',
-          callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
-      }
+      scales: scalesConfig
     }
   });
 }
 
 function renderDonutChart(canvas) {
+  const isKg = currentMetric === 'weight';
   const sp = document.getElementById('df-sp').value.trim();
   const spLabel = sp || 'All Salespeople';
 
-  // If sp selected → breakdown by route/location, else by salesperson
   const groups = getOrderTotals(filteredOrders);
-
   let segMap = {};
+
   if (sp) {
-    // Show by order type split
     filteredOrders.forEach(r => {
       const type = (r['Order Type']||'Unknown').trim();
-      const amt  = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+      const val  = isKg
+        ? (parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0)
+        : (parseFloat(r['Total (KES)']||r['Line Total']||0)||0);
       if (!segMap[type]) segMap[type] = 0;
-      segMap[type] += amt;
+      segMap[type] += val;
     });
-    document.getElementById('chart-title').textContent = 'Order Type Split';
-    document.getElementById('chart-subtitle').textContent = 'Revenue by order type — ' + spLabel;
+    document.getElementById('chart-title').textContent = isKg ? 'Weight by Order Type' : 'Revenue by Order Type';
+    document.getElementById('chart-subtitle').textContent = (isKg ? 'KG split by order type — ' : 'Revenue split by order type — ') + spLabel;
   } else {
-    // By salesperson
     groups.forEach(g => {
       if (!segMap[g.sp]) segMap[g.sp] = 0;
-      segMap[g.sp] += g.total;
+      segMap[g.sp] += metricVal(g);
     });
-    document.getElementById('chart-title').textContent = 'Revenue Share';
-    document.getElementById('chart-subtitle').textContent = 'Contribution by salesperson';
+    document.getElementById('chart-title').textContent = isKg ? 'Weight Share by Salesperson' : 'Revenue Share by Salesperson';
+    document.getElementById('chart-subtitle').textContent = isKg ? 'KG contribution per salesperson' : 'Revenue contribution per salesperson';
   }
 
   const labels = Object.keys(segMap).sort((a,b)=>segMap[b]-segMap[a]).slice(0,8);
@@ -2280,7 +2362,7 @@ function renderDonutChart(canvas) {
         tooltip: { callbacks: {
           label: ctx => {
             const pct = total ? Math.round(ctx.raw/total*100) : 0;
-            return ` KES ${ctx.raw.toLocaleString()} (${pct}%)`;
+            return ' ' + metricFmt(ctx.raw) + ' (' + pct + '%)';
           }
         }}
       }
