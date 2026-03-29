@@ -610,8 +610,27 @@ const S = {
 // ══════════════════════════════════════════
 const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
 const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
-const TITLE_KEYS   = ['Title','TITLE','title','Job Title','Role','Position','Designation'];
-const SALESMAN_TITLES = ['salesman','saleswoman','saleslady','sales rep','sales representative','rep'];
+// Column D = index 3 in the salesperson object (0-based)
+// Try known header names first; fall back to reading the 4th key of the object
+const TITLE_KEYS      = ['Title','TITLE','title','Tittle','TITTLE','tittle','Job Title','Role','Position','Designation','Type','Category'];
+const SALESMAN_TITLES = ['salesman','saleswoman','saleslady','sales rep','sales representative','rep','sales'];
+
+function getTitle(sp) {
+  if (!sp) return '';
+  // 1. Try known header names
+  const tk = findKey(sp, TITLE_KEYS);
+  if (tk) return (sp[tk] || '').trim();
+  // 2. Fall back to column D = 4th key (index 3)
+  const keys = Object.keys(sp);
+  if (keys.length >= 4) return (sp[keys[3]] || '').trim();
+  return '';
+}
+
+function isSalesmanTitle(title) {
+  if (!title) return true; // no title → treat as salesman
+  const t = title.toLowerCase().trim();
+  return SALESMAN_TITLES.some(s => t.includes(s));
+}
 
 // ══════════════════════════════════════════
 //  INIT
@@ -856,18 +875,17 @@ function renderLoginList(q) {
       selSP = sp;
       document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
       list.classList.remove('open');
-      // Show title field
-      const tk = findKey(sp, TITLE_KEYS);
-      const titleVal = tk ? (sp[tk] || '') : '';
+      // Show title field (reads column D by name or index)
+      const titleVal = getTitle(sp);
       const titleField = document.getElementById('title-field');
       const titleInp   = document.getElementById('ln-title');
-      if (titleVal) {
-        titleInp.value = titleVal;
-        titleField.style.display = 'block';
-      } else {
-        titleField.style.display = 'none';
-        titleInp.value = '';
-      }
+      // Color-code by role
+      const isSales = isSalesmanTitle(titleVal);
+      titleInp.value = titleVal || '(no title set)';
+      titleInp.style.background    = isSales ? '#E8F5ED' : '#FFF3E8';
+      titleInp.style.color         = isSales ? '#1B6B3A' : 'var(--accent)';
+      titleInp.style.borderColor   = isSales ? '#1B6B3A' : 'var(--accent)';
+      titleField.style.display = 'block';
       document.getElementById('pw-inp').focus();
     };
     list.appendChild(d);
@@ -896,18 +914,16 @@ function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  // Route by Title (column D)
-  const tk    = findKey(selSP, TITLE_KEYS);
-  const title = tk ? (selSP[tk] || '').toLowerCase().trim() : '';
-  const isSalesman = !title || SALESMAN_TITLES.some(t => title.includes(t));
+  // Route by Title (column D by header name or position)
+  const title = getTitle(selSP);
 
-  if (isSalesman) {
-    startApp(selSP);          // → place orders
+  if (isSalesmanTitle(title)) {
+    startApp(selSP);   // → place orders
   } else {
-    // Supervisor / Guest → dashboard
+    // Guest / Supervisor → dashboard only
     const nk = findKey(selSP, NAME_KEYS);
     const pk = findKey(selSP, PAYROLL_KEYS);
-    dashUser = { name: selSP[nk] || '', payroll: selSP[pk] || '', title: selSP[tk] || '' };
+    dashUser = { name: selSP[nk] || '', payroll: selSP[pk] || '', title };
     document.getElementById('login-screen').style.display = 'none';
     openDashboard();
   }
