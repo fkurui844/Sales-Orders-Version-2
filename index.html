@@ -205,9 +205,10 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="logo-sub">Sign in to place orders</div>
 
       <div class="fg">
-        <label class="lbl">Your Name</label>
+        <!-- ✅ UPDATED LABEL -->
+        <label class="lbl">Your Name / Payroll Number</label>
         <div class="dd-wrap" id="ln-wrap">
-          <input class="inp" id="ln-inp" placeholder="Type to search your name…" autocomplete="off">
+          <input class="inp" id="ln-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
           <div class="dd-list" id="ln-list"></div>
         </div>
       </div>
@@ -238,9 +239,10 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="logo-sub">Choose a password for your account</div>
 
       <div class="fg">
-        <label class="lbl">Your Name</label>
+        <!-- ✅ UPDATED LABEL -->
+        <label class="lbl">Your Name / Payroll Number</label>
         <div class="dd-wrap" id="sp-wrap">
-          <input class="inp" id="sp-inp" placeholder="Type to search your name…" autocomplete="off">
+          <input class="inp" id="sp-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
           <div class="dd-list" id="sp-list"></div>
         </div>
       </div>
@@ -457,23 +459,30 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbzfSNs6Qi1DoKpT9f46g_7U
 //  STATE
 // ══════════════════════════════════════════
 const S = {
-  data: null,         // salespeople, customers, products, routes
-  user: null,         // logged-in salesperson object
+  data: null,
+  user: null,
   location: '',
   route: '',
   orderDate: '',
   orderType: 'projection',
-  customer: null,     // {name, code}
-  cart: [],           // line items
-  _locKey: '',        // detected header key for Location in Routes sheet
-  _routeKey: '',      // detected header key for Route name in Routes sheet
+  customer: null,
+  cart: [],
+  _locKey: '',
+  _routeKey: '',
 };
+
+// ══════════════════════════════════════════
+//  SALESPERSON KEY DETECTION
+//  Handles columns from "Salesperson Details" sheet:
+//  Name, Payroll No, Password (and any casing variants)
+// ══════════════════════════════════════════
+const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
+const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
 
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  // default date = today
   const d = new Date();
   document.getElementById('order-date').value =
     `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -499,7 +508,6 @@ async function loadData() {
 function findKey(obj, candidates, fallback) {
   if (!obj) return fallback || '';
   for (const k of candidates) if (k in obj) return k;
-  // case-insensitive fallback
   const low = candidates.map(c => c.toLowerCase());
   for (const k of Object.keys(obj)) {
     if (low.includes(k.toLowerCase())) return k;
@@ -551,7 +559,7 @@ function checkStrength() {
   str.className = 'pw-strength' + (score ? ' s'+score : '');
   const labels = ['','Weak','Fair','Good','Strong'];
   hint.textContent = score ? labels[score] : 'Use 6+ characters for a strong password';
-  hint.style.color = ['','#E53935','#FB8C00','#43A047',getComputedStyle(document.documentElement).getPropertyValue('--ok').trim()][score] || 'var(--muted)';
+  hint.style.color = ['','#E53935','#FB8C00','#43A047','var(--ok)'][score] || 'var(--muted)';
 }
 
 // ══════════════════════════════════════════
@@ -562,7 +570,6 @@ let selSetSP = null;
 function initSetPwSearch() {
   const inp  = document.getElementById('sp-inp');
   const list = document.getElementById('sp-list');
-  // clone to remove old listeners
   const fresh = inp.cloneNode(true);
   inp.parentNode.replaceChild(fresh, inp);
   fresh.value = '';
@@ -577,20 +584,27 @@ function initSetPwSearch() {
 function renderSetList(q) {
   const list = document.getElementById('sp-list');
   if (!S.data) { list.innerHTML = '<div class="dd-empty">Loading…</div>'; return; }
-  const nk = findKey(S.data.salespeople[0]||{}, ['Name','Salesperson','SALESPERSON','NAME']);
-  const pk = findKey(S.data.salespeople[0]||{}, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
 
+  const sample = S.data.salespeople[0] || {};
+  const nk = findKey(sample, NAME_KEYS);
+  const pk = findKey(sample, PAYROLL_KEYS);
+
+  const lq = q.toLowerCase();
   const matches = S.data.salespeople
-    .filter(sp => (sp[nk]||'').toLowerCase().includes(q.toLowerCase()))
+    .filter(sp => {
+      const name = (sp[nk]||'').toLowerCase();
+      const pay  = (sp[pk]||'').toLowerCase();
+      return name.includes(lq) || pay.includes(lq);
+    })
     .slice(0, 40);
 
   list.innerHTML = '';
-  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match</div>'; return; }
+  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match found</div>'; return; }
   matches.forEach(sp => {
     const name = sp[nk]||'', pay = sp[pk]||'';
     const d = document.createElement('div');
     d.className = 'dd-item';
-    d.innerHTML = `${name}${pay ? `<span class="sub">Payroll: ${pay}</span>` : ''}`;
+    d.innerHTML = `${name}${pay ? `<span class="sub">Payroll No: ${pay}</span>` : ''}`;
     d.onclick = () => {
       selSetSP = sp;
       document.getElementById('sp-inp').value = name;
@@ -643,8 +657,8 @@ async function doSetPassword() {
     errEl.style.display = 'block'; return;
   }
 
-  const nk   = findKey(selSetSP, ['Name','Salesperson','SALESPERSON']);
-  const pk   = findKey(selSetSP, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const nk   = findKey(selSetSP, NAME_KEYS);
+  const pk   = findKey(selSetSP, PAYROLL_KEYS);
   const name = selSetSP[nk]||'';
   const pay  = selSetSP[pk]||'';
 
@@ -654,19 +668,16 @@ async function doSetPassword() {
   try {
     const res = await gas({ action: 'savePassword', name, pass: pw1, payroll: pay });
     if (res.success) {
-      // Update local copy so sign-in works immediately without reload
       selSetSP['Password'] = pw1;
       const spInData = (S.data.salespeople||[]).find(s => (s[nk]||'') === name);
       if (spInData) spInData['Password'] = pw1;
 
       okEl.style.display  = 'flex';
       errEl.style.display = 'none';
-      // After 2s bounce back to sign-in with name pre-filled
       setTimeout(() => {
         showPanel('signin');
         selSP = selSetSP;
-        const payLabel = pay ? ` (${pay})` : '';
-        document.getElementById('ln-inp').value = name + payLabel;
+        document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
         document.getElementById('pw-inp').focus();
       }, 2000);
     } else {
@@ -703,22 +714,29 @@ function renderLoginList(q) {
   const list = document.getElementById('ln-list');
   if (!S.data) { list.innerHTML = '<div class="dd-empty">Loading…</div>'; return; }
 
-  const nk = findKey(S.data.salespeople[0] || {}, ['Name','Salesperson','SALESPERSON','NAME']);
-  const pk = findKey(S.data.salespeople[0] || {}, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const sample = S.data.salespeople[0] || {};
+  const nk = findKey(sample, NAME_KEYS);
+  const pk = findKey(sample, PAYROLL_KEYS);
 
+  const lq = q.toLowerCase();
+  // ✅ Search by both name AND payroll number
   const matches = S.data.salespeople
-    .filter(sp => (sp[nk]||'').toLowerCase().includes(q.toLowerCase()))
+    .filter(sp => {
+      const name = (sp[nk]||'').toLowerCase();
+      const pay  = (sp[pk]||'').toLowerCase();
+      return name.includes(lq) || pay.includes(lq);
+    })
     .slice(0, 40);
 
   list.innerHTML = '';
-  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match</div>'; return; }
+  if (!matches.length) { list.innerHTML = '<div class="dd-empty">No match found</div>'; return; }
 
   matches.forEach(sp => {
     const name = sp[nk] || '';
     const pay  = sp[pk]  || '';
     const d = document.createElement('div');
     d.className = 'dd-item';
-    d.innerHTML = `${name}${pay ? `<span class="sub">Payroll: ${pay}</span>` : ''}`;
+    d.innerHTML = `${name}${pay ? `<span class="sub">Payroll No: ${pay}</span>` : ''}`;
     d.onclick = () => {
       selSP = sp;
       document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
@@ -741,7 +759,6 @@ function doLogin() {
   const stored = selSP['Password'] || '';
 
   if (!stored) {
-    // No password set yet — nudge them to set one
     err.textContent = 'No password set yet. Please use "Set / Change My Password" below.';
     err.style.display = 'block'; return;
   }
@@ -756,8 +773,8 @@ function doLogin() {
 
 function startApp(sp) {
   S.user = sp;
-  const nk = findKey(sp, ['Name','Salesperson','SALESPERSON']);
-  const pk = findKey(sp, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const nk = findKey(sp, NAME_KEYS);
+  const pk = findKey(sp, PAYROLL_KEYS);
   const name = sp[nk] || '';
   const pay  = sp[pk]  || '';
 
@@ -802,13 +819,10 @@ function populateLocations() {
   const routes = S.data.routes || [];
   if (!routes.length) return;
 
-  // Routes sheet: col A = Route Name, col B = Location (as stated by user)
-  // Detect keys
   const keys = Object.keys(routes[0]);
-  S._routeKey = keys[0] || ''; // col A
-  S._locKey   = keys[1] || ''; // col B
+  S._routeKey = keys[0] || '';
+  S._locKey   = keys[1] || '';
 
-  // Override if we find explicit named columns
   const r0 = routes[0];
   S._routeKey = findKey(r0, ['Route','Route Name','RouteName','ROUTE'], S._routeKey);
   S._locKey   = findKey(r0, ['Location','LOCATION','Area','Region','Town','AREA'], S._locKey);
@@ -892,7 +906,6 @@ function go2() {
 //  STEP 2 — ADD ITEMS
 // ══════════════════════════════════════════
 function initCustomerSearch() {
-  // Re-build listener by cloning node
   const old = document.getElementById('cust-inp');
   const inp  = old.cloneNode(true);
   old.parentNode.replaceChild(inp, old);
@@ -978,7 +991,6 @@ function buildProductUI() {
     return;
   }
 
-  // Group by category
   const groups = {};
   list.forEach(p => {
     const cat = p[catk] || 'General';
@@ -1019,7 +1031,6 @@ function buildProductUI() {
       `;
       container.appendChild(row);
 
-      // Listeners
       row.querySelectorAll('.qty-btn').forEach(btn => {
         btn.onclick = () => changeQty(code, pack, price, kg, desc, cat, parseInt(btn.dataset.delta));
       });
@@ -1053,7 +1064,6 @@ function updateCart(code, pack, price, kg, desc, cat, newQty, delta) {
 
   if (item.qty === 0) S.cart.splice(idx, 1);
 
-  // Sync input
   const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
   const el = document.getElementById(safeId);
   if (el) el.value = item.qty === undefined ? 0 : item.qty;
@@ -1114,8 +1124,8 @@ function go3() {
 // ══════════════════════════════════════════
 function buildSubmitStep() {
   const sp   = S.user;
-  const nk   = findKey(sp, ['Name','Salesperson','SALESPERSON']);
-  const pk   = findKey(sp, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const nk   = findKey(sp, NAME_KEYS);
+  const pk   = findKey(sp, PAYROLL_KEYS);
   const name = sp[nk] || '';
   const pay  = sp[pk]  || '';
   const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
@@ -1153,8 +1163,8 @@ function buildSubmitStep() {
 
 async function submitOrder() {
   const sp   = S.user;
-  const nk   = findKey(sp, ['Name','Salesperson','SALESPERSON']);
-  const pk   = findKey(sp, ['Payroll No','Payroll','PayrollNo','Payroll Number','Employee No']);
+  const nk   = findKey(sp, NAME_KEYS);
+  const pk   = findKey(sp, PAYROLL_KEYS);
   const name = sp[nk] || '';
   const pay  = sp[pk]  || '';
   const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
