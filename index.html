@@ -181,10 +181,7 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 
 textarea.inp{resize:vertical;min-height:80px}
 
-/* ── DASHBOARD BUTTON on login ── */
-.btn-dash{width:100%;padding:14px;background:linear-gradient(135deg,#1A1714 0%,#2d2a27 100%);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:10px}
-.btn-dash:hover{opacity:.88}
-.btn-dash:active{transform:scale(.98)}
+
 
 /* ── DASHBOARD APP SHELL ── */
 #dash-app{display:none;flex-direction:column;min-height:100vh;background:var(--bg)}
@@ -193,9 +190,7 @@ textarea.inp{resize:vertical;min-height:80px}
 .dash-head-logo span{color:var(--accent)}
 .dash-head-right{display:flex;align-items:center;gap:10px;font-size:12px;opacity:.8}
 
-/* ── DASHBOARD PANEL C login ── */
-#panel-dash{display:none}
-#panel-dash.active{display:block}
+
 
 /* ── STATS ROW ── */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
@@ -232,8 +227,7 @@ textarea.inp{resize:vertical;min-height:80px}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;padding:0 20px;margin-bottom:14px}
 .modal-close{position:absolute;top:14px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 
-/* ── SP SELECTOR on dashboard login ── */
-.dash-sp-pill{display:inline-flex;align-items:center;gap:6px;background:var(--ok-lt);border:1.5px solid var(--ok);color:var(--ok);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;margin-bottom:12px}
+
 </style>
 </head>
 <body>
@@ -256,10 +250,9 @@ textarea.inp{resize:vertical;min-height:80px}
     <!-- ── PANEL A: SIGN IN ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
-      <div class="logo-sub">Sign in to place orders</div>
+      <div class="logo-sub">Sign in to continue</div>
 
       <div class="fg">
-        <!-- ✅ UPDATED LABEL -->
         <label class="lbl">Your Name / Payroll Number</label>
         <div class="dd-wrap" id="ln-wrap">
           <input class="inp" id="ln-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
@@ -267,10 +260,17 @@ textarea.inp{resize:vertical;min-height:80px}
         </div>
       </div>
 
+      <div class="fg" id="title-field" style="display:none">
+        <label class="lbl">Title</label>
+        <input class="inp" id="ln-title" readonly placeholder="—"
+          style="background:var(--accent-lt);color:var(--accent);font-weight:600;border-color:var(--accent)">
+      </div>
+
       <div class="fg">
         <label class="lbl">Password</label>
         <div class="pw-wrap">
-          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
+          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password"
+            onkeydown="if(event.key==='Enter')doLogin()">
           <button class="pw-eye" tabindex="-1" onclick="toggleEye('pw-inp',this)">👁</button>
         </div>
       </div>
@@ -280,46 +280,8 @@ textarea.inp{resize:vertical;min-height:80px}
 
       <div class="divider">or</div>
 
-      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px;margin-bottom:10px" onclick="showPanel('set')">
+      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
         🔑 Set / Change My Password
-      </button>
-
-      <button class="btn-dash" onclick="showPanel('dash')">
-        📊 View Dashboard
-      </button>
-    </div>
-
-    <!-- ── PANEL C: DASHBOARD LOGIN ── -->
-    <div id="panel-dash" class="login-panel hidden">
-      <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
-
-      <div class="logo" style="font-size:26px">Dashboard</div>
-      <div class="logo-sub">Supervisor access — view all orders</div>
-
-      <div class="fg">
-        <label class="lbl">Your Payroll Number <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#bbb">(optional)</span></label>
-        <div class="dd-wrap" id="dp-wrap">
-          <input class="inp" id="dp-inp" placeholder="Type payroll number or name to search…" autocomplete="off">
-          <div class="dd-list" id="dp-list"></div>
-        </div>
-      </div>
-
-      <div id="dp-name-row" class="fg" style="display:none">
-        <label class="lbl">Name</label>
-        <input class="inp" id="dp-name-disp" readonly>
-      </div>
-
-      <div class="fg">
-        <label class="lbl">Dashboard Password</label>
-        <div class="pw-wrap">
-          <input class="inp" type="password" id="dp-pw" placeholder="Enter dashboard password" onkeydown="if(event.key==='Enter')doDashLogin()">
-          <button class="pw-eye" tabindex="-1" onclick="toggleEye('dp-pw',this)">👁</button>
-        </div>
-      </div>
-
-      <div class="err-msg" id="dp-err"></div>
-      <button class="btn-accent" style="width:100%;margin-top:6px" onclick="doDashLogin()">
-        Open Dashboard →
       </button>
     </div>
 
@@ -648,6 +610,8 @@ const S = {
 // ══════════════════════════════════════════
 const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
 const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
+const TITLE_KEYS   = ['Title','TITLE','title','Job Title','Role','Position','Designation'];
+const SALESMAN_TITLES = ['salesman','saleswoman','saleslady','sales rep','sales representative','rep'];
 
 // ══════════════════════════════════════════
 //  INIT
@@ -892,6 +856,19 @@ function renderLoginList(q) {
       selSP = sp;
       document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
       list.classList.remove('open');
+      // Show title field
+      const tk = findKey(sp, TITLE_KEYS);
+      const titleVal = tk ? (sp[tk] || '') : '';
+      const titleField = document.getElementById('title-field');
+      const titleInp   = document.getElementById('ln-title');
+      if (titleVal) {
+        titleInp.value = titleVal;
+        titleField.style.display = 'block';
+      } else {
+        titleField.style.display = 'none';
+        titleInp.value = '';
+      }
+      document.getElementById('pw-inp').focus();
     };
     list.appendChild(d);
   });
@@ -919,7 +896,21 @@ function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  startApp(selSP);
+  // Route by Title (column D)
+  const tk    = findKey(selSP, TITLE_KEYS);
+  const title = tk ? (selSP[tk] || '').toLowerCase().trim() : '';
+  const isSalesman = !title || SALESMAN_TITLES.some(t => title.includes(t));
+
+  if (isSalesman) {
+    startApp(selSP);          // → place orders
+  } else {
+    // Supervisor / Guest → dashboard
+    const nk = findKey(selSP, NAME_KEYS);
+    const pk = findKey(selSP, PAYROLL_KEYS);
+    dashUser = { name: selSP[nk] || '', payroll: selSP[pk] || '', title: selSP[tk] || '' };
+    document.getElementById('login-screen').style.display = 'none';
+    openDashboard();
+  }
 }
 
 function startApp(sp) {
@@ -944,6 +935,8 @@ function logout() {
   document.getElementById('ln-inp').value = '';
   document.getElementById('pw-inp').value = '';
   document.getElementById('login-err').style.display = 'none';
+  document.getElementById('title-field').style.display = 'none';
+  document.getElementById('ln-title').value = '';
   showPanel('signin');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
@@ -1514,7 +1507,6 @@ function showPanel(which) {
   });
 
   const target = which === 'set'  ? 'panel-set'
-               : which === 'dash' ? 'panel-dash'
                :                    'panel-signin';
 
   document.getElementById(target).classList.remove('hidden');
@@ -1528,7 +1520,6 @@ function showPanel(which) {
   if (spOk) spOk.style.display = 'none';
 
   if (which === 'set')  { clearSetPwForm(); initSetPwSearch(); }
-  if (which === 'dash') { initDashPayrollSearch(); }
 }
 
 // ══════════════════════════════════════════
@@ -1598,6 +1589,11 @@ function doDashLogin() {
   const errEl = document.getElementById('dp-err');
   errEl.style.display = 'none';
 
+  if (!selDashSP) {
+    errEl.textContent = 'Please select your payroll number from the list.';
+    errEl.style.display = 'block'; return;
+  }
+
   const pw = document.getElementById('dp-pw').value;
   if (!pw) {
     errEl.textContent = 'Please enter the dashboard password.';
@@ -1609,14 +1605,9 @@ function doDashLogin() {
     errEl.style.display = 'block'; return;
   }
 
-  // Use selected salesperson if available, otherwise use generic supervisor label
-  if (selDashSP) {
-    const nk = findKey(selDashSP, NAME_KEYS);
-    const pk = findKey(selDashSP, PAYROLL_KEYS);
-    dashUser = { name: selDashSP[nk]||'Supervisor', payroll: selDashSP[pk]||'' };
-  } else {
-    dashUser = { name: 'Supervisor', payroll: '' };
-  }
+  const nk = findKey(selDashSP, NAME_KEYS);
+  const pk = findKey(selDashSP, PAYROLL_KEYS);
+  dashUser = { name: selDashSP[nk]||'', payroll: selDashSP[pk]||'' };
 
   openDashboard();
 }
@@ -1628,9 +1619,11 @@ async function openDashboard() {
   document.getElementById('login-screen').style.display  = 'none';
   document.getElementById('app').style.display           = 'none';
   document.getElementById('dash-app').style.display      = 'flex';
-  document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
+  const label = dashUser.name + (dashUser.payroll ? ' (' + dashUser.payroll + ')' : '')
+              + (dashUser.title ? ' · ' + dashUser.title : '');
+  document.getElementById('dash-hdr-name').textContent = label;
 
-  // Clear all filters so ALL orders are shown by default
+  // Clear all filters so ALL orders show by default
   document.getElementById('df-to').value   = '';
   document.getElementById('df-from').value = '';
   document.getElementById('df-sp').value   = '';
@@ -1650,7 +1643,8 @@ async function loadDashOrders() {
     applyDashFilters();
   } catch(e) {
     allOrders = [];
-    body.innerHTML = '<div class="no-orders" style="color:#C62828">⚠️ Could not load orders: ' + e.message + '<br><br><button onclick="loadDashOrders()" style="margin-top:8px;padding:8px 20px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">🔄 Retry</button></div>';
+    body.innerHTML = '<div class="no-orders" style="color:#C62828">⚠️ Could not load orders: ' + e.message + '<br><br>'
+      + '<button onclick="loadDashOrders()" style="margin-top:8px;padding:8px 20px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">🔄 Retry</button></div>';
   } finally {
     hideLoad();
   }
@@ -1732,7 +1726,8 @@ function renderDashTable(rows) {
     const hasFilters = document.getElementById('df-sp').value || document.getElementById('df-type').value
       || document.getElementById('df-from').value || document.getElementById('df-to').value;
     body.innerHTML = hasFilters
-      ? '<div class="no-orders">📭 No orders match the selected filters.<br><button onclick="clearDashFilters()" style="margin-top:10px;padding:7px 18px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">Clear Filters</button></div>'
+      ? '<div class="no-orders">📭 No orders match the selected filters.<br>'
+        + '<button onclick="clearDashFilters()" style="margin-top:10px;padding:7px 18px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">Clear Filters</button></div>'
       : '<div class="no-orders">📭 No orders have been submitted yet.</div>';
     return;
   }
@@ -1855,6 +1850,12 @@ document.getElementById('order-modal').addEventListener('click', function(e) {
 // ══════════════════════════════════════════
 function dashLogout() {
   dashUser = null; allOrders = []; filteredOrders = [];
+  selSP = null;
+  document.getElementById('ln-inp').value = '';
+  document.getElementById('pw-inp').value = '';
+  document.getElementById('title-field').style.display = 'none';
+  document.getElementById('ln-title').value = '';
+  document.getElementById('login-err').style.display = 'none';
   document.getElementById('dash-app').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   showPanel('signin');
