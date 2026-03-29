@@ -192,7 +192,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <label>Name or Payroll Number</label>
         <div style="position:relative">
           <input type="text" id="spSearchInput" placeholder="Enter your payroll number..."
-            autocomplete="off" oninput="filterSPList(this.value)" onfocus="showSPDropdown()" onkeydown="spSearchKey(event)"
+            autocomplete="off"
             style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s">
           <div id="spDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);max-height:220px;overflow-y:auto;z-index:50;box-shadow:var(--shadow)"></div>
         </div>
@@ -583,26 +583,45 @@ let currentUser = null, selectedSP = null, loginMode = 'name';
 let allSalespeople = [], allCustomers = [], allProducts = [], allRoutes = [], allOrdersCache = [];
 const today = new Date().toISOString().split('T')[0];
 
-document.getElementById('appsScriptDisplay').textContent = GAS_SOURCE;
-document.getElementById('gasUrlInput').value  = GAS_URL;
-document.getElementById('supPassInput').value = SUP_PASS;
-document.getElementById('topDate').textContent = new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-['orderDate','orderDelivery','myFromDate','myToDate','filterFrom','filterTo','prodFilterFrom','prodFilterTo']
-  .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
-if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
+// DOM init moved into DOMContentLoaded below
 
-// ── BOOT — always deferred so login UI paints first ──
-setTimeout(async () => {
+// ── BOOT — runs after DOM is fully ready, attaches all listeners here ──
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Init static DOM values (safe here — DOM is guaranteed ready)
+  document.getElementById('appsScriptDisplay').textContent = GAS_SOURCE;
+  document.getElementById('gasUrlInput').value  = GAS_URL;
+  document.getElementById('supPassInput').value = SUP_PASS;
+  document.getElementById('topDate').textContent =
+    new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  ['orderDate','orderDelivery','myFromDate','myToDate','filterFrom','filterTo','prodFilterFrom','prodFilterTo']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=today; });
+  if (!localStorage.getItem('gasUrl')) localStorage.setItem('gasUrl', GAS_URL_DEFAULT);
+
+  // Attach spSearchInput listeners — avoids "not defined" from inline onfocus/oninput
   const inp = document.getElementById('spSearchInput');
+  inp.addEventListener('input',   () => filterSPList(inp.value));
+  inp.addEventListener('focus',   () => showSPDropdown());
+  inp.addEventListener('keydown', e  => spSearchKey(e));
+
+  // Dismiss dropdown when clicking outside
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#stepName')) hideSPDropdown();
+  });
+
+  // Load salesperson data
+  bootLoadData(inp);
+});
+
+async function bootLoadData(inp) {
   const cached = localStorage.getItem('spDataCache');
   if (cached) {
     try {
-      // Parse in a deferred tick so the page never freezes on large JSON
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0)); // yield so UI paints first
       cacheData(JSON.parse(cached));
       inp.placeholder = 'Enter your payroll number...';
       inp.disabled = false;
-      // Only refresh cache if last fetch was >5 min ago to avoid hammering GAS
+      // Only refresh if cache is older than 5 minutes
       const lastFetch = parseInt(localStorage.getItem('spDataCacheTime') || '0');
       if (Date.now() - lastFetch > 5 * 60 * 1000) {
         api('getData').then(d => {
@@ -612,7 +631,7 @@ setTimeout(async () => {
         }).catch(() => {});
       }
       return;
-    } catch(e) { /* corrupt cache — fall through to fresh load */ }
+    } catch(e) { /* corrupt cache — fall through to fresh fetch */ }
   }
   inp.placeholder = 'Loading...'; inp.disabled = true;
   try {
@@ -623,7 +642,7 @@ setTimeout(async () => {
     inp.placeholder = 'Enter your payroll number...';
   } catch(e) { inp.placeholder = 'Could not load — check connection'; }
   inp.disabled = false;
-}, 0);
+}
 
 // ── SP HELPERS ──
 function getField(obj, candidates) {
@@ -655,7 +674,6 @@ function spDisplayLabel(s) {
 // ── SP SEARCH DROPDOWN ──
 let spHighlightIdx = -1;
 // Pre-processed SP list for fast dropdown rendering
-let _spCache = [];
 function buildSPCache(){
   _spCache = allSalespeople.map((s,i) => ({
     idx: i,
@@ -729,7 +747,7 @@ function hiOpt(opts) {
   opts.forEach((o,i)=>o.classList.toggle('hi',i===spHighlightIdx));
   if(spHighlightIdx>=0) opts[spHighlightIdx].scrollIntoView({block:'nearest'});
 }
-document.addEventListener('click',e=>{ if(!e.target.closest('#stepName')) hideSPDropdown(); });
+// click-outside listener moved into DOMContentLoaded
 
 // ── LOGIN FLOW ──
 function onUserSelected(displayName) {
