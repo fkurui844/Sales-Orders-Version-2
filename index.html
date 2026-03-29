@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Firebase SDKs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.min.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAaqoNe_K4nP2oRpMM3Z-jVy5MEWWXEj2M",
+  authDomain: "sales-orders-b95af.firebaseapp.com",
+  databaseURL: "https://sales-orders-b95af-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "sales-orders-b95af",
+  storageBucket: "sales-orders-b95af.firebasestorage.app",
+  messagingSenderId: "1058139273100",
+  appId: "1:1058139273100:web:ef067079b8a734dedac8a9"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+</script> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sales Order System</title>
@@ -1277,9 +1293,27 @@ window.addEventListener('DOMContentLoaded', () => {
 async function loadData() {
   showLoad('Loading data…');
   try {
-    S.data = await gas({ action: 'getData' });
+    // Try Firebase first (~0ms if synced)
+    const snap = await db.ref('/masterData').get();
+    if (snap.exists()) {
+      S.data = snap.val();
+      // Ensure arrays (Firebase omits empty arrays)
+      S.data.salespeople = S.data.salespeople || [];
+      S.data.customers   = S.data.customers   || [];
+      S.data.products    = S.data.products    || [];
+      S.data.routes      = S.data.routes      || [];
+    } else {
+      // Firebase not yet populated — fall back to GAS and trigger a sync
+      S.data = await gas({ action: 'getData' });
+      gas({ action: 'syncMasterData' }); // populate Firebase for next time
+    }
   } catch(e) {
-    toast('Could not load app data. Check your connection.');
+    // Any Firebase error — fall back to GAS silently
+    try {
+      S.data = await gas({ action: 'getData' });
+    } catch(e2) {
+      toast('Could not load app data. Check your connection.');
+    }
   } finally {
     hideLoad();
   }
@@ -2245,26 +2279,36 @@ async function submitOrder() {
         .substring(0, 120)
         + '-' + items.reduce((s,i) => s + i.qty, 0);
 
-      try {
-        const res = await gas({
-          action: 'submitOrder',
-          clientOrderId,
-          salesperson: name, payroll: pay,
-          route: S.route, location: S.location, orderType: otLbl,
-          customer: co.customer, customerCode: co.custCode,
-          orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
-          items: JSON.stringify(items)
-        }, { maxRetries: 4, timeoutMs: 35000 });
+     try {
+  // Write to Firebase queue instantly (works offline)
+  await db.ref('/queue/' + clientOrderId.replace(/[.#$/\[\]]/g,'_')).set({
+    clientOrderId, orderId: 'ORD-' + Date.now(),
+    status: 'PENDING',
+    timestamp: new Date().toISOString(),
+    date: S.orderDate, salesman: name, payroll: pay,
+    route: S.route, location: S.location, orderType: otLbl,
+    customer: co.customer, customerCode: co.custCode,
+    itemsJson: JSON.stringify(items), notes
+  });
 
-        if (!res.success) throw new Error(res.error || 'Unknown error');
-        results.push(res.orderId);
+  // Also call GAS (non-blocking belt-and-suspenders write to sheet)
+  const res = await gas({
+    action: 'submitOrder',
+    clientOrderId,
+    salesperson: name, payroll: pay,
+    route: S.route, location: S.location, orderType: otLbl,
+    customer: co.customer, customerCode: co.custCode,
+    orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
+    items: JSON.stringify(items)
+  }, { maxRetries: 4, timeoutMs: 35000 });
 
-      } catch(coErr) {
-        // One customer failed — collect it but continue submitting others
-        failed.push({ customer: co.customer, error: coErr.message });
-        results.push(null);
-      }
-    }
+  if (!res.success) throw new Error(res.error || 'Unknown error');
+  results.push(res.orderId);
+
+} catch(coErr) {
+  failed.push({ customer: co.customer, error: coErr.message });
+  results.push(null);
+}
 
     // ── All attempts done ──
     const succeeded = results.filter(Boolean);
