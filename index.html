@@ -297,9 +297,9 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="logo-sub">Supervisor access — view all orders</div>
 
       <div class="fg">
-        <label class="lbl">Your Payroll Number</label>
+        <label class="lbl">Your Payroll Number <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#bbb">(optional)</span></label>
         <div class="dd-wrap" id="dp-wrap">
-          <input class="inp" id="dp-inp" placeholder="Type payroll number to search…" autocomplete="off">
+          <input class="inp" id="dp-inp" placeholder="Type payroll number or name to search…" autocomplete="off">
           <div class="dd-list" id="dp-list"></div>
         </div>
       </div>
@@ -312,7 +312,7 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="fg">
         <label class="lbl">Dashboard Password</label>
         <div class="pw-wrap">
-          <input class="inp" type="password" id="dp-pw" placeholder="Enter dashboard password">
+          <input class="inp" type="password" id="dp-pw" placeholder="Enter dashboard password" onkeydown="if(event.key==='Enter')doDashLogin()">
           <button class="pw-eye" tabindex="-1" onclick="toggleEye('dp-pw',this)">👁</button>
         </div>
       </div>
@@ -1598,11 +1598,6 @@ function doDashLogin() {
   const errEl = document.getElementById('dp-err');
   errEl.style.display = 'none';
 
-  if (!selDashSP) {
-    errEl.textContent = 'Please select your payroll number from the list.';
-    errEl.style.display = 'block'; return;
-  }
-
   const pw = document.getElementById('dp-pw').value;
   if (!pw) {
     errEl.textContent = 'Please enter the dashboard password.';
@@ -1614,9 +1609,14 @@ function doDashLogin() {
     errEl.style.display = 'block'; return;
   }
 
-  const nk = findKey(selDashSP, NAME_KEYS);
-  const pk = findKey(selDashSP, PAYROLL_KEYS);
-  dashUser = { name: selDashSP[nk]||'', payroll: selDashSP[pk]||'' };
+  // Use selected salesperson if available, otherwise use generic supervisor label
+  if (selDashSP) {
+    const nk = findKey(selDashSP, NAME_KEYS);
+    const pk = findKey(selDashSP, PAYROLL_KEYS);
+    dashUser = { name: selDashSP[nk]||'Supervisor', payroll: selDashSP[pk]||'' };
+  } else {
+    dashUser = { name: 'Supervisor', payroll: '' };
+  }
 
   openDashboard();
 }
