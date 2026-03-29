@@ -262,6 +262,9 @@ textarea.inp{resize:vertical;min-height:80px}
 .filter-bar{background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .filter-bar .fg{margin-bottom:0;flex:1;min-width:140px}
 .filter-bar .fg label{margin-bottom:4px}
+.filter-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
+.filter-action-btns{display:flex;gap:8px;align-items:center}
+.filter-clear-btn{padding:12px 18px;font-size:14px}
 
 /* ── ORDERS TABLE ── */
 .orders-table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px}
@@ -354,8 +357,10 @@ textarea.inp{resize:vertical;min-height:80px}
   /* ── Filter bar: full-width stack ── */
   .filter-bar{flex-direction:column;gap:8px}
   .filter-bar .fg{min-width:100%;flex:none}
-  .filter-bar .fg[style*="flex:0"]{flex:none!important;width:100%}
-  .filter-bar .btn-ghost{width:100%}
+  .filter-actions{width:100%}
+  .filter-action-btns{width:100%;display:flex;gap:8px}
+  .filter-clear-btn{flex:1}
+  .btn-export{flex:2;justify-content:center}
 
   /* ── Chart tabs: wrap into 2-per-row pills ── */
   .chart-tabs{gap:5px}
@@ -414,9 +419,6 @@ textarea.inp{resize:vertical;min-height:80px}
 
   /* ── Grand total bar ── */
   .grand-total-bar{flex-wrap:wrap;gap:8px}
-
-  /* ── Export button ── */
-  .btn-export{font-size:14px;padding:12px 14px}
 
   /* ── Co-head (multi-customer) ── */
   .co-head{flex-wrap:wrap}
@@ -809,10 +811,10 @@ textarea.inp{resize:vertical;min-height:80px}
         <label class="lbl">To Date</label>
         <input class="inp" type="date" id="df-to" onchange="applyDashFilters()">
       </div>
-      <div class="fg" style="flex:0 0 auto">
+      <div class="filter-actions">
         <label class="lbl" style="visibility:hidden">.</label>
-        <div style="display:flex;gap:8px">
-          <button class="btn-ghost" style="padding:12px 18px;font-size:14px" onclick="clearDashFilters()">Clear</button>
+        <div class="filter-action-btns">
+          <button class="btn-ghost filter-clear-btn" onclick="clearDashFilters()">Clear</button>
           <button class="btn-export" onclick="exportToExcel()" id="export-btn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Export
