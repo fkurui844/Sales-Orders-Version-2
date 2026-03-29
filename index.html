@@ -676,11 +676,19 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="chart-tabs">
         <button class="chart-tab active" onclick="switchChart('bar')" id="tab-bar">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="5" width="3" height="9"/><rect x="4" y="3" width="3" height="11"/><rect x="8" y="1" width="3" height="13"/><rect x="12" y="7" width="2" height="7"/></svg>
-          Bar
+          By Person
         </button>
         <button class="chart-tab" onclick="switchChart('line')" id="tab-line">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="0,10 4,6 7,8 11,2 14,4"/></svg>
           Trend
+        </button>
+        <button class="chart-tab" onclick="switchChart('route-bar')" id="tab-route-bar">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="7" width="3" height="7"/><rect x="4" y="4" width="3" height="10"/><rect x="8" y="2" width="3" height="12"/><rect x="12" y="5" width="2" height="9"/></svg>
+          By Route
+        </button>
+        <button class="chart-tab" onclick="switchChart('route-line')" id="tab-route-line">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="0,12 3,7 6,10 9,3 12,6 14,4"/></svg>
+          Route Trend
         </button>
         <button class="chart-tab" onclick="switchChart('donut')" id="tab-donut">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
@@ -2142,9 +2150,11 @@ function renderChart() {
     return;
   }
 
-  if (currentChartType === 'bar')   renderBarChart(canvas);
-  if (currentChartType === 'line')  renderLineChart(canvas);
-  if (currentChartType === 'donut') renderDonutChart(canvas);
+  if (currentChartType === 'bar')        renderBarChart(canvas);
+  if (currentChartType === 'line')       renderLineChart(canvas);
+  if (currentChartType === 'donut')      renderDonutChart(canvas);
+  if (currentChartType === 'route-bar')  renderRouteBarChart(canvas);
+  if (currentChartType === 'route-line') renderRouteLineChart(canvas);
 }
 
 function getOrderTotals(rows) {
@@ -2365,6 +2375,130 @@ function renderDonutChart(canvas) {
             return ' ' + metricFmt(ctx.raw) + ' (' + pct + '%)';
           }
         }}
+      }
+    }
+  });
+}
+
+function renderRouteBarChart(canvas) {
+  const isKg = currentMetric === 'weight';
+  document.getElementById('chart-title').textContent = isKg ? 'Weight by Route' : 'Revenue by Route';
+  document.getElementById('chart-subtitle').textContent = isKg
+    ? 'Total KG dispatched per route'
+    : 'Total KES per route in filtered period';
+
+  const routeMap = {};
+  filteredOrders.forEach(r => {
+    const route = (r['Route']||'Unknown').trim();
+    const amt   = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    const kg    = parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+    if (!routeMap[route]) routeMap[route] = { total: 0, kg: 0 };
+    routeMap[route].total += amt;
+    routeMap[route].kg    += kg;
+  });
+
+  const labels = Object.keys(routeMap).sort((a,b) =>
+    isKg ? routeMap[b].kg - routeMap[a].kg : routeMap[b].total - routeMap[a].total
+  ).slice(0,12);
+  const data   = labels.map(l => isKg ? routeMap[l].kg : routeMap[l].total);
+  const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+  document.getElementById('chart-legend').innerHTML = labels.slice(0,6).map((l,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l}</div>`
+  ).join('');
+
+  mainChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: isKg ? 'KG' : 'KES',
+        data,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' ' + metricFmt(ctx.raw) }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880', maxRotation: 30 } },
+        y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880',
+          callback: metricAxisFmt } }
+      }
+    }
+  });
+}
+
+function renderRouteLineChart(canvas) {
+  const isKg = currentMetric === 'weight';
+  document.getElementById('chart-title').textContent = isKg ? 'Weight Trend by Route' : 'Revenue Trend by Route';
+  document.getElementById('chart-subtitle').textContent = isKg
+    ? 'Daily KG dispatched — one line per route'
+    : 'Daily KES — one line per route';
+
+  // Collect all dates and routes
+  const dateSet   = new Set();
+  const routeSet  = new Set();
+  const routeDateMap = {}; // route → date → {total, kg}
+
+  filteredOrders.forEach(r => {
+    const date  = (r['Date']||r['Order Date']||'').trim();
+    const route = (r['Route']||'Unknown').trim();
+    const amt   = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    const kg    = parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+    if (!date) return;
+    dateSet.add(date);
+    routeSet.add(route);
+    if (!routeDateMap[route]) routeDateMap[route] = {};
+    if (!routeDateMap[route][date]) routeDateMap[route][date] = { total: 0, kg: 0 };
+    routeDateMap[route][date].total += amt;
+    routeDateMap[route][date].kg    += kg;
+  });
+
+  const dates  = [...dateSet].sort();
+  const labels = dates.map(d => fmtDate(d));
+
+  // Rank routes by total value, take top 6
+  const routeTotals = {};
+  routeSet.forEach(rt => {
+    routeTotals[rt] = dates.reduce((s,d) => s + (routeDateMap[rt]?.[d]?.[isKg?'kg':'total']||0), 0);
+  });
+  const topRoutes = [...routeSet].sort((a,b) => routeTotals[b]-routeTotals[a]).slice(0,6);
+
+  const datasets = topRoutes.map((rt, i) => ({
+    label: rt,
+    data: dates.map(d => routeDateMap[rt]?.[d]?.[isKg?'kg':'total'] || 0),
+    borderColor: CHART_COLORS[i % CHART_COLORS.length],
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: dates.length > 20 ? 1 : 3,
+    pointBackgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+    tension: 0.35,
+    fill: false,
+  }));
+
+  document.getElementById('chart-legend').innerHTML = topRoutes.map((rt,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${CHART_COLORS[i%CHART_COLORS.length]}"></div>${rt}</div>`
+  ).join('');
+
+  mainChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + metricFmt(ctx.raw) }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'", size:10 }, color: '#8E8880', maxRotation: 40, autoSkip: true, maxTicksLimit: 10 } },
+        y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880', callback: metricAxisFmt } }
       }
     }
   });
