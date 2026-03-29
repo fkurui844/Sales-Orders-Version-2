@@ -65,6 +65,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sp-opt-payroll{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
 .sp-opt-route{font-size:11px;color:var(--text2)}
 .sp-loading{padding:12px 14px;font-size:13px;color:var(--text2)}
+.cust-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s}
+.cust-opt:last-child{border-bottom:none}
+.cust-opt:hover,.cust-opt.hi{background:var(--accent-light)}
+.cust-opt-name{font-weight:500;color:var(--text)}
+.cust-opt-acct{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.cust-opt-route{font-size:11px;color:var(--text2)}
 .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
 .tab-btn{padding:7px 18px;border-radius:7px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
 .tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -271,11 +277,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="form-grid">
             <div class="field">
               <label>Customer</label>
-              <select id="orderCustomer" onchange="onCustomerChange()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;background:var(--surface)">
-                <option value="">Select customer...</option>
+              <div style="position:relative">
+                <input type="text" id="customerSearch" autocomplete="off"
+                  placeholder="Search by name or account number..."
+                  style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s">
+                <input type="hidden" id="orderCustomer">
+                <div id="customerDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--radius) var(--radius);max-height:240px;overflow-y:auto;z-index:50;box-shadow:var(--shadow)"></div>
+              </div>
+              <div id="customerSelectedBanner" style="display:none;margin-top:6px;background:var(--accent-light);border:1px solid #A8D8BC;border-radius:var(--radius);padding:6px 10px;font-size:12px;color:var(--accent);display:flex;justify-content:space-between;align-items:center">
+                <span id="customerSelectedLabel"></span>
+                <button onclick="clearCustomerSearch()" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:15px;padding:0;line-height:1">&#10005;</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Route</label>
+              <select id="orderRoute" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;background:var(--surface)">
+                <option value="">Select route...</option>
               </select>
             </div>
-            <div class="field"><label>Route</label><input id="orderRoute" class="input-plain" readonly style="background:var(--surface2);color:var(--text2)" placeholder="Auto-filled from customer"></div>
             <div class="field"><label>Order Date</label><input type="date" id="orderDate" class="input-plain"></div>
             <div class="field"><label>Delivery Date</label><input type="date" id="orderDelivery" class="input-plain"></div>
             <div class="field full"><label>Notes (optional)</label><input type="text" id="orderNotes" class="input-plain" placeholder="Special instructions..."></div>
@@ -897,7 +916,7 @@ function onLoginSuccess() {
 
 function doLogout() {
   currentUser=null; selectedSP=null;
-  _qtyMap.clear(); _prodCache=[];
+  _qtyMap.clear(); _prodCache=[]; _custCache=[];
   document.getElementById('appScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('spView').style.display='none';
@@ -949,24 +968,137 @@ async function loadSalespersonData() {
   } catch(e){toast('Error loading data: '+e.message,'error');}
 }
 
-function populateCustomerDrop(){
-  const sel=document.getElementById('orderCustomer');
-  // Build all at once — innerHTML concat inside a loop causes a reflow per iteration
-  const opts=['<option value="">Select customer...</option>'];
-  allCustomers.forEach(c=>{
-    const n=c['Customer']||c['CUSTOMER']||c['Name']||Object.values(c)[0]||'';
-    const r=c['Route']||c['ROUTE']||'';
-    if(n) opts.push(`<option value="${n}" data-route="${r}">${n}</option>`);
-  });
-  sel.innerHTML=opts.join('');
+// ── CUSTOMER SEARCH ─────────────────────────────────────────────────
+// Build a pre-processed cache of customers for fast searching
+let _custHighlightIdx = -1;
+
+function buildCustomerCache(){
+  _custCache = allCustomers.map((c, i) => {
+    // Detect account number column flexibly
+    const name   = c['Customer']||c['CUSTOMER']||c['Name']||c['name']||'';
+    const acct   = c['Account No']||c['Account Number']||c['AccountNo']||c['Account']||
+                   c['ACCOUNT']||c['Acct No']||c['Acct']||c['Code']||c['CODE']||
+                   c['Customer Code']||c['CustomerCode']||'';
+    const route  = c['Route']||c['ROUTE']||c['route']||'';
+    return {
+      idx: i, raw: c, name, acct, route,
+      search: (name+' '+acct+' '+route).toLowerCase()
+    };
+  }).filter(c => c.name || c.acct);
 }
+
+function populateCustomerDrop(){
+  // Build the route dropdown from allRoutes (admin-managed in sheet)
+  const routeSel = document.getElementById('orderRoute');
+  const routeOpts = ['<option value="">Select route...</option>'];
+  allRoutes.forEach(r => {
+    const n = r['Route']||r['ROUTE']||r['route']||Object.values(r)[0]||'';
+    if(n) routeOpts.push(`<option value="${n}">${n}</option>`);
+  });
+  routeSel.innerHTML = routeOpts.join('');
+  // Build customer cache
+  buildCustomerCache();
+  // Attach customer search listeners
+  attachCustomerListeners();
+}
+
+function attachCustomerListeners(){
+  const inp = document.getElementById('customerSearch');
+  if(!inp || inp._listenersAttached) return;
+  inp._listenersAttached = true;
+  inp.addEventListener('input',   () => { renderCustomerDropdown(inp.value); showCustomerDropdown(); });
+  inp.addEventListener('focus',   () => { renderCustomerDropdown(inp.value); showCustomerDropdown(); });
+  inp.addEventListener('keydown', e  => customerSearchKey(e));
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.field') || !e.target.closest('.field').contains(inp)) {
+      hideCustomerDropdown();
+    }
+  });
+}
+
+function renderCustomerDropdown(q){
+  const dd = document.getElementById('customerDropdown');
+  const lower = (q||'').toLowerCase().trim();
+  const list = !lower ? _custCache : _custCache.filter(c => c.search.includes(lower));
+  if(!list.length){
+    dd.innerHTML = '<div class="sp-loading" style="color:var(--text3)">No customers found</div>';
+    return;
+  }
+  dd.innerHTML = list.slice(0,60).map(c => `
+    <div class="cust-opt" onclick="selectCustomer(${c.idx})">
+      <div class="cust-opt-name">${c.name}</div>
+      ${c.acct  ? `<div class="cust-opt-acct">Acct: ${c.acct}</div>` : ''}
+      ${c.route ? `<div class="cust-opt-route">${c.route}</div>` : ''}
+    </div>`).join('');
+  _custHighlightIdx = -1;
+}
+
+function showCustomerDropdown(){
+  const dd = document.getElementById('customerDropdown');
+  const inp = document.getElementById('customerSearch');
+  dd.style.display = 'block';
+  inp.style.borderColor = 'var(--accent)';
+  inp.style.boxShadow   = '0 0 0 3px var(--accent-light)';
+  inp.style.borderRadius = 'var(--radius) var(--radius) 0 0';
+}
+
+function hideCustomerDropdown(){
+  const dd  = document.getElementById('customerDropdown');
+  const inp = document.getElementById('customerSearch');
+  dd.style.display = 'none';
+  inp.style.borderColor  = 'var(--border)';
+  inp.style.boxShadow    = 'none';
+  inp.style.borderRadius = 'var(--radius)';
+}
+
+function selectCustomer(idx){
+  const c = _custCache.find(x => x.idx === idx);
+  if(!c) return;
+  document.getElementById('orderCustomer').value = c.name;
+  const label = c.name + (c.acct ? ' — Acct: '+c.acct : '');
+  document.getElementById('customerSelectedLabel').textContent = label;
+  document.getElementById('customerSelectedBanner').style.display = 'flex';
+  document.getElementById('customerSearch').value = label;
+  hideCustomerDropdown();
+  // Auto-select route if customer has one and it exists in route list
+  if(c.route){
+    const routeSel = document.getElementById('orderRoute');
+    for(let i=0; i<routeSel.options.length; i++){
+      if(routeSel.options[i].value === c.route){
+        routeSel.selectedIndex = i; break;
+      }
+    }
+  }
+}
+
+function clearCustomerSearch(){
+  document.getElementById('orderCustomer').value = '';
+  document.getElementById('customerSearch').value = '';
+  document.getElementById('customerSelectedBanner').style.display = 'none';
+  document.getElementById('orderRoute').selectedIndex = 0;
+  hideCustomerDropdown();
+}
+
+function customerSearchKey(e){
+  const opts = document.getElementById('customerDropdown').querySelectorAll('.cust-opt');
+  if(!opts.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); _custHighlightIdx=Math.min(_custHighlightIdx+1,opts.length-1); hiCustOpt(opts); }
+  else if(e.key==='ArrowUp'){   e.preventDefault(); _custHighlightIdx=Math.max(_custHighlightIdx-1,0); hiCustOpt(opts); }
+  else if(e.key==='Enter'){     e.preventDefault(); if(_custHighlightIdx>=0) opts[_custHighlightIdx].click(); }
+  else if(e.key==='Escape'){    hideCustomerDropdown(); }
+}
+function hiCustOpt(opts){
+  opts.forEach((o,i)=>o.classList.toggle('hi',i===_custHighlightIdx));
+  if(_custHighlightIdx>=0) opts[_custHighlightIdx].scrollIntoView({block:'nearest'});
+}
+
 function onCustomerChange(){
-  const sel=document.getElementById('orderCustomer');
-  document.getElementById('orderRoute').value=sel.options[sel.selectedIndex]?.dataset?.route||'';
+  // Legacy — kept for compatibility; actual logic now in selectCustomer()
 }
 // Pre-processed lists — computed once, reused on every filter/render
-let _prodCache = [];
-let _spCache   = [];
+let _prodCache  = [];
+let _spCache    = [];
+let _custCache  = [];
 function buildProductCache(){
   _prodCache = allProducts.map((p,i) => ({
     idx: i,
@@ -1041,9 +1173,11 @@ function getItems(){
 }
 async function submitOrder(){
   const customer=document.getElementById('orderCustomer').value;
-  if(!customer){toast('Please select a customer','error');return;}
+  if(!customer){toast('Please search and select a customer','error');document.getElementById('customerSearch').focus();return;}
   const items=getItems(); if(!items.length){toast('Please add at least one product','error');return;}
-  const payload={salesperson:currentUser.name,route:document.getElementById('orderRoute').value,customer,
+  const route=document.getElementById('orderRoute').value;
+  if(!route){toast('Please select a route','error');return;}
+  const payload={salesperson:currentUser.name,route,customer,
     orderDate:document.getElementById('orderDate').value,deliveryDate:document.getElementById('orderDelivery').value,
     notes:document.getElementById('orderNotes').value,items};
   const btn=document.getElementById('submitOrderBtn');
@@ -1053,7 +1187,7 @@ async function submitOrder(){
     if(res.success){
       toast(`Order ${res.orderId} saved — ${res.rowsAdded} line(s) written to sheet`,'success');
       clearAllQty();
-      document.getElementById('orderCustomer').value=''; document.getElementById('orderRoute').value='';
+      clearCustomerSearch();
       document.getElementById('orderNotes').value=''; document.getElementById('orderDate').value=today;
       document.getElementById('orderDelivery').value=today; document.getElementById('orderSummary').style.display='none';
     } else toast('Error: '+(res.error||'Unknown error'),'error');
@@ -1249,7 +1383,7 @@ function api(action,body={}){
 function cacheData(d){
   allSalespeople=d.salespeople||[];allCustomers=d.customers||[];
   allProducts=d.products||[];allRoutes=d.routes||[];
-  _prodCache=[]; _spCache=[]; // invalidate render caches when data refreshes
+  _prodCache=[]; _spCache=[]; _custCache=[]; // invalidate render caches when data refreshes
 }
 function groupById(rows){
   const g={};
