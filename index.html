@@ -369,6 +369,25 @@ textarea.inp{resize:vertical;min-height:80px}
 .btn-wa:hover{background:#1ebe5d}
 .btn-dl{width:100%;padding:14px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
 .btn-dl:hover{background:#155229}
+.btn-xlsx{width:100%;padding:14px;background:#1D6F42;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
+.btn-xlsx:hover{background:#155732}
+
+/* ── ORDER HISTORY SEARCH BAR ── */
+.oh-search-wrap{background:#fff;border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.oh-search-inp-wrap{flex:1;min-width:180px;position:relative}
+.oh-search-inp-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.oh-search-inp{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;transition:border-color .2s}
+.oh-search-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
+.oh-search-inp::placeholder{color:#bbb}
+.oh-filter-pills{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.oh-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;background:#fff;white-space:nowrap;font-family:inherit}
+.oh-pill:hover{border-color:var(--accent);color:var(--accent)}
+.oh-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.oh-results-count{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+.oh-clear-search{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:2px 6px;line-height:1;transition:color .15s;display:none}
+.oh-clear-search:hover{color:var(--text)}
+.oh-clear-search.show{display:block}
+.oh-highlight{background:var(--accent-lt);color:var(--accent);border-radius:2px;padding:0 1px}
 /* ══════════════════════════════════════════
    MOBILE RESPONSIVE — nothing hidden, everything reflows
    ══════════════════════════════════════════ */
@@ -443,7 +462,14 @@ textarea.inp{resize:vertical;min-height:80px}
   .share-btns{display:flex;flex-direction:column;gap:10px}
   .share-btns .btn-wa,
   .share-btns .btn-dl,
+  .share-btns .btn-xlsx,
   .share-btns .btn-dark{width:100%}
+
+  /* ── Order history search bar ── */
+  .oh-search-wrap{flex-direction:column;align-items:stretch}
+  .oh-search-inp-wrap{min-width:100%}
+  .oh-filter-pills{justify-content:flex-start}
+  .oh-results-count{text-align:right}
 
   /* ── Summary table in submit step ── */
   .summary-table{min-width:340px;width:100%}
@@ -786,6 +812,10 @@ textarea.inp{resize:vertical;min-height:80px}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             Share via WhatsApp
           </button>
+          <button class="btn-xlsx" onclick="exportOrderAsExcel()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export as Excel (.xlsx)
+          </button>
           <button class="btn-dl" onclick="downloadOrder()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download as Text
@@ -909,6 +939,23 @@ textarea.inp{resize:vertical;min-height:80px}
           <canvas id="main-chart" height="220"></canvas>
         </div>
       </div>
+    </div>
+
+    <!-- Order History Search & Filter -->
+    <div class="oh-search-wrap">
+      <div class="oh-search-inp-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="oh-search-inp" id="oh-search" placeholder="Search by salesman, customer, route, product…" oninput="applyOrderSearch()">
+      </div>
+      <button class="oh-clear-search" id="oh-clear-btn" onclick="clearOrderSearch()" title="Clear search">✕</button>
+      <div class="oh-filter-pills">
+        <button class="oh-pill active" id="ohp-all"       onclick="setOHPill('all')">All</button>
+        <button class="oh-pill"        id="ohp-today"     onclick="setOHPill('today')">Today</button>
+        <button class="oh-pill"        id="ohp-week"      onclick="setOHPill('week')">This week</button>
+        <button class="oh-pill"        id="ohp-proj"      onclick="setOHPill('proj')">Projection</button>
+        <button class="oh-pill"        id="ohp-full"      onclick="setOHPill('full')">Full order</button>
+      </div>
+      <span class="oh-results-count" id="oh-results-count"></span>
     </div>
 
     <!-- Table -->
@@ -3382,6 +3429,249 @@ function fmtDate(d) {
   const [y,m,day] = d.split('-');
   return `${day}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]}-${y}`;
 }
+
+// ══════════════════════════════════════════
+//  EXCEL EXPORT — from salesman success screen
+// ══════════════════════════════════════════
+function exportOrderAsExcel() {
+  if (!S._lastOrder) { toast('No order data to export'); return; }
+  const o = S._lastOrder;
+
+  if (typeof XLSX === 'undefined') {
+    toast('Excel library not loaded — try downloading as text instead');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Order Lines (one row per product per customer) ──
+  const linesData = [
+    ['Date','Salesman','Payroll','Location','Route','Order Type','Customer','Customer Code',
+     'Product Code','Product','Category','Pack','Qty','Unit Price (KES)','Total (KES)','Weight (KG)','Notes']
+  ];
+  o.customerOrders.forEach(co => {
+    co.cart.forEach(item => {
+      linesData.push([
+        o.date, o.salesman, o.payroll||'', o.location, o.route, o.type,
+        co.customer, co.custCode||'',
+        item.code, item.desc, item.cat||'', item.pack,
+        item.qty, item.price, item.total, item.totalKg||0, o.notes||''
+      ]);
+    });
+  });
+  const wsLines = XLSX.utils.aoa_to_sheet(linesData);
+  // Column widths
+  wsLines['!cols'] = [
+    {wch:12},{wch:20},{wch:12},{wch:14},{wch:18},{wch:18},
+    {wch:22},{wch:14},{wch:12},{wch:26},{wch:14},{wch:12},
+    {wch:6},{wch:14},{wch:14},{wch:12},{wch:28}
+  ];
+  XLSX.utils.book_append_sheet(wb, wsLines, 'Order Lines');
+
+  // ── Sheet 2: Customer Totals ──
+  const custData = [
+    ['Customer','Customer Code','Items','Total (KES)','Weight (KG)']
+  ];
+  o.customerOrders.forEach(co => {
+    const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
+    const totKg  = co.cart.reduce((s,i)=>s+(i.totalKg||0),0);
+    custData.push([co.customer, co.custCode||'', co.cart.length, totAmt, +totKg.toFixed(2)]);
+  });
+  const grandAmt = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+(i.totalKg||0),0),0);
+  custData.push(['','','GRAND TOTAL', grandAmt, +grandKg.toFixed(2)]);
+  const wsCust = XLSX.utils.aoa_to_sheet(custData);
+  wsCust['!cols'] = [{wch:24},{wch:14},{wch:8},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsCust, 'By Customer');
+
+  // ── Sheet 3: Product Totals ──
+  const prodMap = {};
+  o.customerOrders.forEach(co => {
+    co.cart.forEach(item => {
+      const key = item.code + '||' + item.pack;
+      if (!prodMap[key]) prodMap[key] = { code:item.code, desc:item.desc, cat:item.cat||'', pack:item.pack, qty:0, total:0, kg:0 };
+      prodMap[key].qty   += item.qty;
+      prodMap[key].total += item.total;
+      prodMap[key].kg    += (item.totalKg||0);
+    });
+  });
+  const prodData = [['Product Code','Product','Category','Pack','Total Qty','Total (KES)','Total Weight (KG)']];
+  Object.values(prodMap).sort((a,b)=>b.total-a.total).forEach(p => {
+    prodData.push([p.code, p.desc, p.cat, p.pack, p.qty, p.total, +p.kg.toFixed(2)]);
+  });
+  const wsProd = XLSX.utils.aoa_to_sheet(prodData);
+  wsProd['!cols'] = [{wch:12},{wch:26},{wch:14},{wch:12},{wch:10},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsProd, 'By Product');
+
+  const filename = `Order-${o.salesman.replace(/[^a-zA-Z0-9]/g,'-')}-${o.date}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  toast('Excel file downloaded ✓');
+}
+
+// ══════════════════════════════════════════
+//  ORDER HISTORY SEARCH & FILTER
+// ══════════════════════════════════════════
+let _ohSearchTerm = '';
+let _ohPill = 'all';
+let _ohAllRows = []; // cache of all rendered order data
+
+// Called by the dashboard after it renders orders — patch into applyDashFilters
+const _origApplyDashFilters = typeof applyDashFilters === 'function' ? applyDashFilters : null;
+
+function ohHighlight(text, q) {
+  if (!q || !text) return text || '';
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(new RegExp('(' + escaped + ')', 'gi'),
+    '<span class="oh-highlight">$1</span>');
+}
+
+function applyOrderSearch() {
+  _ohSearchTerm = (document.getElementById('oh-search')?.value || '').trim().toLowerCase();
+  const clearBtn = document.getElementById('oh-clear-btn');
+  if (clearBtn) clearBtn.classList.toggle('show', _ohSearchTerm.length > 0);
+  renderFilteredOrders();
+}
+
+function clearOrderSearch() {
+  const inp = document.getElementById('oh-search');
+  if (inp) inp.value = '';
+  _ohSearchTerm = '';
+  const clearBtn = document.getElementById('oh-clear-btn');
+  if (clearBtn) clearBtn.classList.remove('show');
+  renderFilteredOrders();
+}
+
+function setOHPill(pill) {
+  _ohPill = pill;
+  ['all','today','week','proj','full'].forEach(p => {
+    const el = document.getElementById('ohp-' + p);
+    if (el) el.classList.toggle('active', p === pill);
+  });
+  renderFilteredOrders();
+}
+
+function renderFilteredOrders() {
+  const tbody = document.getElementById('dash-orders-body');
+  if (!tbody) return;
+
+  // Get today's date string YYYY-MM-DD
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const weekAgo  = new Date(now); weekAgo.setDate(now.getDate() - 7);
+  const weekStr  = weekAgo.toISOString().slice(0,10);
+
+  // Grab all rendered rows (data stored as dataset attributes we'll add)
+  const allRows = Array.from(tbody.querySelectorAll('.order-row[data-searchable]'));
+  let visible = 0;
+
+  allRows.forEach(row => {
+    const searchable = (row.dataset.searchable || '').toLowerCase();
+    const rowDate    = row.dataset.date || '';
+    const rowType    = (row.dataset.type || '').toLowerCase();
+
+    // Pill filter
+    let pillPass = true;
+    if (_ohPill === 'today') pillPass = rowDate === todayStr;
+    else if (_ohPill === 'week') pillPass = rowDate >= weekStr;
+    else if (_ohPill === 'proj') pillPass = rowType.includes('projection');
+    else if (_ohPill === 'full') pillPass = rowType.includes('full');
+
+    // Text search
+    const termPass = !_ohSearchTerm || searchable.includes(_ohSearchTerm);
+
+    const show = pillPass && termPass;
+    row.style.display = show ? '' : 'none';
+
+    // Apply highlight to visible cells
+    if (show) {
+      visible++;
+      if (_ohSearchTerm) {
+        row.querySelectorAll('[data-raw]').forEach(cell => {
+          cell.innerHTML = ohHighlight(cell.dataset.raw, _ohSearchTerm);
+        });
+      } else {
+        row.querySelectorAll('[data-raw]').forEach(cell => {
+          cell.textContent = cell.dataset.raw;
+        });
+      }
+    }
+  });
+
+  // Update results count
+  const countEl = document.getElementById('oh-results-count');
+  if (countEl) {
+    if (_ohSearchTerm || _ohPill !== 'all') {
+      countEl.textContent = `${visible} of ${allRows.length} order${allRows.length!==1?'s':''}`;
+    } else {
+      countEl.textContent = allRows.length ? `${allRows.length} order${allRows.length!==1?'s':''}` : '';
+    }
+  }
+
+  // Show empty state
+  let emptyEl = tbody.querySelector('.oh-no-results');
+  if (visible === 0 && allRows.length > 0) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('div');
+      emptyEl.className = 'no-orders oh-no-results';
+      tbody.appendChild(emptyEl);
+    }
+    emptyEl.textContent = _ohSearchTerm
+      ? `No orders matching "${_ohSearchTerm}"`
+      : 'No orders for this filter';
+    emptyEl.style.display = '';
+  } else if (emptyEl) {
+    emptyEl.style.display = 'none';
+  }
+}
+
+// Hook into the dashboard order rendering to tag rows with searchable data
+// We monkey-patch renderDashOrders if it exists, otherwise wait for it
+function tagOrderRowsForSearch() {
+  const tbody = document.getElementById('dash-orders-body');
+  if (!tbody) return;
+  tbody.querySelectorAll('.order-row:not([data-searchable])').forEach(row => {
+    // Build a searchable string from all visible text in the row
+    const cells = row.querySelectorAll('div, span');
+    let parts = [];
+    cells.forEach(c => {
+      const t = c.textContent.trim();
+      if (t) parts.push(t);
+    });
+
+    // Also tag cells that should be highlighted
+    const divs = row.querySelectorAll('div');
+    divs.forEach(d => {
+      const t = d.textContent.trim();
+      if (t && !d.querySelector('div') && !d.querySelector('span')) {
+        d.dataset.raw = t;
+      }
+    });
+
+    row.dataset.searchable = parts.join(' ');
+    // Try to extract date and type
+    const dateEl = row.querySelector('.or-date');
+    if (dateEl) {
+      // Convert display date back to YYYY-MM-DD for comparison
+      const txt = dateEl.textContent.trim(); // e.g. "29-Mar-2026"
+      const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+      const m = txt.match(/(\d+)-([A-Za-z]+)-(\d+)/);
+      if (m) row.dataset.date = `${m[3]}-${String(months[m[2]]||1).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
+    const typeEl = row.querySelector('.or-type');
+    if (typeEl) row.dataset.type = typeEl.textContent.trim();
+  });
+}
+
+// Watch for dashboard order renders using MutationObserver
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('dash-orders-body');
+  if (!tbody) return;
+  const obs = new MutationObserver(() => {
+    tagOrderRowsForSearch();
+    applyOrderSearch();
+  });
+  obs.observe(tbody, { childList: true, subtree: true });
+});
 </script>
 </body>
 </html>
