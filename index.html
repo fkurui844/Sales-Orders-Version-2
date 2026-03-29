@@ -1621,27 +1621,31 @@ async function openDashboard() {
   document.getElementById('dash-app').style.display      = 'flex';
   document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
 
-  // Set today as default date range (last 30 days)
-  const today = new Date();
-  const from  = new Date(today); from.setDate(from.getDate() - 30);
-  const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  document.getElementById('df-to').value   = fmt(today);
-  document.getElementById('df-from').value = fmt(from);
+  // Default: show all orders (no date filter pre-applied, so nothing is hidden)
+  document.getElementById('df-to').value   = '';
+  document.getElementById('df-from').value = '';
+  document.getElementById('df-sp').value   = '';
+  document.getElementById('df-type').value = '';
 
   await loadDashOrders();
 }
 
 async function loadDashOrders() {
   showLoad('Loading orders…');
+  const body = document.getElementById('dash-orders-body');
+  body.innerHTML = '<div class="no-orders">⏳ Loading orders…</div>';
   try {
     const rows = await gas({ action: 'getOrders' });
     allOrders = Array.isArray(rows) ? rows : [];
+    if (!allOrders.length) {
+      body.innerHTML = '<div class="no-orders">📭 No orders have been submitted yet.</div>';
+    }
     populateSPFilter();
     applyDashFilters();
   } catch(e) {
-    toast('Could not load orders: ' + e.message);
     allOrders = [];
-    renderDashTable([]);
+    body.innerHTML = `<div class="no-orders" style="color:#C62828">⚠️ Could not load orders.<br><span style="font-size:11px;color:var(--muted)">${e.message}</span><br><br><button onclick="loadDashOrders()" style="margin-top:8px;padding:8px 20px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">Retry</button></div>`;
+    toast('Could not load orders: ' + e.message);
   } finally {
     hideLoad();
   }
@@ -1720,7 +1724,11 @@ function updateDashStats() {
 function renderDashTable(rows) {
   const body = document.getElementById('dash-orders-body');
   if (!rows.length) {
-    body.innerHTML = '<div class="no-orders">📭 No orders found for the selected filters.</div>';
+    const hasFilters = document.getElementById('df-sp').value || document.getElementById('df-type').value
+      || document.getElementById('df-from').value || document.getElementById('df-to').value;
+    body.innerHTML = hasFilters
+      ? '<div class="no-orders">📭 No orders match the selected filters.<br><button onclick="clearDashFilters()" style="margin-top:10px;padding:7px 18px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">Clear Filters</button></div>'
+      : '<div class="no-orders">📭 No orders have been submitted yet.</div>';
     return;
   }
 
