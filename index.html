@@ -363,9 +363,9 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="card">
         <div class="card-title"><div class="card-icon">🏪</div>Select Customer</div>
         <div class="fg" style="margin-bottom:0">
-          <label class="lbl">Customer Name</label>
+          <label class="lbl">Customer Name / Account No.</label>
           <div class="dd-wrap" id="cust-wrap">
-            <input class="inp" id="cust-inp" placeholder="Search customer…" autocomplete="off">
+            <input class="inp" id="cust-inp" placeholder="Type name or account number to search…" autocomplete="off">
             <div class="dd-list" id="cust-list"></div>
           </div>
         </div>
@@ -922,31 +922,42 @@ function initCustomerSearch() {
   if (S.customer) buildProductUI();
 }
 
+// Customer column key constants (matches "Customers" sheet headers)
+const CUST_NAME_KEYS = ['Customer Name','CustomerName','Name','Customer','CUSTOMER NAME','CUSTOMER','customer name','Client Name','CLIENT NAME'];
+const CUST_CODE_KEYS = ['Customer Code','CustomerCode','Code','Acc Code','ACC CODE','Account Code','ACCOUNT CODE','Account No','Account No.','Acc No','ACC NO','ACCOUNT NO','customer code','acc code','account no'];
+const CUST_ROUTE_KEYS = ['Route','ROUTE','route','Route Name','ROUTE NAME'];
+
 function renderCustList(q) {
   const list = document.getElementById('cust-list');
   const custs = S.data.customers || [];
   if (!custs.length) { list.innerHTML = '<div class="dd-empty">No customers loaded</div>'; return; }
 
-  const c0   = custs[0];
-  const nk   = findKey(c0, ['Customer Name','CustomerName','Name','Customer','CUSTOMER NAME','CUSTOMER']);
-  const ck   = findKey(c0, ['Customer Code','CustomerCode','Code','ACC CODE','Account Code','Acc Code','ACCOUNT CODE']);
-  const rk   = findKey(c0, ['Route','ROUTE','route']);
+  const c0 = custs[0];
+  const nk = findKey(c0, CUST_NAME_KEYS);
+  const ck = findKey(c0, CUST_CODE_KEYS);
+  const rk = findKey(c0, CUST_ROUTE_KEYS);
 
   const lq = q.toLowerCase();
   const filtered = custs.filter(c => {
-    const rMatch = !S.route || !c[rk] || (c[rk]||'').toLowerCase() === S.route.toLowerCase();
-    return rMatch && ((c[nk]||'').toLowerCase().includes(lq) || (c[ck]||'').toLowerCase().includes(lq));
-  }).slice(0, 40);
+    const rVal = rk ? (c[rk]||'').toLowerCase() : '';
+    const rMatch = !S.route || !rVal || rVal === S.route.toLowerCase();
+    const nameMatch = (c[nk]||'').toLowerCase().includes(lq);
+    const codeMatch = ck ? (c[ck]||'').toLowerCase().includes(lq) : false;
+    return rMatch && (nameMatch || codeMatch);
+  }).slice(0, 50);
 
   list.innerHTML = '';
-  if (!filtered.length) { list.innerHTML = '<div class="dd-empty">No customers found</div>'; return; }
+  if (!filtered.length) {
+    list.innerHTML = `<div class="dd-empty">No customers found${q ? ' for "' + q + '"' : ''}</div>`;
+    return;
+  }
 
   filtered.forEach(c => {
     const name = c[nk] || '';
-    const code = c[ck] || '';
+    const code = ck ? (c[ck] || '') : '';
     const d = document.createElement('div');
     d.className = 'dd-item';
-    d.innerHTML = `${name}${code ? `<span class="sub">${code}</span>` : ''}`;
+    d.innerHTML = `${name}${code ? `<span class="sub">Acc No: ${code}</span>` : ''}`;
     d.onclick = () => {
       S.customer = { name, code, raw: c };
       document.getElementById('cust-inp').value = name;
