@@ -1290,86 +1290,116 @@ window.addEventListener('DOMContentLoaded', () => {
   loadData();
 });
 
-// ── Normalise master data from Firebase ───────────────────────────────────────
-// Firebase REST (used by GAS) stores JS arrays as integer-keyed objects.
-// The JS SDK usually re-converts them, but this is not guaranteed for large
-// arrays or when stored via PUT. We always force proper arrays here.
+// ── localStorage master-data cache ─────────────────────────────────────────────
+// 30-minute TTL. Lets the login screen appear instantly on repeat visits.
+const LS_DATA_KEY = 'salesorder_masterdata_v1';
+const LS_DATA_TTL = 30 * 60 * 1000;
+
+function lsDataSave(data) {
+  try {
+    localStorage.setItem(LS_DATA_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch(e) { /* storage full — ignore */ }
+}
+
+function lsDataLoad() {
+  try {
+    const raw = localStorage.getItem(LS_DATA_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > LS_DATA_TTL) { localStorage.removeItem(LS_DATA_KEY); return null; }
+    return data;
+  } catch(e) { return null; }
+}
+
+// ── Normalise master data from Firebase ───────────────────────────────────────────────
+// Firebase REST stores arrays as integer-keyed objects when written via PUT.
+// Force proper arrays so .filter/.find always work.
 function normaliseData(data) {
   if (!data || typeof data !== 'object') return data;
   ['salespeople','customers','products','routes'].forEach(k => {
     const v = data[k];
     if (!v) { data[k] = []; return; }
-    if (!Array.isArray(v) && typeof v === 'object') {
-      data[k] = Object.values(v);
-    }
+    if (!Array.isArray(v) && typeof v === 'object') data[k] = Object.values(v);
   });
   return data;
 }
 
+// ── Update selSP / selSetSP after a background refresh ───────────────────────
+function refreshSelections(freshData) {
+  const sps = freshData.salespeople || [];
+  if (selSP) {
+    const nk = findKey(selSP, NAME_KEYS), pk = findKey(selSP, PAYROLL_KEYS);
+    const name = (selSP[nk]||'').trim(), pay = (selSP[pk]||'').trim();
+    const hit = sps.find(s => {
+      const snk = findKey(s, NAME_KEYS), spk = findKey(s, PAYROLL_KEYS);
+      return (s[snk]||'').trim() === name || (pay && (s[spk]||'').trim() === pay);
+    });
+    if (hit) selSP = hit;
+  }
+  if (selSetSP) {
+    const nk = findKey(selSetSP, NAME_KEYS), name = (selSetSP[nk]||'').trim();
+    const hit = sps.find(s => (s[findKey(s, NAME_KEYS)]||'').trim() === name);
+    if (hit) selSetSP = hit;
+  }
+}
+
 async function loadData() {
+  // ── 1. Serve from localStorage immediately (0 ms) ────────────────────────────
+  const cached = lsDataLoad();
+  if (cached) {
+    S.data = normaliseData(cached);
+    // Login screen already visible — refresh passwords silently in background
+    _backgroundRefresh();
+    return;
+  }
+
+  // ── 2. No cache — race Firebase vs 4-second timeout then fall back to GAS ──
   showLoad('Loading data…');
-  let usedFirebase = false;
   try {
-    // Try Firebase first (~0ms if synced)
-    const snap = await db.ref('/masterData').get();
-    if (snap.exists()) {
-      S.data = normaliseData(snap.val());
-      usedFirebase = true;
-    } else {
-      // Firebase not yet populated — fall back to GAS and trigger a sync
-      S.data = await gas({ action: 'getData' });
-      gas({ action: 'syncMasterData' }); // populate Firebase for next time
-    }
-  } catch(e) {
-    // Any Firebase error — fall back to GAS silently
+    let data = null;
+
+    // Race Firebase against a 4-second timeout
     try {
-      S.data = await gas({ action: 'getData' });
-    } catch(e2) {
-      toast('Could not load app data. Check your connection.');
+      const fbPromise = db.ref('/masterData').get();
+      const raceTimeout = new Promise((_, rej) =>
+        setTimeout(() => rej(new Error('firebase_slow')), 4000)
+      );
+      const snap = await Promise.race([fbPromise, raceTimeout]);
+      if (snap && snap.exists()) data = normaliseData(snap.val());
+    } catch(fbErr) {
+      // Firebase was slow or errored — fall through to GAS
     }
+
+    if (!data) {
+      try {
+        data = normaliseData(await gas({ action: 'getData' }, { timeoutMs: 25000 }));
+        gas({ action: 'syncMasterData' }); // prime Firebase for next visit
+      } catch(gasErr) {
+        toast('Could not load app data. Check your connection.');
+        return;
+      }
+    }
+
+    S.data = data;
+    lsDataSave(S.data);
   } finally {
     hideLoad();
   }
 
-  // ── Background GAS refresh ───────────────────────────────────────────────
-  // Firebase master data may be seconds or minutes behind the sheet,
-  // which means recently-set passwords won't be in Firebase yet.
-  // We fire a silent GAS fetch right after the fast Firebase load so that
-  // by the time the user finishes typing their password the data is fresh.
-  if (usedFirebase) {
-    gas({ action: 'getData' }).then(fresh => {
-      if (!fresh || !fresh.salespeople) return;
-      S.data = normaliseData(fresh);
-
-      // If the user already selected themselves in the login dropdown,
-      // update selSP to the fresh object so the password field is current.
-      if (selSP) {
-        const nk   = findKey(selSP, NAME_KEYS);
-        const pk   = findKey(selSP, PAYROLL_KEYS);
-        const name = (selSP[nk] || '').trim();
-        const pay  = (selSP[pk] || '').trim();
-        const refreshed = (S.data.salespeople || []).find(s => {
-          const snk = findKey(s, NAME_KEYS);
-          const spk = findKey(s, PAYROLL_KEYS);
-          return (s[snk]||'').trim() === name || (pay && (s[spk]||'').trim() === pay);
-        });
-        if (refreshed) selSP = refreshed;
-      }
-      // Same update for the set-password panel
-      if (selSetSP) {
-        const nk   = findKey(selSetSP, NAME_KEYS);
-        const name = (selSetSP[nk] || '').trim();
-        const refreshed = (S.data.salespeople || []).find(s => {
-          const snk = findKey(s, NAME_KEYS);
-          return (s[snk]||'').trim() === name;
-        });
-        if (refreshed) selSetSP = refreshed;
-      }
-    }).catch(() => { /* silent — Firebase data is still usable */ });
-  }
+  // Background refresh to keep passwords current after a cold load
+  _backgroundRefresh();
 }
 
-// ══════════════════════════════════════════
+// Silently fetch fresh data from GAS and update selSP/selSetSP if needed
+function _backgroundRefresh() {
+  gas({ action: 'getData' }, { timeoutMs: 25000 }).then(fresh => {
+    if (!fresh || !fresh.salespeople) return;
+    S.data = normaliseData(fresh);
+    lsDataSave(S.data);
+    refreshSelections(S.data);
+  }).catch(() => { /* silent — cached data is still usable */ });
+}
+
 //  KEY DETECTION HELPER
 // ══════════════════════════════════════════
 function findKey(obj, candidates, fallback) {
