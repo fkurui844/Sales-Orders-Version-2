@@ -126,20 +126,6 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .ot-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:3px}
 .ot-desc{font-size:11px;color:var(--muted);line-height:1.4}
 
-/* ── PRODUCT SEARCH BAR ── */
-.prod-search-bar{padding:10px 12px;background:#fff;border-bottom:2px solid var(--border);display:flex;gap:8px;align-items:center;position:sticky;top:52px;z-index:50}
-.prod-search-inp{flex:1;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238E8880' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;transition:border-color .2s}
-.prod-search-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
-.prod-search-inp::placeholder{color:#bbb}
-.prod-cat-sel{padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;color:var(--text);background:#fff;cursor:pointer;min-width:110px;transition:border-color .2s}
-.prod-cat-sel:focus{outline:none;border-color:var(--accent)}
-.prod-clear-btn{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);background:#fff;cursor:pointer;white-space:nowrap;transition:all .15s;display:none}
-.prod-clear-btn.vis{display:block}
-.prod-clear-btn:hover{border-color:var(--accent);color:var(--accent)}
-.prod-count-lbl{padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border)}
-.prod-row.hidden{display:none}
-.cat-header.hidden{display:none}
-
 /* ── PRODUCT LIST ── */
 .prod-header{padding:11px 16px;background:var(--bg);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .cat-header{padding:7px 16px;background:#FAF7F4;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
@@ -181,27 +167,14 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 /* ── BANNER ── */
 .banner{background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;padding:10px 14px;font-size:12px;color:#E65100;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
-/* ── SUCCESS ── */
-.share-btns{display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto}
-.btn-wa{width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .1s}
-.btn-wa:hover{background:#1ebe5d}
-.btn-wa:active{transform:scale(.98)}
-.btn-dl{width:100%;padding:14px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .1s}
-.btn-dl:hover{background:#155229}
-.btn-dl:active{transform:scale(.98)}
+/* ── ORDER PREVIEW ── */
 .order-preview{background:#fff;border-radius:12px;padding:18px;margin:16px 0;text-align:left;box-shadow:var(--shadow);font-size:13px;max-width:420px;margin-left:auto;margin-right:auto}
-.order-preview-head{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--border)}
-.order-preview-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.opm-k{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.opm-v{font-weight:600;font-size:13px}
-.order-preview-line{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);gap:8px}
-.order-preview-line:last-child{border-bottom:none}
-.opl-name{font-weight:500;flex:1}
-.opl-code{font-size:10px;color:var(--muted);display:block}
-.opl-qty{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-align:right;white-space:nowrap}
+.order-preview-head{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.order-preview-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.opm-k{color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.opm-v{font-weight:600;font-size:12px}
 .order-preview-total{display:flex;justify-content:space-between;padding:10px 0 0;margin-top:4px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;border-top:2px solid var(--border)}
-
-/* ── SUCCESS HEADER ── */
+/* ── SUCCESS ── */
 .success-wrap{text-align:center;padding:56px 20px}
 .s-ico{font-size:64px;margin-bottom:18px;animation:pop .4s ease}
 @keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
@@ -215,7 +188,10 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 
 textarea.inp{resize:vertical;min-height:80px}
 
-
+/* ── DASHBOARD BUTTON on login ── */
+.btn-dash{width:100%;padding:14px;background:linear-gradient(135deg,#1A1714 0%,#2d2a27 100%);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-dash:hover{opacity:.88}
+.btn-dash:active{transform:scale(.98)}
 
 /* ── DASHBOARD APP SHELL ── */
 #dash-app{display:none;flex-direction:column;min-height:100vh;background:var(--bg)}
@@ -224,7 +200,9 @@ textarea.inp{resize:vertical;min-height:80px}
 .dash-head-logo span{color:var(--accent)}
 .dash-head-right{display:flex;align-items:center;gap:10px;font-size:12px;opacity:.8}
 
-
+/* ── DASHBOARD PANEL C login ── */
+#panel-dash{display:none}
+#panel-dash.active{display:block}
 
 /* ── STATS ROW ── */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
@@ -261,7 +239,54 @@ textarea.inp{resize:vertical;min-height:80px}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;padding:0 20px;margin-bottom:14px}
 .modal-close{position:absolute;top:14px;right:16px;background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
 
+/* ── SP SELECTOR on dashboard login ── */
+.dash-sp-pill{display:inline-flex;align-items:center;gap:6px;background:var(--ok-lt);border:1.5px solid var(--ok);color:var(--ok);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;margin-bottom:12px}
 
+/* ── MULTI-CUSTOMER ORDERS ── */
+.cust-orders-list{margin-bottom:14px}
+.co-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.co-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg);border-bottom:1px solid var(--border);gap:8px}
+.co-head-left{flex:1;min-width:0}
+.co-cust-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-cust-code{font-size:11px;color:var(--muted)}
+.co-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.co-total{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent)}
+.co-edit-btn{background:none;border:1.5px solid var(--border);border-radius:7px;padding:5px 10px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);transition:all .15s}
+.co-edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+.co-del-btn{background:none;border:1.5px solid var(--border);border-radius:7px;padding:5px 8px;font-size:14px;cursor:pointer;color:var(--muted);transition:all .15s}
+.co-del-btn:hover{border-color:#C62828;color:#C62828}
+.co-lines{padding:0 16px}
+.co-line{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px}
+.co-line:last-child{border-bottom:none}
+.co-line-name{flex:1;font-weight:500}
+.co-line-sub{font-size:10px;color:var(--muted);display:block}
+.co-line-right{text-align:right;white-space:nowrap}
+.co-line-qty{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px}
+.co-line-amt{font-size:11px;color:var(--muted)}
+.add-cust-btn{width:100%;padding:14px;background:#fff;border:2px dashed var(--border);border-radius:var(--radius);font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
+.add-cust-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
+.grand-total-bar{background:var(--text);color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+.gt-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px;opacity:.75}
+.gt-row:last-child{margin-bottom:0}
+.gt-main{display:flex;justify-content:space-between;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px}
+.gt-main span:last-child{color:var(--accent)}
+/* ── PRODUCT SUMMARY TABLE ── */
+.summary-table{width:100%;border-collapse:collapse;font-size:12px}
+.summary-table th{background:var(--bg);padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)}
+.summary-table th:last-child,.summary-table td:last-child{text-align:right}
+.summary-table td{padding:9px 12px;border-bottom:1px solid var(--border)}
+.summary-table tr:last-child td{border-bottom:none}
+.summary-table tr:hover td{background:var(--accent-lt)}
+.st-code{font-size:10px;color:var(--muted);display:block}
+.st-qty{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;color:var(--accent)}
+.st-amt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px}
+.summary-cat-row td{background:#FAF7F4;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:5px 12px}
+/* ── SHARE BUTTONS ── */
+.share-btns{display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto}
+.btn-wa{width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
+.btn-wa:hover{background:#1ebe5d}
+.btn-dl{width:100%;padding:14px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
+.btn-dl:hover{background:#155229}
 </style>
 </head>
 <body>
@@ -284,7 +309,7 @@ textarea.inp{resize:vertical;min-height:80px}
     <!-- ── PANEL A: SIGN IN ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
-      <div class="logo-sub">Sign in to continue</div>
+      <div class="logo-sub">Sign in to place orders</div>
 
       <div class="fg">
         <label class="lbl">Your Name / Payroll Number</label>
@@ -297,14 +322,13 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="fg" id="title-field" style="display:none">
         <label class="lbl">Title</label>
         <input class="inp" id="ln-title" readonly placeholder="—"
-          style="background:var(--accent-lt);color:var(--accent);font-weight:600;border-color:var(--accent)">
+          style="font-weight:600;border-color:var(--accent)">
       </div>
 
       <div class="fg">
         <label class="lbl">Password</label>
         <div class="pw-wrap">
-          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password"
-            onkeydown="if(event.key==='Enter')doLogin()">
+          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
           <button class="pw-eye" tabindex="-1" onclick="toggleEye('pw-inp',this)">👁</button>
         </div>
       </div>
@@ -443,95 +467,97 @@ textarea.inp{resize:vertical;min-height:80px}
     </div>
   </div>
 
-  <!-- ── STEP 2: ADD ITEMS ── -->
+  <!-- ── STEP 2: ADD ITEMS (multi-customer) ── -->
   <div id="step-items" style="display:none">
-    <div class="content">
 
-      <!-- Customer -->
-      <div class="card">
-        <div class="card-title"><div class="card-icon">🏪</div>Select Customer</div>
-        <div class="fg" style="margin-bottom:0">
-          <label class="lbl">Customer Name / Account No.</label>
-          <div class="dd-wrap" id="cust-wrap">
-            <input class="inp" id="cust-inp" placeholder="Type name or account number to search…" autocomplete="off">
-            <div class="dd-list" id="cust-list"></div>
+    <!-- SUB-VIEW A: list of saved customer orders -->
+    <div id="step2-list">
+      <div class="content">
+        <div class="cust-orders-list" id="cust-orders-list" style="display:none"></div>
+        <div class="grand-total-bar" id="grand-total-bar" style="display:none">
+          <div class="gt-main"><span>Grand Total</span><span id="gt-amount">KES 0</span></div>
+          <div class="gt-row"><span>Customers</span><span id="gt-custs">0</span></div>
+          <div class="gt-row"><span>Total Lines</span><span id="gt-lines">0</span></div>
+          <div class="gt-row"><span>Total Weight</span><span id="gt-kg">0.00 KG</span></div>
+        </div>
+        <button class="add-cust-btn" id="add-cust-btn" onclick="openAddCustomer()">
+          ＋ Add Customer Order
+        </button>
+      </div>
+      <div class="sticky-ft">
+        <button class="btn-ghost" onclick="setStep(1)">← Back</button>
+        <button class="btn-accent" id="go3-btn" onclick="go3()" disabled style="opacity:.45">Review &amp; Submit →</button>
+      </div>
+    </div>
+
+    <!-- SUB-VIEW B: pick customer + add products -->
+    <div id="step2-add" style="display:none">
+      <div class="content">
+        <div class="card">
+          <div class="card-title"><div class="card-icon">🏪</div><span id="add-cust-title">Select Customer</span></div>
+          <div class="fg" style="margin-bottom:0">
+            <label class="lbl">Customer Name / Account No.</label>
+            <div class="dd-wrap" id="cust-wrap">
+              <input class="inp" id="cust-inp" placeholder="Type name or account number to search…" autocomplete="off">
+              <div class="dd-list" id="cust-list"></div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- Filter banner -->
-      <div class="banner" id="filter-banner" style="display:none">
-        🌅 <span>Morning Projection — showing <strong>Fresh Milk</strong> products only</span>
-      </div>
-
-      <!-- Products -->
-      <div class="card" style="padding:0;overflow:hidden">
-        <div class="prod-header">Select Products</div>
-
-        <!-- Search / filter bar (shown after customer selected) -->
-        <div class="prod-search-bar" id="prod-search-bar" style="display:none">
-          <input class="prod-search-inp" id="prod-search" type="text"
-            placeholder="Search by name or product code…"
-            oninput="filterProducts()">
-          <select class="prod-cat-sel" id="prod-cat-sel" onchange="filterProducts()">
-            <option value="">All Categories</option>
-          </select>
-          <button class="prod-clear-btn" id="prod-clear-btn" onclick="clearProductSearch()">✕ Clear</button>
+        <div class="banner" id="filter-banner" style="display:none">
+          🌅 <span>Morning Projection — showing <strong>Fresh Milk</strong> products only</span>
         </div>
-
-        <div class="prod-count-lbl" id="prod-count-lbl" style="display:none"></div>
-
-        <div id="prod-list">
-          <div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">
-            Select a customer to load products
-          </div>
-        </div>
-      </div>
-
-      <!-- Cart -->
-      <div id="cart-sec" style="display:none">
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="prod-header">Order Lines</div>
-          <div id="cart-lines"></div>
+          <div class="prod-header">Select Products</div>
+          <div class="prod-search-bar" id="prod-search-bar" style="display:none">
+            <input class="prod-search-inp" id="prod-search" type="text" placeholder="Search by name or product code…" oninput="filterProducts()">
+            <select class="prod-cat-sel" id="prod-cat-sel" onchange="filterProducts()"><option value="">All Categories</option></select>
+            <button class="prod-clear-btn" id="prod-clear-btn" onclick="clearProductSearch()">✕ Clear</button>
+          </div>
+          <div class="prod-count-lbl" id="prod-count-lbl" style="display:none"></div>
+          <div id="prod-list"><div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Select a customer to load products</div></div>
         </div>
-        <div class="total-bar">
-          <div><div class="tb-lbl">Order Total</div><div class="tb-val" id="cart-total">KES 0</div></div>
-          <div style="text-align:right"><div class="tb-lbl">Total Weight</div><div class="tb-val" id="cart-kg">0.00 KG</div></div>
+        <div id="cart-sec" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="prod-header">Order Lines</div>
+            <div id="cart-lines"></div>
+          </div>
+          <div class="total-bar">
+            <div><div class="tb-lbl">Order Total</div><div class="tb-val" id="cart-total">KES 0</div></div>
+            <div style="text-align:right"><div class="tb-lbl">Total Weight</div><div class="tb-val" id="cart-kg">0.00 KG</div></div>
+          </div>
         </div>
       </div>
+      <div class="sticky-ft">
+        <button class="btn-ghost" onclick="cancelAddCustomer()">← Back</button>
+        <button class="btn-accent" onclick="saveCustomerOrder()">Save Customer Order ✓</button>
+      </div>
+    </div>
 
-    </div>
-    <div class="sticky-ft">
-      <button class="btn-ghost" onclick="setStep(1)">← Back</button>
-      <button class="btn-accent" onclick="go3()">Review Order →</button>
-    </div>
   </div>
 
-  <!-- ── STEP 3: SUBMIT ── -->
+  <!-- ── STEP 3: REVIEW & SUBMIT ── -->
   <div id="step-submit" style="display:none">
     <div class="content">
-
       <div class="card">
         <div class="card-title"><div class="card-icon">📋</div>Order Summary</div>
         <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
           <div id="order-summary"></div>
         </div>
       </div>
-
+      <div id="submit-customer-orders"></div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div class="prod-header">Line Items</div>
-        <div id="submit-lines"></div>
+        <div class="prod-header">📊 Product Totals — All Customers</div>
+        <div style="overflow-x:auto"><table class="summary-table" id="submit-summary-table"></table></div>
       </div>
-
+      <div class="grand-total-bar" id="submit-grand-total" style="margin-top:0"></div>
       <div class="card">
         <label class="lbl">Notes (Optional)</label>
-        <textarea class="inp" id="notes-inp" placeholder="Special instructions…" rows="3"></textarea>
+        <textarea class="inp" id="notes-inp" placeholder="Special instructions for the whole batch…" rows="3"></textarea>
       </div>
-
     </div>
     <div class="sticky-ft">
       <button class="btn-ghost" onclick="setStep(2)">← Back</button>
-      <button class="btn-accent" id="sub-btn" onclick="submitOrder()">Submit Order ✓</button>
+      <button class="btn-accent" id="sub-btn" onclick="submitOrder()">Submit All Orders ✓</button>
     </div>
   </div>
 
@@ -540,17 +566,13 @@ textarea.inp{resize:vertical;min-height:80px}
     <div class="content">
       <div class="success-wrap">
         <div class="s-ico">✅</div>
-        <div class="s-title">Order Submitted!</div>
-        <div class="s-sub">Your order has been recorded successfully.</div>
+        <div class="s-title">Orders Submitted!</div>
+        <div class="s-sub">All customer orders have been recorded successfully.</div>
         <div class="s-id" id="ok-id"></div>
-
-        <!-- Order preview card -->
-        <div class="order-preview" id="ok-preview"></div>
-
-        <!-- Share / Download buttons -->
+        <div class="order-preview" id="ok-preview" style="text-align:left"></div>
         <div class="share-btns">
           <button class="btn-wa" onclick="shareWhatsApp()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             Share via WhatsApp
           </button>
           <button class="btn-dl" onclick="downloadOrder()">
@@ -661,6 +683,9 @@ const S = {
   orderType: 'projection',
   customer: null,
   cart: [],
+  customerOrders: [],   // [{customer, custCode, raw, cart:[...]}]
+  _editingIdx: -1,
+  _lastOrder: null,
   _locKey: '',
   _routeKey: '',
 };
@@ -672,24 +697,18 @@ const S = {
 // ══════════════════════════════════════════
 const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
 const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
-// Column D = index 3 in the salesperson object (0-based)
-// Try known header names first; fall back to reading the 4th key of the object
-const TITLE_KEYS      = ['Title','TITLE','title','Tittle','TITTLE','tittle','Job Title','Role','Position','Designation','Type','Category'];
+const TITLE_KEYS   = ['Title','TITLE','title','Tittle','TITTLE','Job Title','Role','Position','Designation','Type','Category'];
 const SALESMAN_TITLES = ['salesman','saleswoman','saleslady','sales rep','sales representative','rep','sales'];
-
 function getTitle(sp) {
   if (!sp) return '';
-  // 1. Try known header names
   const tk = findKey(sp, TITLE_KEYS);
-  if (tk) return (sp[tk] || '').trim();
-  // 2. Fall back to column D = 4th key (index 3)
+  if (tk) return (sp[tk]||'').trim();
   const keys = Object.keys(sp);
-  if (keys.length >= 4) return (sp[keys[3]] || '').trim();
+  if (keys.length >= 4) return (sp[keys[3]]||'').trim();
   return '';
 }
-
 function isSalesmanTitle(title) {
-  if (!title) return true; // no title → treat as salesman
+  if (!title) return true;
   const t = title.toLowerCase().trim();
   return SALESMAN_TITLES.some(s => t.includes(s));
 }
@@ -937,17 +956,14 @@ function renderLoginList(q) {
       selSP = sp;
       document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
       list.classList.remove('open');
-      // Show title field (reads column D by name or index)
       const titleVal = getTitle(sp);
-      const titleField = document.getElementById('title-field');
-      const titleInp   = document.getElementById('ln-title');
-      // Color-code by role
-      const isSales = isSalesmanTitle(titleVal);
-      titleInp.value = titleVal || '(no title set)';
-      titleInp.style.background    = isSales ? '#E8F5ED' : '#FFF3E8';
-      titleInp.style.color         = isSales ? '#1B6B3A' : 'var(--accent)';
-      titleInp.style.borderColor   = isSales ? '#1B6B3A' : 'var(--accent)';
-      titleField.style.display = 'block';
+      const isSales  = isSalesmanTitle(titleVal);
+      const titleInp = document.getElementById('ln-title');
+      titleInp.value = titleVal || '(no title)';
+      titleInp.style.background  = isSales ? '#E8F5ED' : '#FFF3E8';
+      titleInp.style.color       = isSales ? '#1B6B3A' : 'var(--accent)';
+      titleInp.style.borderColor = isSales ? '#1B6B3A' : 'var(--accent)';
+      document.getElementById('title-field').style.display = 'block';
       document.getElementById('pw-inp').focus();
     };
     list.appendChild(d);
@@ -976,16 +992,13 @@ function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  // Route by Title (column D by header name or position)
   const title = getTitle(selSP);
-
   if (isSalesmanTitle(title)) {
-    startApp(selSP);   // → place orders
+    startApp(selSP);
   } else {
-    // Guest / Supervisor → dashboard only
-    const nk = findKey(selSP, NAME_KEYS);
-    const pk = findKey(selSP, PAYROLL_KEYS);
-    dashUser = { name: selSP[nk] || '', payroll: selSP[pk] || '', title };
+    const nk2 = findKey(selSP, NAME_KEYS);
+    const pk2 = findKey(selSP, PAYROLL_KEYS);
+    dashUser = { name: selSP[nk2]||'', payroll: selSP[pk2]||'', title };
     document.getElementById('login-screen').style.display = 'none';
     openDashboard();
   }
@@ -1009,12 +1022,10 @@ function startApp(sp) {
 }
 
 function logout() {
-  selSP = null; S.user = null; S.cart = []; S.customer = null; S.route = ''; S.location = '';
+  selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = '';
   document.getElementById('ln-inp').value = '';
   document.getElementById('pw-inp').value = '';
   document.getElementById('login-err').style.display = 'none';
-  document.getElementById('title-field').style.display = 'none';
-  document.getElementById('ln-title').value = '';
   showPanel('signin');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
@@ -1115,13 +1126,115 @@ function pickOT(type) {
 function go2() {
   S.location  = document.getElementById('who-loc').value;
   S.orderDate = document.getElementById('order-date').value;
-
   if (!S.location)  { toast('Please select your location'); return; }
   if (!S.route)     { toast('Please select your route'); return; }
   if (!S.orderDate) { toast('Please select an order date'); return; }
-
-  initCustomerSearch();
+  S.customerOrders = [];
   setStep(2);
+  showStep2List();
+}
+
+function showStep2List() {
+  document.getElementById('step2-list').style.display = 'block';
+  document.getElementById('step2-add').style.display  = 'none';
+  renderCustomerOrdersList();
+}
+
+function openAddCustomer(editIdx) {
+  S._editingIdx = (editIdx !== undefined) ? editIdx : -1;
+  if (S._editingIdx >= 0) {
+    const co = S.customerOrders[S._editingIdx];
+    S.customer = { name: co.customer, code: co.custCode, raw: co.raw || {} };
+    S.cart = co.cart.map(i => ({...i}));
+    document.getElementById('add-cust-title').textContent = 'Edit: ' + co.customer;
+    document.getElementById('cust-inp').value = co.customer;
+  } else {
+    S.customer = null; S.cart = [];
+    document.getElementById('add-cust-title').textContent = 'Select Customer';
+    document.getElementById('cust-inp').value = '';
+  }
+  document.getElementById('step2-list').style.display = 'none';
+  document.getElementById('step2-add').style.display  = 'block';
+  document.getElementById('prod-search-bar').style.display = 'none';
+  document.getElementById('prod-list').innerHTML = '<div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Select a customer to load products</div>';
+  document.getElementById('filter-banner').style.display = 'none';
+  initCustomerSearch();
+  if (S.customer) buildProductUI();
+  renderCart();
+}
+
+function cancelAddCustomer() {
+  S.customer = null; S.cart = []; S._editingIdx = -1;
+  showStep2List();
+}
+
+function saveCustomerOrder() {
+  if (!S.customer) { toast('Please select a customer'); return; }
+  if (!S.cart.length) { toast('Please add at least one product'); return; }
+  const order = { customer: S.customer.name, custCode: S.customer.code, raw: S.customer.raw||{}, cart: S.cart.map(i=>({...i})) };
+  if (S._editingIdx >= 0) {
+    S.customerOrders[S._editingIdx] = order;
+  } else {
+    const ex = S.customerOrders.findIndex(o => o.customer === S.customer.name && o.custCode === S.customer.code);
+    if (ex >= 0) S.customerOrders[ex] = order; else S.customerOrders.push(order);
+  }
+  S.customer = null; S.cart = []; S._editingIdx = -1;
+  showStep2List();
+  toast('Customer order saved ✓');
+}
+
+function removeCustomerOrder(idx) {
+  S.customerOrders.splice(idx, 1);
+  renderCustomerOrdersList();
+}
+
+function renderCustomerOrdersList() {
+  const listEl = document.getElementById('cust-orders-list');
+  const gtBar  = document.getElementById('grand-total-bar');
+  const go3Btn = document.getElementById('go3-btn');
+  const addBtn = document.getElementById('add-cust-btn');
+  if (!S.customerOrders.length) {
+    listEl.style.display = 'none'; gtBar.style.display = 'none';
+    go3Btn.disabled = true; go3Btn.style.opacity = '.45';
+    addBtn.innerHTML = '＋ Add Customer Order'; return;
+  }
+  listEl.style.display = 'block'; gtBar.style.display = 'block';
+  go3Btn.disabled = false; go3Btn.style.opacity = '1';
+  addBtn.innerHTML = '＋ Add Another Customer';
+  let grandAmt = 0, grandKg = 0, grandLines = 0;
+  listEl.innerHTML = '';
+  S.customerOrders.forEach((co, idx) => {
+    const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
+    const totKg  = co.cart.reduce((s,i)=>s+i.totalKg,0);
+    grandAmt += totAmt; grandKg += totKg; grandLines += co.cart.length;
+    let linesHtml = '';
+    co.cart.forEach(item => {
+      linesHtml += `<div class="co-line">
+        <div class="co-line-name">${item.desc}<span class="co-line-sub">${item.code} · ${item.pack}</span></div>
+        <div class="co-line-right"><div class="co-line-qty">×${item.qty}</div><div class="co-line-amt">KES ${item.total.toLocaleString()}</div></div>
+      </div>`;
+    });
+    const card = document.createElement('div');
+    card.className = 'co-card';
+    card.innerHTML = `
+      <div class="co-head">
+        <div class="co-head-left">
+          <div class="co-cust-name">${co.customer}</div>
+          ${co.custCode ? `<div class="co-cust-code">${co.custCode} · ${co.cart.length} item${co.cart.length!==1?'s':''}</div>` : ''}
+        </div>
+        <div class="co-head-right">
+          <div class="co-total">KES ${totAmt.toLocaleString()}</div>
+          <button class="co-edit-btn" onclick="openAddCustomer(${idx})">✏️ Edit</button>
+          <button class="co-del-btn" onclick="removeCustomerOrder(${idx})">🗑</button>
+        </div>
+      </div>
+      <div class="co-lines">${linesHtml}</div>`;
+    listEl.appendChild(card);
+  });
+  document.getElementById('gt-amount').textContent = 'KES ' + grandAmt.toLocaleString();
+  document.getElementById('gt-custs').textContent  = S.customerOrders.length;
+  document.getElementById('gt-lines').textContent  = grandLines;
+  document.getElementById('gt-kg').textContent     = grandKg.toFixed(2) + ' KG';
 }
 
 // ══════════════════════════════════════════
@@ -1283,26 +1396,10 @@ function buildProductUI() {
     (groups[cat] = groups[cat]||[]).push(p);
   });
 
-  // Populate category dropdown
-  const catSel = document.getElementById('prod-cat-sel');
-  catSel.innerHTML = '<option value="">All Categories</option>';
-  Object.keys(groups).forEach(cat => {
-    const o = document.createElement('option');
-    o.value = o.textContent = cat;
-    catSel.appendChild(o);
-  });
-
-  // Show search bar
-  document.getElementById('prod-search-bar').style.display = 'flex';
-  document.getElementById('prod-search').value = '';
-  document.getElementById('prod-clear-btn').classList.remove('vis');
-  document.getElementById('prod-count-lbl').style.display = 'none';
-
   container.innerHTML = '';
   Object.entries(groups).forEach(([cat, items]) => {
     const ch = document.createElement('div');
     ch.className = 'cat-header';
-    ch.dataset.cat = cat;
     ch.textContent = cat;
     container.appendChild(ch);
 
@@ -1319,9 +1416,6 @@ function buildProductUI() {
 
       const row = document.createElement('div');
       row.className = 'prod-row';
-      row.dataset.cat  = cat;
-      row.dataset.code = code.toLowerCase();
-      row.dataset.desc = desc.toLowerCase();
       row.innerHTML = `
         <div>
           <div class="prod-name">${desc}</div>
@@ -1346,55 +1440,6 @@ function buildProductUI() {
   });
 
   renderCart();
-}
-
-// ── PRODUCT SEARCH / FILTER ──────────────────────────────────────────────────
-function filterProducts() {
-  const q      = (document.getElementById('prod-search').value || '').toLowerCase().trim();
-  const selCat = (document.getElementById('prod-cat-sel').value || '').toLowerCase().trim();
-  const rows   = document.querySelectorAll('#prod-list .prod-row');
-  const heads  = document.querySelectorAll('#prod-list .cat-header');
-
-  let visible = 0;
-  const catsWithVisible = new Set();
-
-  rows.forEach(row => {
-    const desc    = row.dataset.desc || '';
-    const code    = row.dataset.code || '';
-    const rowCat  = (row.dataset.cat || '').toLowerCase();
-    const matchQ   = !q   || desc.includes(q) || code.includes(q);
-    const matchCat = !selCat || rowCat === selCat;
-    const show = matchQ && matchCat;
-    row.classList.toggle('hidden', !show);
-    if (show) { visible++; catsWithVisible.add(row.dataset.cat); }
-  });
-
-  // Hide category headers that have no visible rows
-  heads.forEach(h => {
-    h.classList.toggle('hidden', !catsWithVisible.has(h.dataset.cat));
-  });
-
-  // Show/hide clear button
-  const hasFilter = q || selCat;
-  document.getElementById('prod-clear-btn').classList.toggle('vis', !!hasFilter);
-
-  // Count label
-  const total = rows.length;
-  const lbl = document.getElementById('prod-count-lbl');
-  if (hasFilter) {
-    lbl.style.display = 'block';
-    lbl.textContent = visible === total
-      ? `All ${total} products`
-      : `${visible} of ${total} products`;
-  } else {
-    lbl.style.display = 'none';
-  }
-}
-
-function clearProductSearch() {
-  document.getElementById('prod-search').value = '';
-  document.getElementById('prod-cat-sel').value = '';
-  filterProducts();
 }
 
 function changeQty(code, pack, price, kg, desc, cat, delta) {
@@ -1467,24 +1512,20 @@ function removeCart(i) {
 }
 
 function go3() {
-  if (!S.customer)    { toast('Please select a customer'); return; }
-  if (!S.cart.length) { toast('Please add at least one product'); return; }
+  if (!S.customerOrders.length) { toast('Please add at least one customer order'); return; }
   buildSubmitStep();
   setStep(3);
 }
 
 // ══════════════════════════════════════════
-//  STEP 3 — SUBMIT
+//  STEP 3 — SUBMIT (multi-customer)
 // ══════════════════════════════════════════
 function buildSubmitStep() {
-  const sp   = S.user;
-  const nk   = findKey(sp, NAME_KEYS);
-  const pk   = findKey(sp, PAYROLL_KEYS);
-  const name = sp[nk] || '';
-  const pay  = sp[pk]  || '';
+  const sp = S.user, nk = findKey(sp, NAME_KEYS), pk = findKey(sp, PAYROLL_KEYS);
+  const name = sp[nk]||'', pay = sp[pk]||'';
   const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
-  const totAmt = S.cart.reduce((s,i) => s+i.total, 0);
-  const totKg  = S.cart.reduce((s,i) => s+i.totalKg, 0);
+  const grandAmt = S.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = S.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.totalKg,0),0);
 
   document.getElementById('order-summary').innerHTML = `
     <div class="sum-row"><span class="sum-k">Salesman</span><span class="sum-v">${name}</span></div>
@@ -1493,188 +1534,113 @@ function buildSubmitStep() {
     <div class="sum-row"><span class="sum-k">Route</span><span class="sum-v">${S.route}</span></div>
     <div class="sum-row"><span class="sum-k">Order Date</span><span class="sum-v">${fmtDate(S.orderDate)}</span></div>
     <div class="sum-row"><span class="sum-k">Order Type</span><span class="sum-v"><span class="tag">${otLbl}</span></span></div>
-    <div class="sum-row"><span class="sum-k">Customer</span><span class="sum-v">${S.customer.name}</span></div>
-    <div class="sum-row"><span class="sum-k">Customer Code</span><span class="sum-v">${S.customer.code||'—'}</span></div>
-    <div class="sum-row"><span class="sum-k">Order Total</span><span class="sum-v" style="color:var(--accent);font-size:16px">KES ${totAmt.toLocaleString()}</span></div>
-    <div class="sum-row"><span class="sum-k">Total Weight</span><span class="sum-v">${totKg.toFixed(2)} KG</span></div>
+    <div class="sum-row"><span class="sum-k">Customers</span><span class="sum-v">${S.customerOrders.length}</span></div>
   `;
 
-  const lines = document.getElementById('submit-lines');
-  lines.innerHTML = '';
-  S.cart.forEach(item => {
-    const d = document.createElement('div');
-    d.className = 'cart-line';
-    d.innerHTML = `
-      <div class="cl-info">
-        <div class="cl-prod">${item.desc} <span class="badge">${item.code}</span></div>
-        <div class="cl-det">${item.cat} · ${item.pack} · Qty: ${item.qty} · KES ${item.price.toLocaleString()}/unit · ${item.totalKg.toFixed(2)} KG</div>
+  // Per-customer cards
+  const custEl = document.getElementById('submit-customer-orders');
+  custEl.innerHTML = '';
+  S.customerOrders.forEach(co => {
+    const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
+    let linesHtml = '';
+    co.cart.forEach(item => {
+      linesHtml += `<div class="co-line">
+        <div class="co-line-name">${item.desc}<span class="co-line-sub">${item.code} · ${item.pack}</span></div>
+        <div class="co-line-right"><div class="co-line-qty">×${item.qty}</div><div class="co-line-amt">KES ${item.total.toLocaleString()}</div></div>
+      </div>`;
+    });
+    const card = document.createElement('div');
+    card.className = 'co-card';
+    card.innerHTML = `
+      <div class="co-head">
+        <div class="co-head-left">
+          <div class="co-cust-name">${co.customer}</div>
+          ${co.custCode?`<div class="co-cust-code">${co.custCode} · ${co.cart.length} line${co.cart.length!==1?'s':''}</div>`:''}
+        </div>
+        <div class="co-head-right"><div class="co-total">KES ${totAmt.toLocaleString()}</div></div>
       </div>
-      <div class="cl-total">KES ${item.total.toLocaleString()}</div>
-    `;
-    lines.appendChild(d);
+      <div class="co-lines">${linesHtml}</div>`;
+    custEl.appendChild(card);
   });
+
+  // Product totals by category
+  const prodMap = {};
+  S.customerOrders.forEach(co => {
+    co.cart.forEach(item => {
+      const key = item.code+'||'+item.pack;
+      if (!prodMap[key]) prodMap[key]={desc:item.desc,code:item.code,pack:item.pack,cat:item.cat||'General',qty:0,total:0};
+      prodMap[key].qty+=item.qty; prodMap[key].total+=item.total;
+    });
+  });
+  const catMap = {};
+  Object.values(prodMap).forEach(p=>{(catMap[p.cat]=catMap[p.cat]||[]).push(p);});
+  let tbl = '<thead><tr><th>Product</th><th>Pack</th><th style="text-align:center">Total Qty</th><th>Total (KES)</th></tr></thead><tbody>';
+  Object.entries(catMap).forEach(([cat,prods])=>{
+    tbl += `<tr class="summary-cat-row"><td colspan="4">${cat}</td></tr>`;
+    prods.sort((a,b)=>b.qty-a.qty).forEach(p=>{
+      tbl+=`<tr><td><span style="font-weight:500">${p.desc}</span><span class="st-code">${p.code}</span></td><td style="color:var(--muted);font-size:11px">${p.pack}</td><td style="text-align:center"><span class="st-qty">${p.qty}</span></td><td><span class="st-amt">KES ${p.total.toLocaleString()}</span></td></tr>`;
+    });
+  });
+  tbl+='</tbody>';
+  document.getElementById('submit-summary-table').innerHTML = tbl;
+
+  document.getElementById('submit-grand-total').innerHTML = `
+    <div class="gt-main"><span>Grand Total</span><span style="color:var(--accent)">KES ${grandAmt.toLocaleString()}</span></div>
+    <div class="gt-row"><span>Customers</span><span>${S.customerOrders.length}</span></div>
+    <div class="gt-row"><span>Total Weight</span><span>${grandKg.toFixed(2)} KG</span></div>
+  `;
 }
 
+
 async function submitOrder() {
-  const sp   = S.user;
-  const nk   = findKey(sp, NAME_KEYS);
-  const pk   = findKey(sp, PAYROLL_KEYS);
-  const name = sp[nk] || '';
-  const pay  = sp[pk]  || '';
+  const sp = S.user, nk = findKey(sp, NAME_KEYS), pk = findKey(sp, PAYROLL_KEYS);
+  const name = sp[nk]||'', pay = sp[pk]||'';
   const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
   const notes = document.getElementById('notes-inp').value.trim();
 
-  const items = S.cart.map(i => ({
-    productCode : i.code,
-    product     : i.desc,
-    description : i.desc,
-    category    : i.cat,
-    packaging   : i.pack,
-    qty         : i.qty,
-    price       : i.price,
-    total       : i.total,
-    totalKg     : i.totalKg
-  }));
-
-  const params = {
-    action       : 'submitOrder',
-    salesperson  : name,
-    payroll      : pay,
-    route        : S.route,
-    location     : S.location,
-    orderType    : otLbl,
-    customer     : S.customer.name,
-    customerCode : S.customer.code,
-    orderDate    : S.orderDate,
-    deliveryDate : S.orderDate,
-    notes        : notes,
-    items        : JSON.stringify(items)
-  };
-
-  showLoad('Submitting order…');
+  showLoad('Submitting orders…');
   document.getElementById('sub-btn').disabled = true;
 
   try {
-    const res = await gas(params);
-    if (res.success) {
-      document.getElementById('ok-id').textContent = res.orderId;
-      // Snapshot the order BEFORE clearing cart
-      S._lastOrder = {
-        orderId  : res.orderId,
-        salesman : name,
-        payroll  : pay,
-        location : S.location,
-        route    : S.route,
-        date     : S.orderDate,
-        type     : otLbl,
-        customer : S.customer.name,
-        custCode : S.customer.code,
-        notes    : notes,
-        cart     : S.cart.map(i => ({...i}))
-      };
-      buildOrderPreview(S._lastOrder);
-      S.cart = [];
-      setStep(4);
-    } else {
-      toast('Error: ' + (res.error || 'Unknown error'));
+    const results = [];
+    for (const co of S.customerOrders) {
+      const items = co.cart.map(i => ({
+        productCode: i.code, product: i.desc, description: i.desc,
+        category: i.cat, packaging: i.pack, qty: i.qty,
+        price: i.price, total: i.total, totalKg: i.totalKg
+      }));
+      const res = await gas({
+        action: 'submitOrder', salesperson: name, payroll: pay,
+        route: S.route, location: S.location, orderType: otLbl,
+        customer: co.customer, customerCode: co.custCode,
+        orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
+        items: JSON.stringify(items)
+      });
+      if (!res.success) throw new Error('Failed for ' + co.customer + ': ' + (res.error||'unknown'));
+      results.push(res.orderId);
     }
+
+    // Snapshot for sharing
+    S._lastOrder = {
+      orderId: results[0], salesman: name, payroll: pay,
+      location: S.location, route: S.route, date: S.orderDate,
+      type: otLbl, notes, customerOrders: S.customerOrders.map(co=>({...co, cart:co.cart.map(i=>({...i}))}))
+    };
+    buildSuccessPreview(S._lastOrder);
+    document.getElementById('ok-id').textContent = results.length === 1 ? results[0] : results.length + ' orders submitted';
+    S.customerOrders = []; S.cart = [];
+    setStep(4);
   } catch(e) {
-    toast('Network error — please try again');
+    toast('Error: ' + e.message);
   } finally {
     hideLoad();
     document.getElementById('sub-btn').disabled = false;
   }
 }
 
-// ══════════════════════════════════════════
-//  ORDER PREVIEW & SHARING
-// ══════════════════════════════════════════
-function buildOrderPreview(o) {
-  const totAmt = o.cart.reduce((s,i) => s+i.total, 0);
-  const totKg  = o.cart.reduce((s,i) => s+i.totalKg, 0);
-  const el = document.getElementById('ok-preview');
-  if (!el) return;
-
-  let lines = '';
-  o.cart.forEach(item => {
-    lines += `
-      <div class="order-preview-line">
-        <div class="opl-name">${item.desc}<span class="opl-code">${item.code} · ${item.pack}</span></div>
-        <div class="opl-qty">×${item.qty}<br><span style="font-size:11px;color:var(--muted);font-weight:400">KES ${item.total.toLocaleString()}</span></div>
-      </div>`;
-  });
-
-  el.innerHTML = `
-    <div class="order-preview-head">📋 ${o.customer}${o.custCode ? ' <span style="font-size:13px;font-weight:400;color:var(--muted)">(${o.custCode})</span>' : ''}</div>
-    <div class="order-preview-meta">
-      <div><div class="opm-k">Salesman</div><div class="opm-v">${o.salesman}</div></div>
-      <div><div class="opm-k">Date</div><div class="opm-v">${fmtDate(o.date)}</div></div>
-      <div><div class="opm-k">Route</div><div class="opm-v">${o.route}</div></div>
-      <div><div class="opm-k">Type</div><div class="opm-v">${o.type}</div></div>
-    </div>
-    ${lines}
-    <div class="order-preview-total">
-      <span>Total</span>
-      <span style="color:var(--accent)">KES ${totAmt.toLocaleString()}</span>
-    </div>
-    ${totKg ? `<div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px">${totKg.toFixed(2)} KG</div>` : ''}
-    ${o.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)"><strong>Notes:</strong> ${o.notes}</div>` : ''}
-  `;
-}
-
-function buildOrderText(o) {
-  const totAmt = o.cart.reduce((s,i) => s+i.total, 0);
-  const totKg  = o.cart.reduce((s,i) => s+i.totalKg, 0);
-  const sep = '─────────────────────';
-  let txt = '';
-  txt += `🧾 *SALES ORDER*\n`;
-  txt += `${sep}\n`;
-  txt += `*Order ID:*  ${o.orderId}\n`;
-  txt += `*Date:*      ${fmtDate(o.date)}\n`;
-  txt += `*Salesman:*  ${o.salesman}${o.payroll ? ' (' + o.payroll + ')' : ''}\n`;
-  txt += `*Route:*     ${o.route}\n`;
-  txt += `*Location:*  ${o.location}\n`;
-  txt += `*Type:*      ${o.type}\n`;
-  txt += `${sep}\n`;
-  txt += `*Customer:*  ${o.customer}${o.custCode ? ' (' + o.custCode + ')' : ''}\n`;
-  txt += `${sep}\n`;
-  txt += `*LINE ITEMS*\n`;
-  o.cart.forEach((item, i) => {
-    txt += `${i+1}. ${item.desc}\n`;
-    txt += `   Code: ${item.code} | Pack: ${item.pack}\n`;
-    txt += `   Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*\n`;
-  });
-  txt += `${sep}\n`;
-  txt += `*TOTAL:  KES ${totAmt.toLocaleString()}*\n`;
-  if (totKg) txt += `*Weight: ${totKg.toFixed(2)} KG*\n`;
-  if (o.notes) txt += `\n📝 Notes: ${o.notes}\n`;
-  txt += `${sep}`;
-  return txt;
-}
-
-function shareWhatsApp() {
-  if (!S._lastOrder) { toast('No order data to share'); return; }
-  const txt = buildOrderText(S._lastOrder);
-  const url = 'https://wa.me/?text=' + encodeURIComponent(txt.replace(/\\n/g,'\n'));
-  window.open(url, '_blank');
-}
-
-function downloadOrder() {
-  if (!S._lastOrder) { toast('No order data to download'); return; }
-  const o   = S._lastOrder;
-  const txt = buildOrderText(o).replace(/\\n/g,'\n').replace(/\*/g,'');
-  const blob = new Blob([txt], { type: 'text/plain' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `Order-${o.orderId}-${o.customer.replace(/[^a-zA-Z0-9]/g,'-')}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Order downloaded ✓');
-}
-
 function newOrder() {
-  S.cart = []; S.customer = null; S.route = ''; S.location = '';
+  S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null;
+  S.route = ''; S.location = '';
   document.getElementById('who-loc').value = '';
   document.getElementById('route-inp').value = '';
   document.getElementById('route-inp').readOnly = true;
@@ -1694,26 +1660,19 @@ function gas(params) {
       .join('&');
 
     const s = document.createElement('script');
-
     const timer = setTimeout(() => {
       delete window[cb];
       if (s.parentNode) document.head.removeChild(s);
-      reject(new Error('Request timed out — check your GAS URL or internet connection'));
+      reject(new Error('Request timed out'));
     }, 30000);
-
     window[cb] = data => {
       clearTimeout(timer);
       delete window[cb];
       if (s.parentNode) document.head.removeChild(s);
       data && data.error ? reject(new Error(data.error)) : resolve(data);
     };
-
     s.src = GAS_URL + '?' + qs;
-    s.onerror = () => {
-      clearTimeout(timer);
-      delete window[cb];
-      reject(new Error('Network error — could not reach GAS URL'));
-    };
+    s.onerror = () => { clearTimeout(timer); delete window[cb]; reject(new Error('Network error')); };
     document.head.appendChild(s);
   });
 }
@@ -1754,8 +1713,7 @@ function showPanel(which) {
     if (el) el.classList.add('hidden');
   });
 
-  const target = which === 'set'  ? 'panel-set'
-               :                    'panel-signin';
+  const target = which === 'set' ? 'panel-set' : 'panel-signin';
 
   document.getElementById(target).classList.remove('hidden');
 
@@ -1767,7 +1725,7 @@ function showPanel(which) {
   const spOk = document.getElementById('sp-ok');
   if (spOk) spOk.style.display = 'none';
 
-  if (which === 'set')  { clearSetPwForm(); initSetPwSearch(); }
+  if (which === 'set') { clearSetPwForm(); initSetPwSearch(); }
 }
 
 // ══════════════════════════════════════════
@@ -1867,22 +1825,19 @@ async function openDashboard() {
   document.getElementById('login-screen').style.display  = 'none';
   document.getElementById('app').style.display           = 'none';
   document.getElementById('dash-app').style.display      = 'flex';
-  const label = dashUser.name + (dashUser.payroll ? ' (' + dashUser.payroll + ')' : '')
-              + (dashUser.title ? ' · ' + dashUser.title : '');
-  document.getElementById('dash-hdr-name').textContent = label;
+  document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
 
-  // Clear all filters so ALL orders show by default
-  document.getElementById('df-to').value   = '';
-  document.getElementById('df-from').value = '';
-  document.getElementById('df-sp').value   = '';
-  document.getElementById('df-type').value = '';
+  // Set today as default date range (last 30 days)
+  const today = new Date();
+  const from  = new Date(today); from.setDate(from.getDate() - 30);
+  const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('df-to').value   = fmt(today);
+  document.getElementById('df-from').value = fmt(from);
 
   await loadDashOrders();
 }
 
 async function loadDashOrders() {
-  const body = document.getElementById('dash-orders-body');
-  body.innerHTML = '<div class="no-orders">⏳ Fetching orders…</div>';
   showLoad('Loading orders…');
   try {
     const rows = await gas({ action: 'getOrders' });
@@ -1890,9 +1845,9 @@ async function loadDashOrders() {
     populateSPFilter();
     applyDashFilters();
   } catch(e) {
+    toast('Could not load orders: ' + e.message);
     allOrders = [];
-    body.innerHTML = '<div class="no-orders" style="color:#C62828">⚠️ Could not load orders: ' + e.message + '<br><br>'
-      + '<button onclick="loadDashOrders()" style="margin-top:8px;padding:8px 20px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">🔄 Retry</button></div>';
+    renderDashTable([]);
   } finally {
     hideLoad();
   }
@@ -1971,12 +1926,7 @@ function updateDashStats() {
 function renderDashTable(rows) {
   const body = document.getElementById('dash-orders-body');
   if (!rows.length) {
-    const hasFilters = document.getElementById('df-sp').value || document.getElementById('df-type').value
-      || document.getElementById('df-from').value || document.getElementById('df-to').value;
-    body.innerHTML = hasFilters
-      ? '<div class="no-orders">📭 No orders match the selected filters.<br>'
-        + '<button onclick="clearDashFilters()" style="margin-top:10px;padding:7px 18px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">Clear Filters</button></div>'
-      : '<div class="no-orders">📭 No orders have been submitted yet.</div>';
+    body.innerHTML = '<div class="no-orders">📭 No orders found for the selected filters.</div>';
     return;
   }
 
@@ -2098,15 +2048,100 @@ document.getElementById('order-modal').addEventListener('click', function(e) {
 // ══════════════════════════════════════════
 function dashLogout() {
   dashUser = null; allOrders = []; filteredOrders = [];
-  selSP = null;
-  document.getElementById('ln-inp').value = '';
-  document.getElementById('pw-inp').value = '';
-  document.getElementById('title-field').style.display = 'none';
-  document.getElementById('ln-title').value = '';
-  document.getElementById('login-err').style.display = 'none';
   document.getElementById('dash-app').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   showPanel('signin');
+}
+
+// ══════════════════════════════════════════
+//  SUCCESS PREVIEW & SHARING
+// ══════════════════════════════════════════
+function buildSuccessPreview(o) {
+  const el = document.getElementById('ok-preview');
+  if (!el) return;
+  const grandAmt = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.totalKg,0),0);
+  let html = `<div class="order-preview-head">🧾 ${o.salesman}${o.payroll?' ('+o.payroll+')':''}</div>
+    <div class="order-preview-meta">
+      <div><div class="opm-k">Date</div><div class="opm-v">${fmtDate(o.date)}</div></div>
+      <div><div class="opm-k">Route</div><div class="opm-v">${o.route}</div></div>
+      <div><div class="opm-k">Type</div><div class="opm-v">${o.type}</div></div>
+      <div><div class="opm-k">Customers</div><div class="opm-v">${o.customerOrders.length}</div></div>
+    </div>`;
+  o.customerOrders.forEach(co => {
+    const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
+    html += `<div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;padding:8px 0 4px;border-top:1px solid var(--border);margin-top:6px">${co.customer}${co.custCode?' <span style="font-weight:400;font-size:12px;color:var(--muted)">('+co.custCode+')</span>':''}</div>`;
+    co.cart.forEach(item => {
+      html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0">
+        <span style="color:var(--muted)">${item.desc} <span style="font-size:10px">[${item.code}]</span></span>
+        <span style="font-weight:600">×${item.qty} = KES ${item.total.toLocaleString()}</span>
+      </div>`;
+    });
+    html += `<div style="text-align:right;font-size:11px;color:var(--muted);padding-bottom:4px">Subtotal: KES ${totAmt.toLocaleString()}</div>`;
+  });
+  html += `<div class="order-preview-total"><span>Grand Total</span><span style="color:var(--accent)">KES ${grandAmt.toLocaleString()}</span></div>`;
+  if (grandKg) html += `<div style="text-align:right;font-size:11px;color:var(--muted);margin-top:3px">${grandKg.toFixed(2)} KG</div>`;
+  el.innerHTML = html;
+}
+
+function buildOrderText(o) {
+  const sep = '─────────────────────────────';
+  let txt = `🧾 *SALES ORDER BATCH*
+${sep}
+`;
+  txt += `*Salesman:* ${o.salesman}${o.payroll?' ('+o.payroll+')':''}
+`;
+  txt += `*Date:* ${fmtDate(o.date)}  |  *Route:* ${o.route}
+`;
+  txt += `*Location:* ${o.location}  |  *Type:* ${o.type}
+${sep}
+`;
+  o.customerOrders.forEach((co, ci) => {
+    const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
+    txt += `
+*${ci+1}. ${co.customer}*${co.custCode?' ('+co.custCode+')':''}
+`;
+    co.cart.forEach((item,ii) => {
+      txt += `   ${ii+1}. ${item.desc} [${item.code}]
+`;
+      txt += `      ${item.pack} · Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*
+`;
+    });
+    txt += `   _Subtotal: KES ${totAmt.toLocaleString()}_
+`;
+  });
+  const grandAmt = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.totalKg,0),0);
+  txt += `
+${sep}
+*GRAND TOTAL: KES ${grandAmt.toLocaleString()}*`;
+  if (grandKg) txt += `
+*Total Weight: ${grandKg.toFixed(2)} KG*`;
+  if (o.notes) txt += `
+📝 Notes: ${o.notes}`;
+  txt += `
+${sep}`;
+  return txt;
+}
+
+function shareWhatsApp() {
+  if (!S._lastOrder) { toast('No order data to share'); return; }
+  const txt = buildOrderText(S._lastOrder);
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
+function downloadOrder() {
+  if (!S._lastOrder) { toast('No order data to download'); return; }
+  const o = S._lastOrder;
+  const txt = buildOrderText(o).replace(/\*/g,'');
+  const blob = new Blob([txt], { type:'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `Orders-${o.salesman.replace(/[^a-zA-Z0-9]/g,'-')}-${o.date}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Downloaded ✓');
 }
 
 function fmtDate(d) {
