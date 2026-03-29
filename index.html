@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sales Order System</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -231,6 +231,33 @@ textarea.inp{resize:vertical;min-height:80px}
 .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .chart-body{position:relative;min-height:220px}
 
+/* ── EXPORT BUTTON ── */
+.btn-export{display:flex;align-items:center;gap:7px;padding:12px 18px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .1s;white-space:nowrap}
+.btn-export:hover{background:#155730}
+.btn-export:active{transform:scale(.97)}
+.btn-export:disabled{opacity:.5;cursor:not-allowed}
+.btn-export svg{flex-shrink:0}
+
+/* ── EXPORT MODAL ── */
+#export-modal{position:fixed;inset:0;background:rgba(26,23,20,.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+#export-modal.open{display:flex}
+.export-card{background:#fff;border-radius:20px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.export-card-head{background:var(--ok);color:#fff;padding:22px 24px 18px}
+.export-card-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;display:flex;align-items:center;gap:10px}
+.export-card-sub{font-size:12px;opacity:.8;margin-top:4px}
+.export-card-body{padding:20px 24px}
+.export-option{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:all .18s;margin-bottom:10px;background:#fff}
+.export-option:last-child{margin-bottom:0}
+.export-option:hover{border-color:var(--ok);background:var(--ok-lt)}
+.export-option.active{border-color:var(--ok);background:var(--ok-lt)}
+.export-opt-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.export-opt-info{flex:1}
+.export-opt-title{font-weight:700;font-size:14px;color:var(--text)}
+.export-opt-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.export-card-footer{padding:0 24px 22px;display:flex;gap:10px}
+.export-card-footer .btn-ghost{flex:1;text-align:center}
+.export-card-footer .btn-export{flex:2;justify-content:center}
+
 /* ── FILTER BAR ── */
 .filter-bar{background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .filter-bar .fg{margin-bottom:0;flex:1;min-width:140px}
@@ -308,6 +335,124 @@ textarea.inp{resize:vertical;min-height:80px}
 .btn-wa:hover{background:#1ebe5d}
 .btn-dl{width:100%;padding:14px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
 .btn-dl:hover{background:#155229}
+/* ══════════════════════════════════════════
+   MOBILE RESPONSIVE — nothing hidden, everything reflows
+   ══════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+
+  /* Login card */
+  .login-card{padding:28px 20px}
+
+  /* Content padding */
+  .content{padding:14px 12px}
+
+  /* ── Stats: 2×2 grid ── */
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stat-val{font-size:22px}
+
+  /* ── Filter bar: full-width stack ── */
+  .filter-bar{flex-direction:column;gap:8px}
+  .filter-bar .fg{min-width:100%;flex:none}
+  .filter-bar .fg[style*="flex:0"]{flex:none!important;width:100%}
+  .filter-bar .btn-ghost{width:100%}
+
+  /* ── Chart tabs: wrap into 2-per-row pills ── */
+  .chart-tabs{gap:5px}
+  .chart-tab{flex:1;min-width:calc(33% - 6px);justify-content:center;padding:8px 6px;font-size:11px}
+  .metric-toggle{width:100%;margin-top:4px}
+  .metric-toggle-btn{flex:1;text-align:center}
+
+  /* ── Orders table: card layout ── */
+  .orders-table-head{display:none}
+  .order-row{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    padding:14px 14px;
+    position:relative;
+    border-bottom:1px solid var(--border);
+  }
+  .or-date{font-size:10px;color:var(--muted);order:1}
+  .or-sp{font-size:14px;font-weight:700;order:2}
+  .or-cust{font-size:12px;color:var(--muted);order:3}
+  .or-amt{font-size:18px;font-weight:800;color:var(--accent);order:5}
+  .or-qty{text-align:left;font-size:11px;color:var(--muted);order:4}
+  .or-type{position:absolute;top:14px;right:14px;order:0}
+
+  /* ── Chart body height on mobile ── */
+  .chart-body{min-height:200px}
+  canvas#main-chart{height:200px!important}
+
+  /* ── App steps bar: smaller text ── */
+  .step{font-size:9px;padding:11px 3px;gap:4px}
+  .step .sn{width:17px;height:17px;font-size:9px}
+
+  /* ── Order type grid: 1 col on very small ── */
+  .ot-grid{grid-template-columns:1fr 1fr}
+
+  /* ── Orders table wrap: horizontal scroll on mobile ── */
+  .orders-table-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin-bottom:24px;
+  }
+
+  /* ── Ensure content never gets clipped ── */
+  #dash-app .content{
+    padding-bottom:40px;
+  }
+
+  /* ── Share buttons stack vertically ── */
+  .share-btns{display:flex;flex-direction:column;gap:10px}
+  .share-btns .btn-wa,
+  .share-btns .btn-dl,
+  .share-btns .btn-dark{width:100%}
+
+  /* ── Summary table in submit step ── */
+  .summary-table{min-width:340px;width:100%}
+
+  /* ── Grand total bar ── */
+  .grand-total-bar{flex-wrap:wrap;gap:8px}
+
+  /* ── Export button ── */
+  .btn-export{font-size:14px;padding:12px 14px}
+
+  /* ── Co-head (multi-customer) ── */
+  .co-head{flex-wrap:wrap}
+
+  /* ── Step 1 form fields ── */
+  .co-grid{grid-template-columns:1fr}
+}
+
+  /* ── Product rows ── */
+  .prod-row{grid-template-columns:1fr auto}
+  .prod-price{display:none}
+
+  /* ── Modal full height ── */
+  .modal-card{max-height:92vh}
+
+  /* ── Head user text trim ── */
+  .head-user{font-size:10px}
+  .dash-head-right{font-size:10px;gap:6px}
+
+  /* ── Total bar ── */
+  .total-bar{flex-direction:column;gap:6px;align-items:flex-start}
+
+  /* ── Order-type tabs: smaller ── */
+  .ot-name{font-size:14px}
+  .ot-desc{font-size:10px}
+}
+
+@media (max-width: 400px) {
+  /* Very small phones */
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stat-card{padding:12px 8px}
+  .stat-val{font-size:20px}
+  .stat-lbl{font-size:9px}
+  .chart-tab{font-size:10px;padding:7px 4px}
+  .ot-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -666,7 +811,13 @@ textarea.inp{resize:vertical;min-height:80px}
       </div>
       <div class="fg" style="flex:0 0 auto">
         <label class="lbl" style="visibility:hidden">.</label>
-        <button class="btn-ghost" style="padding:12px 18px;font-size:14px" onclick="clearDashFilters()">Clear</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" style="padding:12px 18px;font-size:14px" onclick="clearDashFilters()">Clear</button>
+          <button class="btn-export" onclick="exportToExcel()" id="export-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Export
+          </button>
+        </div>
       </div>
     </div>
 
@@ -732,7 +883,60 @@ textarea.inp{resize:vertical;min-height:80px}
   </div>
 </div><!-- #dash-app -->
 
-<!-- ══════════════ ORDER DETAIL MODAL ══════════════ -->
+<!-- ══════════════ EXPORT MODAL ══════════════ -->
+<div id="export-modal">
+  <div class="export-card">
+    <div class="export-card-head">
+      <div class="export-card-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Export to Excel
+      </div>
+      <div class="export-card-sub" id="export-count-label">Preparing export…</div>
+    </div>
+    <div class="export-card-body">
+
+      <div class="export-option active" id="opt-detail" onclick="selectExportOpt('detail')">
+        <div class="export-opt-icon" style="background:#E8F5ED">📋</div>
+        <div class="export-opt-info">
+          <div class="export-opt-title">Full Order Lines</div>
+          <div class="export-opt-desc">Every line item — product, qty, price, weight, customer</div>
+        </div>
+      </div>
+
+      <div class="export-option" id="opt-summary" onclick="selectExportOpt('summary')">
+        <div class="export-opt-icon" style="background:#FFF3E8">📊</div>
+        <div class="export-opt-info">
+          <div class="export-opt-title">Order Summary</div>
+          <div class="export-opt-desc">One row per order — totals, KES, KG, salesperson, route</div>
+        </div>
+      </div>
+
+      <div class="export-option" id="opt-route" onclick="selectExportOpt('route')">
+        <div class="export-opt-icon" style="background:#EEF2FF">🗺️</div>
+        <div class="export-opt-info">
+          <div class="export-opt-title">Route Summary</div>
+          <div class="export-opt-desc">Aggregated totals grouped by route and date</div>
+        </div>
+      </div>
+
+      <div class="export-option" id="opt-sp" onclick="selectExportOpt('sp')">
+        <div class="export-opt-icon" style="background:#FDF4FF">👤</div>
+        <div class="export-opt-info">
+          <div class="export-opt-title">Salesperson Summary</div>
+          <div class="export-opt-desc">Total revenue and weight per salesperson</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="export-card-footer">
+      <button class="btn-ghost" onclick="closeExportModal()">Cancel</button>
+      <button class="btn-export" id="do-export-btn" onclick="doExport()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Excel
+      </button>
+    </div>
+  </div>
+</div>
 <div id="order-modal">
   <div class="modal-card" style="position:relative">
     <div class="modal-handle"></div>
@@ -742,6 +946,7 @@ textarea.inp{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ══════════════════════════════════════════
@@ -2043,12 +2248,12 @@ function renderDashTable(rows) {
       : `<span class="tag-full">Full</span>`;
 
     row.innerHTML = `
+      <div class="or-type">${typeTag}</div>
       <div class="or-date">${fmtDate(o.date)}</div>
       <div class="or-sp">${o.sp}</div>
       <div class="or-cust">${o.cust}</div>
-      <div class="or-qty">${o.lines}</div>
+      <div class="or-qty">${o.lines} line${o.lines!==1?'s':''} · ${o.kg.toFixed(1)} KG</div>
       <div class="or-amt">KES ${o.total.toLocaleString()}</div>
-      <div class="or-type">${typeTag}</div>
     `;
     row.onclick = () => openModal(o);
     body.appendChild(row);
@@ -2503,6 +2708,237 @@ function renderRouteLineChart(canvas) {
     }
   });
 }
+
+// ══════════════════════════════════════════
+//  EXPORT TO EXCEL
+// ══════════════════════════════════════════
+let selectedExportOpt = 'detail';
+
+function selectExportOpt(opt) {
+  selectedExportOpt = opt;
+  ['detail','summary','route','sp'].forEach(o => {
+    document.getElementById('opt-' + o).classList.toggle('active', o === opt);
+  });
+}
+
+function exportToExcel() {
+  if (!filteredOrders.length) { toast('No orders to export'); return; }
+
+  // Update count label
+  const orderGroups = {};
+  filteredOrders.forEach(r => {
+    const key = (r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
+    orderGroups[key] = true;
+  });
+  const orderCount = Object.keys(orderGroups).length;
+  document.getElementById('export-count-label').textContent =
+    `${orderCount} order${orderCount!==1?'s':''} · ${filteredOrders.length} line${filteredOrders.length!==1?'s':''} selected`;
+
+  document.getElementById('export-modal').classList.add('open');
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+
+function doExport() {
+  const btn = document.getElementById('do-export-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Generating…`;
+
+  try {
+    const wb = XLSX.utils.book_new();
+
+    // ── Build active filter label for filename ──
+    const sp   = document.getElementById('df-sp').value   || 'All';
+    const from = document.getElementById('df-from').value || '';
+    const to   = document.getElementById('df-to').value   || '';
+    const datePart = from && to ? `_${from}_to_${to}` : from ? `_from_${from}` : '';
+    const spPart   = sp !== 'All' ? `_${sp.replace(/[^a-zA-Z0-9]/g,'-')}` : '';
+    const fileBase = `SalesOrders${spPart}${datePart}`;
+
+    if (selectedExportOpt === 'detail') {
+      buildDetailSheet(wb);
+    } else if (selectedExportOpt === 'summary') {
+      buildSummarySheet(wb);
+    } else if (selectedExportOpt === 'route') {
+      buildRouteSheet(wb);
+    } else if (selectedExportOpt === 'sp') {
+      buildSPSheet(wb);
+    }
+
+    XLSX.writeFile(wb, fileBase + '.xlsx');
+    toast('Excel file downloaded ✓');
+    closeExportModal();
+  } catch(e) {
+    toast('Export failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Excel`;
+  }
+}
+
+function styleSheet(ws, headers) {
+  // Column widths based on header length
+  ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 4, 14) }));
+}
+
+function buildDetailSheet(wb) {
+  const headers = ['Date','Salesperson','Customer','Customer Code','Route','Location','Order Type','Product Code','Description','Packaging','Qty','Unit Price (KES)','Line Total (KES)','Weight (KG)','Notes'];
+  const rows = [headers];
+
+  filteredOrders.forEach(r => {
+    rows.push([
+      r['Date']||r['Order Date']||'',
+      r['Salesman']||r['Salesperson']||'',
+      r['Customer Name']||r['Customer']||'',
+      r['Customer Code']||r['Cust Code']||'',
+      r['Route']||'',
+      r['Location']||'',
+      r['Order Type']||'',
+      r['Product Code']||r['Code']||'',
+      r['Description']||r['Product']||'',
+      r['Packaging']||r['Pack']||'',
+      parseFloat(r['Qty']||0)||0,
+      parseFloat(r['Unit Price (KES)']||r['Unit Price']||0)||0,
+      parseFloat(r['Total (KES)']||r['Line Total']||0)||0,
+      parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0,
+      r['Notes']||'',
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  styleSheet(ws, headers);
+  XLSX.utils.book_append_sheet(wb, ws, 'Order Lines');
+}
+
+function buildSummarySheet(wb) {
+  const headers = ['Date','Salesperson','Customer','Customer Code','Route','Location','Order Type','Lines','Total (KES)','Total (KG)','Notes'];
+  const rows = [headers];
+
+  const orderMap = {};
+  const orderKeys = [];
+  filteredOrders.forEach(r => {
+    const key = (r['Date']||r['Order Date']||'') + '||' + (r['Salesman']||r['Salesperson']||'') + '||' + (r['Customer Name']||r['Customer']||'');
+    if (!orderMap[key]) {
+      orderMap[key] = {
+        date:  r['Date']||r['Order Date']||'',
+        sp:    r['Salesman']||r['Salesperson']||'',
+        cust:  r['Customer Name']||r['Customer']||'',
+        code:  r['Customer Code']||r['Cust Code']||'',
+        route: r['Route']||'',
+        loc:   r['Location']||'',
+        type:  r['Order Type']||'',
+        notes: r['Notes']||'',
+        lines: 0, total: 0, kg: 0,
+      };
+      orderKeys.push(key);
+    }
+    orderMap[key].lines++;
+    orderMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    orderMap[key].kg    += parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+    if (r['Notes'] && !orderMap[key].notes) orderMap[key].notes = r['Notes'];
+  });
+
+  orderKeys.sort((a,b) => orderMap[a].date < orderMap[b].date ? 1 : -1);
+  orderKeys.forEach(k => {
+    const o = orderMap[k];
+    rows.push([o.date, o.sp, o.cust, o.code, o.route, o.loc, o.type, o.lines, o.total, o.kg, o.notes]);
+  });
+
+  // Totals row
+  const totAmt = orderKeys.reduce((s,k)=>s+orderMap[k].total,0);
+  const totKg  = orderKeys.reduce((s,k)=>s+orderMap[k].kg,0);
+  rows.push(['','','','','','','TOTAL', orderKeys.length, totAmt, totKg, '']);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  styleSheet(ws, headers);
+  XLSX.utils.book_append_sheet(wb, ws, 'Order Summary');
+}
+
+function buildRouteSheet(wb) {
+  const headers = ['Route','Date','Total Orders','Total Lines','Revenue (KES)','Weight (KG)'];
+  const rows = [headers];
+
+  const routeDateMap = {};
+  filteredOrders.forEach(r => {
+    const route = r['Route']||'Unknown';
+    const date  = r['Date']||r['Order Date']||'';
+    const key   = route + '||' + date;
+    if (!routeDateMap[key]) routeDateMap[key] = { route, date, orders: new Set(), lines: 0, total: 0, kg: 0 };
+    const orderKey = (r['Salesman']||r['Salesperson']||'') + '||' + (r['Customer Name']||r['Customer']||'');
+    routeDateMap[key].orders.add(orderKey);
+    routeDateMap[key].lines++;
+    routeDateMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    routeDateMap[key].kg    += parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+  });
+
+  // Also add a totals-by-route block
+  const routeTotals = {};
+  Object.values(routeDateMap).forEach(rd => {
+    if (!routeTotals[rd.route]) routeTotals[rd.route] = { orders: 0, lines: 0, total: 0, kg: 0 };
+    routeTotals[rd.route].orders += rd.orders.size;
+    routeTotals[rd.route].lines  += rd.lines;
+    routeTotals[rd.route].total  += rd.total;
+    routeTotals[rd.route].kg     += rd.kg;
+  });
+
+  // Sort by route then date
+  Object.keys(routeDateMap).sort().forEach(k => {
+    const rd = routeDateMap[k];
+    rows.push([rd.route, rd.date, rd.orders.size, rd.lines, rd.total, rd.kg]);
+  });
+
+  rows.push([]); // blank row
+  rows.push(['ROUTE TOTALS','','Orders','Lines','Revenue (KES)','Weight (KG)']);
+  Object.keys(routeTotals).sort().forEach(rt => {
+    const t = routeTotals[rt];
+    rows.push([rt, '', t.orders, t.lines, t.total, t.kg]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  styleSheet(ws, headers);
+  XLSX.utils.book_append_sheet(wb, ws, 'By Route');
+}
+
+function buildSPSheet(wb) {
+  const headers = ['Salesperson','Route','Location','Orders','Lines','Revenue (KES)','Weight (KG)','Avg Order Value (KES)'];
+  const rows = [headers];
+
+  const spMap = {};
+  filteredOrders.forEach(r => {
+    const sp    = r['Salesman']||r['Salesperson']||'Unknown';
+    const route = r['Route']||'';
+    const loc   = r['Location']||'';
+    const key   = sp + '||' + route + '||' + loc;
+    if (!spMap[key]) spMap[key] = { sp, route, loc, orderSet: new Set(), lines: 0, total: 0, kg: 0 };
+    const oKey = (r['Date']||'') + '||' + (r['Customer Name']||r['Customer']||'');
+    spMap[key].orderSet.add(oKey);
+    spMap[key].lines++;
+    spMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    spMap[key].kg    += parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+  });
+
+  Object.values(spMap)
+    .sort((a,b) => b.total - a.total)
+    .forEach(s => {
+      const orders = s.orderSet.size;
+      rows.push([s.sp, s.route, s.loc, orders, s.lines, s.total, s.kg, orders ? +(s.total/orders).toFixed(0) : 0]);
+    });
+
+  // Grand total
+  const gt = Object.values(spMap).reduce((acc,s)=>({ total:acc.total+s.total, kg:acc.kg+s.kg, lines:acc.lines+s.lines }),{ total:0,kg:0,lines:0 });
+  rows.push(['TOTAL','','','',gt.lines,gt.total,gt.kg,'']);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  styleSheet(ws, headers);
+  XLSX.utils.book_append_sheet(wb, ws, 'By Salesperson');
+}
+
+// Close export modal on backdrop click
+document.getElementById('export-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeExportModal();
+});
 
 function dashLogout() {
   dashUser = null; allOrders = []; filteredOrders = [];
