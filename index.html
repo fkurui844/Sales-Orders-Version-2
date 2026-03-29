@@ -210,6 +210,21 @@ textarea.inp{resize:vertical;min-height:80px}
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);line-height:1}
 .stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:4px}
 
+/* ── CHART SECTION ── */
+.charts-section{margin-bottom:14px}
+.chart-tabs{display:flex;gap:6px;margin-bottom:10px}
+.chart-tab{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.chart-tab:hover{border-color:var(--accent);color:var(--accent)}
+.chart-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.chart-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
+.chart-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.chart-body{position:relative;min-height:220px}
+
 /* ── FILTER BAR ── */
 .filter-bar{background:#fff;border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .filter-bar .fg{margin-bottom:0;flex:1;min-width:140px}
@@ -623,6 +638,18 @@ textarea.inp{resize:vertical;min-height:80px}
         </select>
       </div>
       <div class="fg">
+        <label class="lbl">Location</label>
+        <select class="inp" id="df-location" onchange="applyDashFilters()">
+          <option value="">All Locations</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="lbl">Route</label>
+        <select class="inp" id="df-route" onchange="applyDashFilters()">
+          <option value="">All Routes</option>
+        </select>
+      </div>
+      <div class="fg">
         <label class="lbl">From Date</label>
         <input class="inp" type="date" id="df-from" onchange="applyDashFilters()">
       </div>
@@ -633,6 +660,37 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="fg" style="flex:0 0 auto">
         <label class="lbl" style="visibility:hidden">.</label>
         <button class="btn-ghost" style="padding:12px 18px;font-size:14px" onclick="clearDashFilters()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section" id="charts-section">
+      <!-- Chart toggle tabs -->
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="switchChart('bar')" id="tab-bar">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="5" width="3" height="9"/><rect x="4" y="3" width="3" height="11"/><rect x="8" y="1" width="3" height="13"/><rect x="12" y="7" width="2" height="7"/></svg>
+          Bar
+        </button>
+        <button class="chart-tab" onclick="switchChart('line')" id="tab-line">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="0,10 4,6 7,8 11,2 14,4"/></svg>
+          Trend
+        </button>
+        <button class="chart-tab" onclick="switchChart('donut')" id="tab-donut">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+          Split
+        </button>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title" id="chart-title">Sales by Day</div>
+            <div class="chart-subtitle" id="chart-subtitle">Revenue trend over selected period</div>
+          </div>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+        <div class="chart-body">
+          <canvas id="main-chart" height="220"></canvas>
+        </div>
       </div>
     </div>
 
@@ -664,6 +722,7 @@ textarea.inp{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
@@ -1836,34 +1895,66 @@ function populateSPFilter() {
     sel.appendChild(o);
   });
   sel.value = cur;
+
+  // Populate Location filter
+  const locSel = document.getElementById('df-location');
+  const curLoc = locSel.value;
+  const locations = [...new Set(allOrders.map(r => (r['Location']||'').trim()).filter(Boolean))].sort();
+  locSel.innerHTML = '<option value="">All Locations</option>';
+  locations.forEach(l => {
+    const o = document.createElement('option');
+    o.value = o.textContent = l;
+    locSel.appendChild(o);
+  });
+  locSel.value = curLoc;
+
+  // Populate Route filter
+  const routeSel = document.getElementById('df-route');
+  const curRoute = routeSel.value;
+  const routes = [...new Set(allOrders.map(r => (r['Route']||'').trim()).filter(Boolean))].sort();
+  routeSel.innerHTML = '<option value="">All Routes</option>';
+  routes.forEach(rt => {
+    const o = document.createElement('option');
+    o.value = o.textContent = rt;
+    routeSel.appendChild(o);
+  });
+  routeSel.value = curRoute;
 }
 
 function applyDashFilters() {
-  const sp   = document.getElementById('df-sp').value.trim().toLowerCase();
-  const type = document.getElementById('df-type').value.trim().toLowerCase();
-  const from = document.getElementById('df-from').value.trim();
-  const to   = document.getElementById('df-to').value.trim();
+  const sp       = document.getElementById('df-sp').value.trim().toLowerCase();
+  const type     = document.getElementById('df-type').value.trim().toLowerCase();
+  const location = document.getElementById('df-location').value.trim().toLowerCase();
+  const route    = document.getElementById('df-route').value.trim().toLowerCase();
+  const from     = document.getElementById('df-from').value.trim();
+  const to       = document.getElementById('df-to').value.trim();
 
   filteredOrders = allOrders.filter(r => {
     const rSP   = (r['Salesman']||r['Salesperson']||'').trim().toLowerCase();
     const rType = (r['Order Type']||'').trim().toLowerCase();
     const rDate = (r['Date']||r['Order Date']||'').trim();
-    const mSP   = !sp   || rSP.includes(sp);
-    const mType = !type || rType.includes(type);
-    const mFrom = !from || rDate >= from;
-    const mTo   = !to   || rDate <= to;
-    return mSP && mType && mFrom && mTo;
+    const rLoc  = (r['Location']||'').trim().toLowerCase();
+    const rRt   = (r['Route']||'').trim().toLowerCase();
+    return (!sp       || rSP.includes(sp))
+        && (!type     || rType.includes(type))
+        && (!location || rLoc.includes(location))
+        && (!route    || rRt.includes(route))
+        && (!from     || rDate >= from)
+        && (!to       || rDate <= to);
   });
 
   updateDashStats();
   renderDashTable(filteredOrders);
+  renderChart();
 }
 
 function clearDashFilters() {
-  document.getElementById('df-sp').value   = '';
-  document.getElementById('df-type').value = '';
-  document.getElementById('df-from').value = '';
-  document.getElementById('df-to').value   = '';
+  document.getElementById('df-sp').value       = '';
+  document.getElementById('df-type').value     = '';
+  document.getElementById('df-location').value = '';
+  document.getElementById('df-route').value    = '';
+  document.getElementById('df-from').value     = '';
+  document.getElementById('df-to').value       = '';
   applyDashFilters();
 }
 
@@ -1998,6 +2089,204 @@ function closeModal() {
 document.getElementById('order-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// ══════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════
+let mainChart = null;
+let currentChartType = 'bar';
+
+const CHART_COLORS = ['#C45B00','#1B6B3A','#2563EB','#9333EA','#D97706','#0891B2','#BE185D','#4F46E5'];
+
+function switchChart(type) {
+  currentChartType = type;
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + type).classList.add('active');
+  renderChart();
+}
+
+function renderChart() {
+  const canvas = document.getElementById('main-chart');
+  if (!canvas) return;
+
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+
+  if (!filteredOrders.length) {
+    document.getElementById('chart-title').textContent = 'No Data';
+    document.getElementById('chart-subtitle').textContent = 'No orders match the current filters';
+    document.getElementById('chart-legend').innerHTML = '';
+    return;
+  }
+
+  if (currentChartType === 'bar')   renderBarChart(canvas);
+  if (currentChartType === 'line')  renderLineChart(canvas);
+  if (currentChartType === 'donut') renderDonutChart(canvas);
+}
+
+function getOrderTotals(rows) {
+  // Group by date+salesman+customer, return per-group totals
+  const map = {};
+  rows.forEach(r => {
+    const date  = (r['Date']||r['Order Date']||'').trim();
+    const sp    = (r['Salesman']||r['Salesperson']||'').trim();
+    const cust  = (r['Customer Name']||r['Customer']||'').trim();
+    const key   = date + '||' + sp + '||' + cust;
+    const amt   = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    if (!map[key]) map[key] = { date, sp, cust, total: 0 };
+    map[key].total += amt;
+  });
+  return Object.values(map);
+}
+
+function renderBarChart(canvas) {
+  document.getElementById('chart-title').textContent = 'Revenue by Salesperson';
+  document.getElementById('chart-subtitle').textContent = 'Total KES per salesperson in filtered period';
+
+  const groups = getOrderTotals(filteredOrders);
+  const spMap = {};
+  groups.forEach(g => {
+    if (!spMap[g.sp]) spMap[g.sp] = 0;
+    spMap[g.sp] += g.total;
+  });
+  const labels = Object.keys(spMap).sort((a,b) => spMap[b]-spMap[a]).slice(0,10);
+  const data   = labels.map(l => spMap[l]);
+  const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+  document.getElementById('chart-legend').innerHTML = labels.slice(0,5).map((l,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l}</div>`
+  ).join('');
+
+  mainChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'KES',
+        data,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' KES ' + ctx.raw.toLocaleString() }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880', maxRotation: 30 } },
+        y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880',
+          callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+      }
+    }
+  });
+}
+
+function renderLineChart(canvas) {
+  document.getElementById('chart-title').textContent = 'Daily Revenue Trend';
+  document.getElementById('chart-subtitle').textContent = 'KES collected per day over selected period';
+
+  const groups = getOrderTotals(filteredOrders);
+  const dateMap = {};
+  groups.forEach(g => {
+    if (!dateMap[g.date]) dateMap[g.date] = 0;
+    dateMap[g.date] += g.total;
+  });
+  const dates = Object.keys(dateMap).sort();
+  const vals  = dates.map(d => dateMap[d]);
+
+  document.getElementById('chart-legend').innerHTML =
+    `<div class="legend-item"><div class="legend-dot" style="background:${CHART_COLORS[0]}"></div>Daily Revenue</div>`;
+
+  mainChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: dates.map(d => fmtDate(d)),
+      datasets: [{
+        label: 'KES',
+        data: vals,
+        borderColor: CHART_COLORS[0],
+        backgroundColor: 'rgba(196,91,0,0.08)',
+        borderWidth: 2.5,
+        pointRadius: dates.length > 20 ? 2 : 4,
+        pointBackgroundColor: CHART_COLORS[0],
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' KES ' + ctx.raw.toLocaleString() }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'DM Sans'", size: 10 }, color: '#8E8880', maxRotation: 40, autoSkip: true, maxTicksLimit: 10 } },
+        y: { grid: { color: '#F0EDE8' }, ticks: { font: { family: "'DM Sans'" }, color: '#8E8880',
+          callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } }
+      }
+    }
+  });
+}
+
+function renderDonutChart(canvas) {
+  const sp = document.getElementById('df-sp').value.trim();
+  const spLabel = sp || 'All Salespeople';
+
+  // If sp selected → breakdown by route/location, else by salesperson
+  const groups = getOrderTotals(filteredOrders);
+
+  let segMap = {};
+  if (sp) {
+    // Show by order type split
+    filteredOrders.forEach(r => {
+      const type = (r['Order Type']||'Unknown').trim();
+      const amt  = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+      if (!segMap[type]) segMap[type] = 0;
+      segMap[type] += amt;
+    });
+    document.getElementById('chart-title').textContent = 'Order Type Split';
+    document.getElementById('chart-subtitle').textContent = 'Revenue by order type — ' + spLabel;
+  } else {
+    // By salesperson
+    groups.forEach(g => {
+      if (!segMap[g.sp]) segMap[g.sp] = 0;
+      segMap[g.sp] += g.total;
+    });
+    document.getElementById('chart-title').textContent = 'Revenue Share';
+    document.getElementById('chart-subtitle').textContent = 'Contribution by salesperson';
+  }
+
+  const labels = Object.keys(segMap).sort((a,b)=>segMap[b]-segMap[a]).slice(0,8);
+  const data   = labels.map(l => segMap[l]);
+  const colors = labels.map((_,i) => CHART_COLORS[i % CHART_COLORS.length]);
+  const total  = data.reduce((a,b)=>a+b,0);
+
+  document.getElementById('chart-legend').innerHTML = labels.map((l,i) => {
+    const pct = total ? Math.round(data[i]/total*100) : 0;
+    return `<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l} (${pct}%)</div>`;
+  }).join('');
+
+  mainChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const pct = total ? Math.round(ctx.raw/total*100) : 0;
+            return ` KES ${ctx.raw.toLocaleString()} (${pct}%)`;
+          }
+        }}
+      }
+    }
+  });
+}
 
 function dashLogout() {
   dashUser = null; allOrders = []; filteredOrders = [];
