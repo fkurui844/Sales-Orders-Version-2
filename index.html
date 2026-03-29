@@ -351,7 +351,6 @@ textarea.inp{resize:vertical;min-height:80px}
       <div class="logo-sub">Choose a password for your account</div>
 
       <div class="fg">
-        <!-- ✅ UPDATED LABEL -->
         <label class="lbl">Your Name / Payroll Number</label>
         <div class="dd-wrap" id="sp-wrap">
           <input class="inp" id="sp-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
@@ -692,8 +691,6 @@ const S = {
 
 // ══════════════════════════════════════════
 //  SALESPERSON KEY DETECTION
-//  Handles columns from "Salesperson Details" sheet:
-//  Name, Payroll No, Password (and any casing variants)
 // ══════════════════════════════════════════
 const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
 const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
@@ -934,7 +931,6 @@ function renderLoginList(q) {
   const pk = findKey(sample, PAYROLL_KEYS);
 
   const lq = q.toLowerCase();
-  // ✅ Search by both name AND payroll number
   const matches = S.data.salespeople
     .filter(sp => {
       const name = (sp[nk]||'').toLowerCase();
@@ -1249,12 +1245,9 @@ function initCustomerSearch() {
 
   const list = document.getElementById('cust-list');
 
-  // Show full list immediately on click/focus
   inp.addEventListener('click',  () => { renderCustList(inp.value); list.classList.add('open'); });
   inp.addEventListener('focus',  () => { renderCustList(inp.value); list.classList.add('open'); });
-  // Filter as user types
   inp.addEventListener('input',  () => { renderCustList(inp.value); list.classList.add('open'); });
-  // Close when clicking outside
   document.addEventListener('click', e => {
     if (!document.getElementById('cust-wrap').contains(e.target)) list.classList.remove('open');
   });
@@ -1262,12 +1255,10 @@ function initCustomerSearch() {
   if (S.customer) buildProductUI();
 }
 
-// Customer column key constants (matches "Customers" sheet headers)
 const CUST_NAME_KEYS  = ['Customer Name','CustomerName','Name','Customer','CUSTOMER NAME','CUSTOMER','customer name','Client Name','CLIENT NAME'];
 const CUST_CODE_KEYS  = ['Customer Code','CustomerCode','Code','Acc Code','ACC CODE','Account Code','ACCOUNT CODE','Account No','Account No.','Acc No','ACC NO','ACCOUNT NO','customer code','acc code','account no'];
 const CUST_ROUTE_KEYS = ['Route','ROUTE','route','Route Name','ROUTE NAME'];
 
-// Highlight matching text in a string
 function highlight(text, q) {
   if (!q) return text;
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1291,17 +1282,13 @@ function renderCustList(q) {
 
   const lq = (q || '').toLowerCase().trim();
 
-  // Filter: if no query show all (up to 80); otherwise match name OR account number
   const filtered = custs.filter(c => {
-    // Route soft-filter: still show customer even if route doesn't match,
-    // but route-matched ones will appear first (sorted below)
     if (!lq) return true;
     const nameMatch = (c[nk]||'').toLowerCase().includes(lq);
     const codeMatch = ck ? (c[ck]||'').toLowerCase().includes(lq) : false;
     return nameMatch || codeMatch;
   });
 
-  // Sort: route-matching customers first when a route is selected
   filtered.sort((a, b) => {
     if (!S.route || !rk) return 0;
     const aMatch = (a[rk]||'').toLowerCase() === S.route.toLowerCase() ? 0 : 1;
@@ -1318,7 +1305,6 @@ function renderCustList(q) {
     return;
   }
 
-  // Count label
   if (filtered.length > 80) {
     const info = document.createElement('div');
     info.style.cssText = 'padding:6px 16px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg)';
@@ -1537,7 +1523,6 @@ function buildSubmitStep() {
     <div class="sum-row"><span class="sum-k">Customers</span><span class="sum-v">${S.customerOrders.length}</span></div>
   `;
 
-  // Per-customer cards
   const custEl = document.getElementById('submit-customer-orders');
   custEl.innerHTML = '';
   S.customerOrders.forEach(co => {
@@ -1563,7 +1548,6 @@ function buildSubmitStep() {
     custEl.appendChild(card);
   });
 
-  // Product totals by category
   const prodMap = {};
   S.customerOrders.forEach(co => {
     co.cart.forEach(item => {
@@ -1620,7 +1604,6 @@ async function submitOrder() {
       results.push(res.orderId);
     }
 
-    // Snapshot for sharing
     S._lastOrder = {
       orderId: results[0], salesman: name, payroll: pay,
       location: S.location, route: S.route, date: S.orderDate,
@@ -1696,16 +1679,13 @@ function toast(msg) {
 }
 
 // ══════════════════════════════════════════
-//  DASHBOARD — constants & state
+//  DASHBOARD
 // ══════════════════════════════════════════
 const DASH_PASSWORD = '123123';
-let   dashUser      = null;   // { name, payroll }
-let   allOrders     = [];     // raw from GAS
-let   filteredOrders = [];    // after filters
+let   dashUser      = null;
+let   allOrders     = [];
+let   filteredOrders = [];
 
-// ══════════════════════════════════════════
-//  PANEL SWITCHING — extended for 'dash'
-// ══════════════════════════════════════════
 function showPanel(which) {
   const panels = ['panel-signin','panel-set','panel-dash'];
   panels.forEach(id => {
@@ -1717,7 +1697,6 @@ function showPanel(which) {
 
   document.getElementById(target).classList.remove('hidden');
 
-  // Clear errors
   ['login-err','sp-err','dp-err'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -1728,9 +1707,6 @@ function showPanel(which) {
   if (which === 'set') { clearSetPwForm(); initSetPwSearch(); }
 }
 
-// ══════════════════════════════════════════
-//  DASHBOARD LOGIN — payroll search
-// ══════════════════════════════════════════
 let selDashSP = null;
 
 function initDashPayrollSearch() {
@@ -1818,16 +1794,12 @@ function doDashLogin() {
   openDashboard();
 }
 
-// ══════════════════════════════════════════
-//  OPEN DASHBOARD
-// ══════════════════════════════════════════
 async function openDashboard() {
   document.getElementById('login-screen').style.display  = 'none';
   document.getElementById('app').style.display           = 'none';
   document.getElementById('dash-app').style.display      = 'flex';
   document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
 
-  // Set today as default date range (last 30 days)
   const today = new Date();
   const from  = new Date(today); from.setDate(from.getDate() - 30);
   const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1856,7 +1828,6 @@ async function loadDashOrders() {
 function populateSPFilter() {
   const sel = document.getElementById('df-sp');
   const cur = sel.value;
-  // Unique salesperson names from orders
   const names = [...new Set(allOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean))].sort();
   sel.innerHTML = '<option value="">All Salespeople</option>';
   names.forEach(n => {
@@ -1896,11 +1867,7 @@ function clearDashFilters() {
   applyDashFilters();
 }
 
-// ══════════════════════════════════════════
-//  STATS
-// ══════════════════════════════════════════
 function updateDashStats() {
-  // Group by order-id equivalent: date+salesman+customer = one "order"
   const orderGroups = {};
   filteredOrders.forEach(r => {
     const key = (r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
@@ -1920,9 +1887,6 @@ function updateDashStats() {
   document.getElementById('ds-sps').textContent = spSet.size;
 }
 
-// ══════════════════════════════════════════
-//  RENDER TABLE
-// ══════════════════════════════════════════
 function renderDashTable(rows) {
   const body = document.getElementById('dash-orders-body');
   if (!rows.length) {
@@ -1930,7 +1894,6 @@ function renderDashTable(rows) {
     return;
   }
 
-  // Group rows into logical orders (date+salesman+customer)
   const orderMap = {};
   const orderKeys = [];
   rows.forEach(r => {
@@ -1949,7 +1912,6 @@ function renderDashTable(rows) {
     orderMap[key].items.push(r);
   });
 
-  // Sort by date desc
   orderKeys.sort((a, b) => {
     const da = orderMap[a].date, db = orderMap[b].date;
     return da < db ? 1 : da > db ? -1 : 0;
@@ -1978,9 +1940,6 @@ function renderDashTable(rows) {
   });
 }
 
-// ══════════════════════════════════════════
-//  ORDER DETAIL MODAL
-// ══════════════════════════════════════════
 function openModal(order) {
   document.getElementById('modal-title').textContent =
     order.cust + ' — ' + fmtDate(order.date);
@@ -2002,7 +1961,6 @@ function openModal(order) {
   });
   html += '</div>';
 
-  // Line items table
   html += '<div style="padding:10px 20px 4px"><div class="lbl">Line Items</div></div>';
   html += '<div style="border-top:1px solid var(--border)">';
   order.items.forEach(item => {
@@ -2023,7 +1981,6 @@ function openModal(order) {
   });
   html += '</div>';
 
-  // Notes
   const notes = order.items[0] ? (order.items[0]['Notes']||'') : '';
   if (notes) {
     html += `<div style="padding:12px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)">
@@ -2038,14 +1995,10 @@ function closeModal() {
   document.getElementById('order-modal').classList.remove('open');
 }
 
-// Close modal on backdrop click
 document.getElementById('order-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-// ══════════════════════════════════════════
-//  DASHBOARD LOGOUT
-// ══════════════════════════════════════════
 function dashLogout() {
   dashUser = null; allOrders = []; filteredOrders = [];
   document.getElementById('dash-app').style.display  = 'none';
@@ -2061,6 +2014,7 @@ function buildSuccessPreview(o) {
   if (!el) return;
   const grandAmt = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
   const grandKg  = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.totalKg,0),0);
+
   let html = `<div class="order-preview-head">🧾 ${o.salesman}${o.payroll?' ('+o.payroll+')':''}</div>
     <div class="order-preview-meta">
       <div><div class="opm-k">Date</div><div class="opm-v">${fmtDate(o.date)}</div></div>
@@ -2068,7 +2022,9 @@ function buildSuccessPreview(o) {
       <div><div class="opm-k">Type</div><div class="opm-v">${o.type}</div></div>
       <div><div class="opm-k">Customers</div><div class="opm-v">${o.customerOrders.length}</div></div>
     </div>`;
-  o.customerOrders.forEach(co => {
+
+  // Per-customer breakdown
+  o.customerOrders.forEach((co, ci) => {
     const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
     html += `<div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;padding:8px 0 4px;border-top:1px solid var(--border);margin-top:6px">${co.customer}${co.custCode?' <span style="font-weight:400;font-size:12px;color:var(--muted)">('+co.custCode+')</span>':''}</div>`;
     co.cart.forEach(item => {
@@ -2079,48 +2035,80 @@ function buildSuccessPreview(o) {
     });
     html += `<div style="text-align:right;font-size:11px;color:var(--muted);padding-bottom:4px">Subtotal: KES ${totAmt.toLocaleString()}</div>`;
   });
+
+  // Grand total line
   html += `<div class="order-preview-total"><span>Grand Total</span><span style="color:var(--accent)">KES ${grandAmt.toLocaleString()}</span></div>`;
   if (grandKg) html += `<div style="text-align:right;font-size:11px;color:var(--muted);margin-top:3px">${grandKg.toFixed(2)} KG</div>`;
+
+  // ── PRODUCT QUANTITY TOTALS (new section) ──
+  const prodTotals = {};
+  o.customerOrders.forEach(co => {
+    co.cart.forEach(item => {
+      const key = item.code + '||' + item.pack;
+      if (!prodTotals[key]) prodTotals[key] = { desc: item.desc, pack: item.pack, code: item.code, qty: 0 };
+      prodTotals[key].qty += item.qty;
+    });
+  });
+  const prodEntries = Object.values(prodTotals);
+  if (prodEntries.length) {
+    html += `<div style="margin-top:12px;border-top:2px solid var(--border);padding-top:10px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">📦 Product Totals</div>`;
+    prodEntries.forEach(p => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--text)">${p.desc}</div>
+          <div style="font-size:10px;color:var(--muted)">${p.code} · ${p.pack}</div>
+        </div>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:12px">×${p.qty}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
   el.innerHTML = html;
 }
 
 function buildOrderText(o) {
   const sep = '─────────────────────────────';
-  let txt = `🧾 *SALES ORDER BATCH*
-${sep}
-`;
-  txt += `*Salesman:* ${o.salesman}${o.payroll?' ('+o.payroll+')':''}
-`;
-  txt += `*Date:* ${fmtDate(o.date)}  |  *Route:* ${o.route}
-`;
-  txt += `*Location:* ${o.location}  |  *Type:* ${o.type}
-${sep}
-`;
+  let txt = `🧾 *SALES ORDER BATCH*\n${sep}\n`;
+  txt += `*Salesman:* ${o.salesman}${o.payroll?' ('+o.payroll+')':''}\n`;
+  txt += `*Date:* ${fmtDate(o.date)}  |  *Route:* ${o.route}\n`;
+  txt += `*Location:* ${o.location}  |  *Type:* ${o.type}\n${sep}\n`;
   o.customerOrders.forEach((co, ci) => {
     const totAmt = co.cart.reduce((s,i)=>s+i.total,0);
-    txt += `
-*${ci+1}. ${co.customer}*${co.custCode?' ('+co.custCode+')':''}
-`;
+    txt += `\n*${ci+1}. ${co.customer}*${co.custCode?' ('+co.custCode+')':''}\n`;
     co.cart.forEach((item,ii) => {
-      txt += `   ${ii+1}. ${item.desc} [${item.code}]
-`;
-      txt += `      ${item.pack} · Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*
-`;
+      txt += `   ${ii+1}. ${item.desc} [${item.code}]\n`;
+      txt += `      ${item.pack} · Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*\n`;
     });
-    txt += `   _Subtotal: KES ${totAmt.toLocaleString()}_
-`;
+    txt += `   _Subtotal: KES ${totAmt.toLocaleString()}_\n`;
   });
   const grandAmt = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
   const grandKg  = o.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.totalKg,0),0);
-  txt += `
-${sep}
-*GRAND TOTAL: KES ${grandAmt.toLocaleString()}*`;
-  if (grandKg) txt += `
-*Total Weight: ${grandKg.toFixed(2)} KG*`;
-  if (o.notes) txt += `
-📝 Notes: ${o.notes}`;
-  txt += `
-${sep}`;
+
+  // Product totals in text export too
+  const prodTotals = {};
+  o.customerOrders.forEach(co => {
+    co.cart.forEach(item => {
+      const key = item.code + '||' + item.pack;
+      if (!prodTotals[key]) prodTotals[key] = { desc: item.desc, pack: item.pack, code: item.code, qty: 0 };
+      prodTotals[key].qty += item.qty;
+    });
+  });
+  const prodEntries = Object.values(prodTotals);
+
+  txt += `\n${sep}\n*GRAND TOTAL: KES ${grandAmt.toLocaleString()}*`;
+  if (grandKg) txt += `\n*Total Weight: ${grandKg.toFixed(2)} KG*`;
+
+  if (prodEntries.length) {
+    txt += `\n\n📦 PRODUCT TOTALS\n`;
+    prodEntries.forEach(p => {
+      txt += `  • ${p.desc} [${p.code}] ${p.pack}: ×${p.qty}\n`;
+    });
+  }
+
+  if (o.notes) txt += `\n📝 Notes: ${o.notes}`;
+  txt += `\n${sep}`;
   return txt;
 }
 
