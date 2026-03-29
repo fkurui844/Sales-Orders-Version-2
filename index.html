@@ -182,6 +182,26 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 .banner{background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;padding:10px 14px;font-size:12px;color:#E65100;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
 /* ── SUCCESS ── */
+.share-btns{display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto}
+.btn-wa{width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .1s}
+.btn-wa:hover{background:#1ebe5d}
+.btn-wa:active{transform:scale(.98)}
+.btn-dl{width:100%;padding:14px;background:var(--ok);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s,transform .1s}
+.btn-dl:hover{background:#155229}
+.btn-dl:active{transform:scale(.98)}
+.order-preview{background:#fff;border-radius:12px;padding:18px;margin:16px 0;text-align:left;box-shadow:var(--shadow);font-size:13px;max-width:420px;margin-left:auto;margin-right:auto}
+.order-preview-head{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--border)}
+.order-preview-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.opm-k{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.opm-v{font-weight:600;font-size:13px}
+.order-preview-line{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);gap:8px}
+.order-preview-line:last-child{border-bottom:none}
+.opl-name{font-weight:500;flex:1}
+.opl-code{font-size:10px;color:var(--muted);display:block}
+.opl-qty{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-align:right;white-space:nowrap}
+.order-preview-total{display:flex;justify-content:space-between;padding:10px 0 0;margin-top:4px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;border-top:2px solid var(--border)}
+
+/* ── SUCCESS HEADER ── */
 .success-wrap{text-align:center;padding:56px 20px}
 .s-ico{font-size:64px;margin-bottom:18px;animation:pop .4s ease}
 @keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
@@ -523,8 +543,22 @@ textarea.inp{resize:vertical;min-height:80px}
         <div class="s-title">Order Submitted!</div>
         <div class="s-sub">Your order has been recorded successfully.</div>
         <div class="s-id" id="ok-id"></div>
-        <br>
-        <button class="btn-dark" style="max-width:300px;margin:0 auto;display:block" onclick="newOrder()">Place Another Order →</button>
+
+        <!-- Order preview card -->
+        <div class="order-preview" id="ok-preview"></div>
+
+        <!-- Share / Download buttons -->
+        <div class="share-btns">
+          <button class="btn-wa" onclick="shareWhatsApp()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Share via WhatsApp
+          </button>
+          <button class="btn-dl" onclick="downloadOrder()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download as Text
+          </button>
+          <button class="btn-dark" onclick="newOrder()">Place Another Order →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1524,6 +1558,21 @@ async function submitOrder() {
     const res = await gas(params);
     if (res.success) {
       document.getElementById('ok-id').textContent = res.orderId;
+      // Snapshot the order BEFORE clearing cart
+      S._lastOrder = {
+        orderId  : res.orderId,
+        salesman : name,
+        payroll  : pay,
+        location : S.location,
+        route    : S.route,
+        date     : S.orderDate,
+        type     : otLbl,
+        customer : S.customer.name,
+        custCode : S.customer.code,
+        notes    : notes,
+        cart     : S.cart.map(i => ({...i}))
+      };
+      buildOrderPreview(S._lastOrder);
       S.cart = [];
       setStep(4);
     } else {
@@ -1535,6 +1584,93 @@ async function submitOrder() {
     hideLoad();
     document.getElementById('sub-btn').disabled = false;
   }
+}
+
+// ══════════════════════════════════════════
+//  ORDER PREVIEW & SHARING
+// ══════════════════════════════════════════
+function buildOrderPreview(o) {
+  const totAmt = o.cart.reduce((s,i) => s+i.total, 0);
+  const totKg  = o.cart.reduce((s,i) => s+i.totalKg, 0);
+  const el = document.getElementById('ok-preview');
+  if (!el) return;
+
+  let lines = '';
+  o.cart.forEach(item => {
+    lines += `
+      <div class="order-preview-line">
+        <div class="opl-name">${item.desc}<span class="opl-code">${item.code} · ${item.pack}</span></div>
+        <div class="opl-qty">×${item.qty}<br><span style="font-size:11px;color:var(--muted);font-weight:400">KES ${item.total.toLocaleString()}</span></div>
+      </div>`;
+  });
+
+  el.innerHTML = `
+    <div class="order-preview-head">📋 ${o.customer}${o.custCode ? ' <span style="font-size:13px;font-weight:400;color:var(--muted)">(${o.custCode})</span>' : ''}</div>
+    <div class="order-preview-meta">
+      <div><div class="opm-k">Salesman</div><div class="opm-v">${o.salesman}</div></div>
+      <div><div class="opm-k">Date</div><div class="opm-v">${fmtDate(o.date)}</div></div>
+      <div><div class="opm-k">Route</div><div class="opm-v">${o.route}</div></div>
+      <div><div class="opm-k">Type</div><div class="opm-v">${o.type}</div></div>
+    </div>
+    ${lines}
+    <div class="order-preview-total">
+      <span>Total</span>
+      <span style="color:var(--accent)">KES ${totAmt.toLocaleString()}</span>
+    </div>
+    ${totKg ? `<div style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px">${totKg.toFixed(2)} KG</div>` : ''}
+    ${o.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)"><strong>Notes:</strong> ${o.notes}</div>` : ''}
+  `;
+}
+
+function buildOrderText(o) {
+  const totAmt = o.cart.reduce((s,i) => s+i.total, 0);
+  const totKg  = o.cart.reduce((s,i) => s+i.totalKg, 0);
+  const sep = '─────────────────────';
+  let txt = '';
+  txt += `🧾 *SALES ORDER*\n`;
+  txt += `${sep}\n`;
+  txt += `*Order ID:*  ${o.orderId}\n`;
+  txt += `*Date:*      ${fmtDate(o.date)}\n`;
+  txt += `*Salesman:*  ${o.salesman}${o.payroll ? ' (' + o.payroll + ')' : ''}\n`;
+  txt += `*Route:*     ${o.route}\n`;
+  txt += `*Location:*  ${o.location}\n`;
+  txt += `*Type:*      ${o.type}\n`;
+  txt += `${sep}\n`;
+  txt += `*Customer:*  ${o.customer}${o.custCode ? ' (' + o.custCode + ')' : ''}\n`;
+  txt += `${sep}\n`;
+  txt += `*LINE ITEMS*\n`;
+  o.cart.forEach((item, i) => {
+    txt += `${i+1}. ${item.desc}\n`;
+    txt += `   Code: ${item.code} | Pack: ${item.pack}\n`;
+    txt += `   Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*\n`;
+  });
+  txt += `${sep}\n`;
+  txt += `*TOTAL:  KES ${totAmt.toLocaleString()}*\n`;
+  if (totKg) txt += `*Weight: ${totKg.toFixed(2)} KG*\n`;
+  if (o.notes) txt += `\n📝 Notes: ${o.notes}\n`;
+  txt += `${sep}`;
+  return txt;
+}
+
+function shareWhatsApp() {
+  if (!S._lastOrder) { toast('No order data to share'); return; }
+  const txt = buildOrderText(S._lastOrder);
+  const url = 'https://wa.me/?text=' + encodeURIComponent(txt.replace(/\\n/g,'\n'));
+  window.open(url, '_blank');
+}
+
+function downloadOrder() {
+  if (!S._lastOrder) { toast('No order data to download'); return; }
+  const o   = S._lastOrder;
+  const txt = buildOrderText(o).replace(/\\n/g,'\n').replace(/\*/g,'');
+  const blob = new Blob([txt], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `Order-${o.orderId}-${o.customer.replace(/[^a-zA-Z0-9]/g,'-')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Order downloaded ✓');
 }
 
 function newOrder() {
