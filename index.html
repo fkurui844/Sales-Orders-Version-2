@@ -188,6 +188,37 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 
 textarea.inp{resize:vertical;min-height:80px}
 
+/* ── DRAFT BANNER ── */
+#draft-banner{display:none;background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;padding:10px 14px;font-size:12px;color:#E65100;margin-bottom:14px;align-items:center;gap:8px;justify-content:space-between}
+#draft-banner.show{display:flex}
+.draft-banner-left{display:flex;align-items:center;gap:8px}
+.draft-restore-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.draft-restore-btn:hover{background:var(--accent-hov)}
+.draft-discard-btn{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:2px 6px;line-height:1}
+.draft-discard-btn:hover{color:#C62828}
+
+/* ── CONFIRM MODAL ── */
+#confirm-modal{position:fixed;inset:0;background:rgba(26,23,20,.6);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+#confirm-modal.open{display:flex}
+.confirm-card{background:#fff;border-radius:20px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.confirm-card-head{padding:24px 24px 16px}
+.confirm-card-ico{font-size:32px;margin-bottom:10px}
+.confirm-card-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--text);margin-bottom:6px}
+.confirm-card-msg{font-size:13px;color:var(--muted);line-height:1.5}
+.confirm-card-footer{padding:0 24px 24px;display:flex;gap:10px}
+.confirm-card-footer .btn-ghost{flex:1;text-align:center;font-size:15px}
+.btn-danger{flex:1;padding:14px;background:#C62828;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:background .2s}
+.btn-danger:hover{background:#B71C1C}
+
+/* ── VALIDATION SHAKE ── */
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.shake{animation:shake .35s ease}
+
+/* ── AUTO-SAVE INDICATOR ── */
+#autosave-indicator{font-size:10px;color:var(--muted);text-align:right;padding:4px 0 0;min-height:16px;transition:opacity .3s}
+#autosave-indicator.saving{color:var(--accent)}
+#autosave-indicator.saved{color:var(--ok)}
+
 /* ── DASHBOARD BUTTON on login ── */
 .btn-dash{width:100%;padding:14px;background:linear-gradient(135deg,#1A1714 0%,#2d2a27 100%);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:10px}
 .btn-dash:hover{opacity:.88}
@@ -583,6 +614,18 @@ textarea.inp{resize:vertical;min-height:80px}
   <div id="step-who">
     <div class="content">
 
+      <!-- Draft restore banner -->
+      <div id="draft-banner">
+        <div class="draft-banner-left">
+          <span>💾</span>
+          <span id="draft-banner-txt">You have an unsaved draft order.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="draft-restore-btn" onclick="restoreDraft()">Restore Draft</button>
+          <button class="draft-discard-btn" onclick="discardDraft()" title="Discard draft">✕</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title"><div class="card-icon">👤</div>Who are you?</div>
 
@@ -630,6 +673,7 @@ textarea.inp{resize:vertical;min-height:80px}
 
     </div>
     <div class="sticky-ft">
+      <div id="autosave-indicator" style="position:absolute;top:-18px;right:16px"></div>
       <button class="btn-accent" onclick="go2()">Continue — Add Products →</button>
     </div>
   </div>
@@ -950,11 +994,186 @@ textarea.inp{resize:vertical;min-height:80px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- ── CONFIRM MODAL (logout / discard warning) ── -->
+<div id="confirm-modal">
+  <div class="confirm-card">
+    <div class="confirm-card-head">
+      <div class="confirm-card-ico" id="confirm-ico">⚠️</div>
+      <div class="confirm-card-title" id="confirm-title">Are you sure?</div>
+      <div class="confirm-card-msg" id="confirm-msg">This action cannot be undone.</div>
+    </div>
+    <div class="confirm-card-footer">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-danger" id="confirm-action-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzfSNs6Qi1DoKpT9f46g_7UiKVozdRPGWtmKmGckBwa8MXJ9xpf6CZiXl7zxR2t8ImC/exec';
+
+// ══════════════════════════════════════════
+//  DRAFT AUTO-SAVE (LocalStorage)
+// ══════════════════════════════════════════
+const DRAFT_KEY = 'salesorder_draft_v1';
+let _autosaveTimer = null;
+
+function draftPayload() {
+  if (!S.user) return null;
+  const nk = findKey(S.user, NAME_KEYS);
+  return {
+    userName: S.user[nk] || '',
+    location: S.location,
+    route: S.route,
+    orderDate: S.orderDate,
+    orderType: S.orderType,
+    customerOrders: S.customerOrders,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function saveDraft() {
+  const p = draftPayload();
+  if (!p) return;
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(p));
+    showAutosaveIndicator('saved');
+  } catch(e) { /* storage full or unavailable */ }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+}
+
+function loadStoredDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function scheduleSave() {
+  clearTimeout(_autosaveTimer);
+  showAutosaveIndicator('saving');
+  _autosaveTimer = setTimeout(saveDraft, 800);
+}
+
+function showAutosaveIndicator(state) {
+  const el = document.getElementById('autosave-indicator');
+  if (!el) return;
+  el.className = 'autosave-indicator ' + state;
+  if (state === 'saving') {
+    el.textContent = '● Saving draft…';
+  } else if (state === 'saved') {
+    el.textContent = '✓ Draft saved';
+    setTimeout(() => { if (el.textContent === '✓ Draft saved') el.textContent = ''; }, 3000);
+  }
+}
+
+function checkForDraft(userName) {
+  const draft = loadStoredDraft();
+  if (!draft) return;
+  if (draft.userName !== userName) return; // belongs to a different user
+  if (!draft.customerOrders || !draft.customerOrders.length) return;
+
+  const custCount = draft.customerOrders.length;
+  const grandAmt  = draft.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+  const saved     = new Date(draft.savedAt);
+  const timeAgo   = formatTimeAgo(saved);
+
+  document.getElementById('draft-banner-txt').textContent =
+    `Unsaved draft: ${custCount} customer${custCount!==1?'s':''} · KES ${grandAmt.toLocaleString()} · saved ${timeAgo}`;
+  document.getElementById('draft-banner').classList.add('show');
+}
+
+function formatTimeAgo(date) {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  return `${hrs}h ago`;
+}
+
+function restoreDraft() {
+  const draft = loadStoredDraft();
+  if (!draft) { toast('No draft found'); return; }
+  S.location      = draft.location || '';
+  S.route         = draft.route || '';
+  S.orderDate     = draft.orderDate || '';
+  S.orderType     = draft.orderType || 'projection';
+  S.customerOrders = draft.customerOrders || [];
+
+  // Restore UI fields
+  const locSel = document.getElementById('who-loc');
+  if (S.location) { locSel.value = S.location; onLocChange(); }
+  if (S.route) {
+    const rInp = document.getElementById('route-inp');
+    rInp.value    = S.route;
+    rInp.readOnly = false;
+  }
+  if (S.orderDate) document.getElementById('order-date').value = S.orderDate;
+  pickOT(S.orderType);
+
+  document.getElementById('draft-banner').classList.remove('show');
+  toast(`Draft restored — ${S.customerOrders.length} customer order${S.customerOrders.length!==1?'s':''} ✓`);
+
+  // Jump straight to step 2 if orders exist
+  if (S.customerOrders.length) {
+    setStep(2);
+    showStep2List();
+  }
+}
+
+function discardDraft() {
+  openConfirm({
+    ico: '🗑️',
+    title: 'Discard Draft?',
+    msg: 'Your saved draft will be permanently deleted.',
+    actionLabel: 'Discard',
+    onConfirm: () => {
+      clearDraft();
+      document.getElementById('draft-banner').classList.remove('show');
+      toast('Draft discarded');
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  CONFIRM MODAL
+// ══════════════════════════════════════════
+let _confirmCallback = null;
+
+function openConfirm({ ico, title, msg, actionLabel, onConfirm }) {
+  document.getElementById('confirm-ico').textContent   = ico || '⚠️';
+  document.getElementById('confirm-title').textContent = title || 'Are you sure?';
+  document.getElementById('confirm-msg').textContent   = msg || '';
+  const btn = document.getElementById('confirm-action-btn');
+  btn.textContent = actionLabel || 'Confirm';
+  _confirmCallback = onConfirm;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  _confirmCallback = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('confirm-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-modal')) closeConfirm();
+  });
+  document.getElementById('confirm-action-btn').addEventListener('click', () => {
+    if (_confirmCallback) _confirmCallback();
+    closeConfirm();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeConfirm();
+  });
+});
 
 // ══════════════════════════════════════════
 //  STATE
@@ -1301,16 +1520,38 @@ function startApp(sp) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   setStep(1);
+
+  // Check for a saved draft for this user
+  checkForDraft(name);
 }
 
 function logout() {
-  selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = '';
-  document.getElementById('ln-inp').value = '';
-  document.getElementById('pw-inp').value = '';
-  document.getElementById('login-err').style.display = 'none';
-  showPanel('signin');
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  const hasOrders = S.customerOrders && S.customerOrders.length > 0;
+
+  const doLogout = () => {
+    clearDraft();
+    selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = '';
+    document.getElementById('ln-inp').value = '';
+    document.getElementById('pw-inp').value = '';
+    document.getElementById('login-err').style.display = 'none';
+    document.getElementById('draft-banner').classList.remove('show');
+    showPanel('signin');
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  };
+
+  if (hasOrders) {
+    const grandAmt = S.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+    openConfirm({
+      ico: '⚠️',
+      title: 'Sign Out?',
+      msg: `You have ${S.customerOrders.length} unsaved customer order${S.customerOrders.length!==1?'s':''} worth KES ${grandAmt.toLocaleString()}. Your draft will be saved and can be restored next time you sign in.`,
+      actionLabel: 'Save & Sign Out',
+      onConfirm: () => { saveDraft(); doLogout(); }
+    });
+  } else {
+    doLogout();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1405,12 +1646,46 @@ function pickOT(type) {
   document.getElementById('ot-full').classList.toggle('sel', type === 'full');
 }
 
+function shakeEl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('shake');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('shake');
+  el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+}
+
 function go2() {
   S.location  = document.getElementById('who-loc').value;
   S.orderDate = document.getElementById('order-date').value;
-  if (!S.location)  { toast('Please select your location'); return; }
-  if (!S.route)     { toast('Please select your route'); return; }
-  if (!S.orderDate) { toast('Please select an order date'); return; }
+
+  // ── Validation ──
+  if (!S.location) {
+    toast('⚠️ Please select your location');
+    shakeEl('who-loc');
+    document.getElementById('who-loc').focus();
+    return;
+  }
+  if (!S.route) {
+    toast('⚠️ Please select your route');
+    shakeEl('route-inp');
+    document.getElementById('route-inp').focus();
+    return;
+  }
+  if (!S.orderDate) {
+    toast('⚠️ Please select an order date');
+    shakeEl('order-date');
+    document.getElementById('order-date').focus();
+    return;
+  }
+  // Warn if date is far in the past (> 7 days)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const chosen = new Date(S.orderDate);
+  const diffDays = Math.floor((today - chosen) / 86400000);
+  if (diffDays > 7) {
+    toast(`⚠️ Date is ${diffDays} days in the past — double-check!`);
+  }
+
   S.customerOrders = [];
   setStep(2);
   showStep2List();
@@ -1451,22 +1726,46 @@ function cancelAddCustomer() {
 }
 
 function saveCustomerOrder() {
-  if (!S.customer) { toast('Please select a customer'); return; }
-  if (!S.cart.length) { toast('Please add at least one product'); return; }
+  if (!S.customer) { toast('⚠️ Please select a customer'); return; }
+
+  // Validate cart is not empty
+  if (!S.cart.length) {
+    toast('⚠️ Please add at least one product');
+    shakeEl('cart-sec');
+    return;
+  }
+
+  // Validate no zero-qty items (should be auto-removed, but double-check)
+  const zeroItems = S.cart.filter(i => !i.qty || i.qty <= 0);
+  if (zeroItems.length) {
+    toast('⚠️ Remove items with zero quantity');
+    return;
+  }
+
   const order = { customer: S.customer.name, custCode: S.customer.code, raw: S.customer.raw||{}, cart: S.cart.map(i=>({...i})) };
+
   if (S._editingIdx >= 0) {
     S.customerOrders[S._editingIdx] = order;
   } else {
+    // Check for duplicate customer
     const ex = S.customerOrders.findIndex(o => o.customer === S.customer.name && o.custCode === S.customer.code);
-    if (ex >= 0) S.customerOrders[ex] = order; else S.customerOrders.push(order);
+    if (ex >= 0) {
+      // Merge/replace silently if same customer edited again
+      S.customerOrders[ex] = order;
+    } else {
+      S.customerOrders.push(order);
+    }
   }
+
   S.customer = null; S.cart = []; S._editingIdx = -1;
+  scheduleSave(); // Auto-save draft
   showStep2List();
   toast('Customer order saved ✓');
 }
 
 function removeCustomerOrder(idx) {
   S.customerOrders.splice(idx, 1);
+  scheduleSave(); // keep draft in sync
   renderCustomerOrdersList();
 }
 
@@ -1898,6 +2197,7 @@ async function submitOrder() {
     buildSuccessPreview(S._lastOrder);
     document.getElementById('ok-id').textContent = results.length === 1 ? results[0] : results.length + ' orders submitted';
     S.customerOrders = []; S.cart = [];
+    clearDraft(); // Draft fulfilled — remove it
     setStep(4);
   } catch(e) {
     toast('Error: ' + e.message);
@@ -1908,6 +2208,7 @@ async function submitOrder() {
 }
 
 function newOrder() {
+  clearDraft();
   S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null;
   S.route = ''; S.location = '';
   document.getElementById('who-loc').value = '';
@@ -1915,6 +2216,7 @@ function newOrder() {
   document.getElementById('route-inp').readOnly = true;
   document.getElementById('route-inp').placeholder = 'Select location first…';
   document.getElementById('notes-inp').value = '';
+  document.getElementById('draft-banner').classList.remove('show');
   setStep(1);
 }
 
