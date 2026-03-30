@@ -1390,9 +1390,16 @@ async function loadData() {
   _backgroundRefresh();
 }
 
-// Silently fetch fresh data from GAS and update selSP/selSetSP if needed
+// Silently fetch fresh data from Firebase (fast) and update selSP/selSetSP if needed.
+// Falls back to GAS only when Firebase has no data at all.
 function _backgroundRefresh() {
-  gas({ action: 'getData' }, { timeoutMs: 25000 }).then(fresh => {
+  db.ref('/masterData').get().then(snap => {
+    if (!snap || !snap.exists()) {
+      // Firebase empty — prime it via GAS (rare, first-ever run)
+      return gas({ action: 'getData' }, { timeoutMs: 25000 });
+    }
+    return snap.val();
+  }).then(fresh => {
     if (!fresh || !fresh.salespeople) return;
     S.data = normaliseData(fresh);
     lsDataSave(S.data);
@@ -2113,6 +2120,9 @@ function renderCustList(q) {
   });
 }
 
+// All products currently visible in the product list (for filterProducts)
+let _prodListData = []; // [{code,desc,pack,price,kg,cat,row}]
+
 function buildProductUI() {
   document.getElementById('filter-banner').style.display = S.orderType === 'projection' ? 'flex' : 'none';
 
@@ -2153,12 +2163,27 @@ function buildProductUI() {
     (groups[cat] = groups[cat]||[]).push(p);
   });
 
-  container.innerHTML = '';
+  // Populate category dropdown
+  const catSel = document.getElementById('prod-cat-sel');
+  if (catSel) {
+    catSel.innerHTML = '<option value="">All Categories</option>';
+    Object.keys(groups).sort().forEach(cat => {
+      const o = document.createElement('option');
+      o.value = o.textContent = cat;
+      catSel.appendChild(o);
+    });
+  }
+
+  // Build all rows into a DocumentFragment — single DOM write
+  const frag = document.createDocumentFragment();
+  _prodListData = [];
+
   Object.entries(groups).forEach(([cat, items]) => {
     const ch = document.createElement('div');
     ch.className = 'cat-header';
+    ch.dataset.cat = cat;
     ch.textContent = cat;
-    container.appendChild(ch);
+    frag.appendChild(ch);
 
     items.forEach(p => {
       const code  = (p[ck]  || '').trim();
@@ -2173,6 +2198,9 @@ function buildProductUI() {
 
       const row = document.createElement('div');
       row.className = 'prod-row';
+      row.dataset.code    = code;
+      row.dataset.desc    = desc.toLowerCase();
+      row.dataset.cat     = cat;
       row.innerHTML = `
         <div>
           <div class="prod-name">${desc}</div>
@@ -2185,7 +2213,7 @@ function buildProductUI() {
           <button class="qty-btn" data-code="${code}" data-pack="${pack}" data-delta="1">+</button>
         </div>
       `;
-      container.appendChild(row);
+      frag.appendChild(row);
 
       row.querySelectorAll('.qty-btn').forEach(btn => {
         btn.onclick = () => changeQty(code, pack, price, kg, desc, cat, parseInt(btn.dataset.delta));
@@ -2193,11 +2221,65 @@ function buildProductUI() {
       row.querySelector('.qty-inp').onchange = function() {
         setQty(code, pack, price, kg, desc, cat, parseInt(this.value)||0);
       };
+
+      _prodListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, cat, catHeader: ch, row });
     });
   });
 
+  container.innerHTML = '';
+  container.appendChild(frag);
+
+  // Show search bar now that products are loaded
+  const searchBar = document.getElementById('prod-search-bar');
+  const countLbl  = document.getElementById('prod-count-lbl');
+  if (searchBar) searchBar.style.display = 'flex';
+  if (countLbl)  { countLbl.textContent = `${list.length} product${list.length!==1?'s':''}` ; countLbl.style.display = 'block'; }
+
   renderCart();
 }
+
+// ── Product search / filter ──────────────────────────────────────────────────
+let _prodFilterTimer = null;
+function filterProducts() {
+  clearTimeout(_prodFilterTimer);
+  _prodFilterTimer = setTimeout(_doFilterProducts, 80);
+}
+function _doFilterProducts() {
+  const q    = (document.getElementById('prod-search')?.value || '').toLowerCase().trim();
+  const cat  = (document.getElementById('prod-cat-sel')?.value || '').trim();
+  const countLbl = document.getElementById('prod-count-lbl');
+  const clearBtn = document.getElementById('prod-clear-btn');
+  if (clearBtn) clearBtn.style.display = (q || cat) ? 'inline-flex' : 'none';
+
+  let visible = 0;
+  const visibleCats = new Set();
+
+  _prodListData.forEach(({ code, desc, cat: itemCat, catHeader, row }) => {
+    const catMatch  = !cat || itemCat === cat;
+    const termMatch = !q   || desc.includes(q) || code.toLowerCase().includes(q);
+    const show = catMatch && termMatch;
+    row.style.display = show ? '' : 'none';
+    if (show) { visible++; visibleCats.add(itemCat); }
+  });
+
+  // Hide category headers that have no visible children
+  _prodListData.forEach(({ cat: itemCat, catHeader }) => {
+    if (catHeader) catHeader.style.display = visibleCats.has(itemCat) ? '' : 'none';
+  });
+
+  if (countLbl) countLbl.textContent = q || cat
+    ? `${visible} result${visible!==1?'s':''}`
+    : `${_prodListData.length} product${_prodListData.length!==1?'s':''}`;
+}
+
+function clearProductSearch() {
+  const inp = document.getElementById('prod-search');
+  const sel = document.getElementById('prod-cat-sel');
+  if (inp) inp.value = '';
+  if (sel) sel.value = '';
+  _doFilterProducts();
+}
+// ── End product search ──────────────────────────────────────────────────────
 
 function changeQty(code, pack, price, kg, desc, cat, delta) {
   updateCart(code, pack, price, kg, desc, cat, null, delta);
@@ -2237,7 +2319,7 @@ function renderCart() {
   section.style.display = 'block';
 
   let totAmt = 0, totKg = 0;
-  lines.innerHTML = '';
+  const frag = document.createDocumentFragment();
 
   S.cart.forEach((item, i) => {
     totAmt += item.total;
@@ -2252,8 +2334,11 @@ function renderCart() {
       <div class="cl-total">KES ${item.total.toLocaleString()}</div>
       <button class="cl-rm" onclick="removeCart(${i})" title="Remove">✕</button>
     `;
-    lines.appendChild(d);
+    frag.appendChild(d);
   });
+
+  lines.innerHTML = '';
+  lines.appendChild(frag);
 
   totEl.textContent = `KES ${totAmt.toLocaleString()}`;
   kgEl.textContent  = `${totKg.toFixed(2)} KG`;
@@ -2749,8 +2834,63 @@ async function openDashboard() {
 async function loadDashOrders() {
   showLoad('Loading orders…');
   try {
-    const rows = await gas({ action: 'getOrders' });
-    allOrders = Array.isArray(rows) ? rows : [];
+    const from = document.getElementById('df-from').value.trim();
+    const to   = document.getElementById('df-to').value.trim();
+
+    // ── Try Firebase /orders first (instant) ──────────────────────────────────
+    let rows = null;
+    try {
+      // Firebase stores orders keyed by orderId; filter client-side by date
+      const snap = await Promise.race([
+        db.ref('/orders').get(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+      ]);
+      if (snap && snap.exists()) {
+        const obj = snap.val();
+        rows = [];
+        Object.values(obj).forEach(order => {
+          if (!order || !order.items || !Array.isArray(order.items)) return;
+          const oDate = (order.date || '').trim();
+          if (from && oDate < from) return;
+          if (to   && oDate > to)   return;
+          // Expand to line-item rows (same shape GAS returns)
+          order.items.forEach(item => {
+            rows.push({
+              'Timestamp'       : order.timestamp || '',
+              'Date'            : oDate,
+              'Salesman'        : order.salesman || '',
+              'Payroll'         : order.payroll  || '',
+              'Route'           : order.route    || '',
+              'Location'        : order.location || '',
+              'Order Type'      : order.orderType || '',
+              'Customer Name'   : order.customer || '',
+              'Customer Code'   : order.customerCode || '',
+              'Product Code'    : item.productCode || item.product_code || '',
+              'Description'     : item.description || item.product || '',
+              'Category'        : item.category  || '',
+              'Packaging'       : item.packaging  || '',
+              'Qty'             : item.qty        || 0,
+              'Unit Price (KES)': item.price      || 0,
+              'Total (KES)'     : item.total      || 0,
+              'Total (KG)'      : item.totalKg    || 0,
+              'Notes'           : order.notes     || '',
+              'Order ID'        : order.orderId   || ''
+            });
+          });
+        });
+        rows.sort((a, b) => (a['Date'] < b['Date'] ? 1 : a['Date'] > b['Date'] ? -1 : 0));
+      }
+    } catch (fbErr) {
+      rows = null; // Firebase slow/failed — fall through to GAS
+    }
+
+    // ── Fall back to GAS (slow JSONP, ~5-15 s) ────────────────────────────────
+    if (rows === null) {
+      const gasRows = await gas({ action: 'getOrders', from, to });
+      rows = Array.isArray(gasRows) ? gasRows : [];
+    }
+
+    allOrders = rows;
     populateSPFilter();
     applyDashFilters();
   } catch(e) {
@@ -2799,7 +2939,12 @@ function populateSPFilter() {
   routeSel.value = curRoute;
 }
 
+let _dashFilterTimer = null;
 function applyDashFilters() {
+  clearTimeout(_dashFilterTimer);
+  _dashFilterTimer = setTimeout(_doApplyDashFilters, 120);
+}
+function _doApplyDashFilters() {
   const sp       = document.getElementById('df-sp').value.trim().toLowerCase();
   const type     = document.getElementById('df-type').value.trim().toLowerCase();
   const location = document.getElementById('df-location').value.trim().toLowerCase();
@@ -2890,7 +3035,8 @@ function renderDashTable(rows) {
     return da < db ? 1 : da > db ? -1 : 0;
   });
 
-  body.innerHTML = '';
+  // Use a DocumentFragment so the DOM is only touched once
+  const frag = document.createDocumentFragment();
   orderKeys.forEach(key => {
     const o   = orderMap[key];
     const row = document.createElement('div');
@@ -2909,8 +3055,11 @@ function renderDashTable(rows) {
       <div class="or-amt">KES ${o.total.toLocaleString()}</div>
     `;
     row.onclick = () => openModal(o);
-    body.appendChild(row);
+    frag.appendChild(row);
   });
+
+  body.innerHTML = '';
+  body.appendChild(frag);
 }
 
 function openModal(order) {
@@ -3827,7 +3976,12 @@ function ohHighlight(text, q) {
     '<span class="oh-highlight">$1</span>');
 }
 
+let _ohSearchTimer = null;
 function applyOrderSearch() {
+  clearTimeout(_ohSearchTimer);
+  _ohSearchTimer = setTimeout(_doApplyOrderSearch, 100);
+}
+function _doApplyOrderSearch() {
   _ohSearchTerm = (document.getElementById('oh-search')?.value || '').trim().toLowerCase();
   const clearBtn = document.getElementById('oh-clear-btn');
   if (clearBtn) clearBtn.classList.toggle('show', _ohSearchTerm.length > 0);
