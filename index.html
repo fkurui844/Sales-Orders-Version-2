@@ -248,6 +248,140 @@ textarea.inp{resize:vertical;min-height:80px}
 .dash-head-right{display:flex;align-items:center;gap:10px;font-size:12px;opacity:.8}
 
 /* ── DASHBOARD PANEL C login ── */
+
+/* ══════════════════════════════════════════
+   ORDER FULFILMENT SECTION
+══════════════════════════════════════════ */
+/* Tab navigation for dash pages */
+.dash-page-nav{display:flex;background:#fff;border-bottom:2px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.dash-page-nav::-webkit-scrollbar{display:none}
+.dash-page-tab{flex:none;padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;white-space:nowrap}
+.dash-page-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.dash-page-tab:hover:not(.active){color:var(--text)}
+
+/* Fulfilment page shell */
+#fulfil-page{display:none}
+#orders-page{display:block}
+
+/* Upload zone */
+.fulfil-upload-zone{border:2.5px dashed var(--border);border-radius:14px;padding:40px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px;position:relative}
+.fulfil-upload-zone:hover,.fulfil-upload-zone.drag-over{border-color:var(--accent);background:var(--accent-lt)}
+.fulfil-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fulfil-upload-ico{font-size:38px;margin-bottom:10px}
+.fulfil-upload-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
+.fulfil-upload-sub{font-size:13px;color:var(--muted)}
+.fulfil-upload-hint{font-size:11px;color:var(--muted);margin-top:6px;opacity:.7}
+
+/* Uploaded file tag */
+.fulfil-file-tag{display:flex;align-items:center;gap:10px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:10px;padding:11px 16px;margin-bottom:16px}
+.fulfil-file-tag-ico{font-size:22px}
+.fulfil-file-tag-info{flex:1;min-width:0}
+.fulfil-file-tag-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fulfil-file-tag-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.fulfil-file-remove{border:none;background:none;cursor:pointer;color:var(--muted);font-size:18px;padding:2px 6px;border-radius:6px;transition:color .15s}
+.fulfil-file-remove:hover{color:#c0392b}
+
+/* Period display */
+.fulfil-period{display:flex;align-items:center;gap:8px;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--accent)}
+
+/* Summary KPI row */
+.fulfil-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.fulfil-kpi{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;text-align:center}
+.fulfil-kpi-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;line-height:1;margin-bottom:4px}
+.fulfil-kpi-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fulfil-kpi-val.ok{color:var(--ok)}
+.fulfil-kpi-val.warn{color:#E67E22}
+.fulfil-kpi-val.bad{color:#C0392B}
+.fulfil-kpi-val.accent{color:var(--accent)}
+
+/* Gauge ring */
+.fulfil-gauge-wrap{display:flex;justify-content:center;margin-bottom:16px}
+.fulfil-gauge-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 28px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;justify-content:center}
+.gauge-ring-wrap{position:relative;width:120px;height:120px}
+.gauge-ring-wrap svg{transform:rotate(-90deg)}
+.gauge-center-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-pct{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1}
+.gauge-sub{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.gauge-legend{display:flex;flex-direction:column;gap:8px}
+.gl-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.gl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gl-label{color:var(--muted)}
+.gl-val{font-weight:700;margin-left:auto;padding-left:12px}
+
+/* Toolbar for table */
+.fulfil-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.fulfil-search{flex:1;min-width:160px;padding:9px 14px 9px 36px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238E8880' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;color:var(--text)}
+.fulfil-search:focus{outline:none;border-color:var(--accent)}
+.fulfil-filter-sel{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:#fff;color:var(--text);cursor:pointer}
+.fulfil-filter-sel:focus{outline:none;border-color:var(--accent)}
+.fulfil-export-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s}
+.fulfil-export-btn:hover{background:#155c31}
+
+/* Fulfilment table */
+.fulfil-table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.fulfil-table{width:100%;border-collapse:collapse;font-size:12px}
+.fulfil-table th{background:var(--bg);padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
+.fulfil-table th:hover{color:var(--text)}
+.fulfil-table th.sorted-asc::after{content:' ▲';opacity:.6}
+.fulfil-table th.sorted-desc::after{content:' ▼';opacity:.6}
+.fulfil-table th:nth-child(n+3),.fulfil-table td:nth-child(n+3){text-align:right}
+.fulfil-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.fulfil-table tr:last-child td{border-bottom:none}
+.fulfil-table tr:hover td{background:#FAF7F4}
+.fulfil-table tr.fulfil-expanded-parent td{background:var(--accent-lt)}
+
+/* Progress bar cell */
+.fulfil-bar-wrap{display:flex;align-items:center;gap:8px}
+.fulfil-bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;min-width:60px}
+.fulfil-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.fulfil-bar-fill.ok{background:var(--ok)}
+.fulfil-bar-fill.warn{background:#E67E22}
+.fulfil-bar-fill.bad{background:#C0392B}
+.fulfil-bar-pct{font-weight:700;font-size:11px;min-width:36px;text-align:right}
+.fulfil-bar-pct.ok{color:var(--ok)}
+.fulfil-bar-pct.warn{color:#E67E22}
+.fulfil-bar-pct.bad{color:#C0392B}
+
+/* Expand rows */
+.fulfil-expand-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:0 4px;color:var(--muted);transition:transform .2s}
+.fulfil-expand-btn.open{transform:rotate(90deg)}
+.fulfil-detail-row td{background:#FAF9F8;padding:0}
+.fulfil-detail-inner{padding:8px 12px 8px 32px;overflow:hidden;transition:max-height .3s}
+.fulfil-detail-table{width:100%;border-collapse:collapse;font-size:11px}
+.fulfil-detail-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.fulfil-detail-table th:nth-child(n+2),.fulfil-detail-table td:nth-child(n+2){text-align:right}
+.fulfil-detail-table td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+.fulfil-detail-table tr:last-child td{border-bottom:none}
+
+/* Badge */
+.fulfil-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.fulfil-badge.ok{background:var(--ok-lt);color:var(--ok)}
+.fulfil-badge.warn{background:#FEF3E2;color:#E67E22}
+.fulfil-badge.bad{background:#FDECEA;color:#C0392B}
+
+/* Empty/loading states */
+.fulfil-empty{padding:48px 24px;text-align:center;color:var(--muted)}
+.fulfil-empty-ico{font-size:40px;margin-bottom:12px}
+.fulfil-empty-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px}
+.fulfil-empty-sub{font-size:13px}
+
+/* Pagination */
+.fulfil-pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.fulfil-pg-btns{display:flex;gap:4px}
+.fulfil-pg-btn{padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-size:12px;cursor:pointer;transition:all .15s}
+.fulfil-pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.fulfil-pg-btn:disabled{opacity:.4;cursor:default}
+.fulfil-pg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Mobile tweaks */
+@media(max-width:600px){
+  .fulfil-kpi-row{grid-template-columns:repeat(2,1fr)}
+  .fulfil-gauge-card{gap:18px}
+  .fulfil-table th:nth-child(3),.fulfil-table td:nth-child(3),
+  .fulfil-table th:nth-child(4),.fulfil-table td:nth-child(4){display:none}
+  .fulfil-toolbar{flex-direction:column;align-items:stretch}
+  .fulfil-search{width:100%}
+}
 #panel-dash{display:none}
 #panel-dash.active{display:block}
 
@@ -855,6 +989,14 @@ textarea.inp{resize:vertical;min-height:80px}
     </div>
   </div>
 
+  <!-- PAGE NAV TABS -->
+  <div class="dash-page-nav">
+    <button class="dash-page-tab active" id="tab-orders" onclick="switchDashPage('orders')">&#128203; Orders</button>
+    <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">&#128202; Order Fulfilment</button>
+  </div>
+
+  <!-- PAGE: ORDERS (original dashboard content) -->
+  <div id="orders-page">
   <div class="content" style="max-width:900px">
 
     <!-- Stats -->
@@ -990,6 +1132,159 @@ textarea.inp{resize:vertical;min-height:80px}
     </div>
 
   </div>
+  </div><!-- #orders-page -->
+
+  <!-- ORDER FULFILMENT PAGE -->
+  <div id="fulfil-page" style="display:none">
+    <div class="content" style="max-width:960px;padding-bottom:40px">
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-title" style="margin-bottom:14px">
+          <div class="card-icon">&#128196;</div>
+          <span>Upload SAP Sales Report</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Download the <strong>Sales per Customer by Product</strong> report from SAP, then upload it here. The system will match each customer&#39;s orders against actual sales and compute fulfilment rates.</p>
+
+        <div class="fulfil-upload-zone" id="fulfil-drop-zone">
+          <input type="file" id="fulfil-file-input" accept=".xls,.xlsx,.txt,.csv" onchange="handleFulfilFile(this.files[0])">
+          <div class="fulfil-upload-ico">&#128196;</div>
+          <div class="fulfil-upload-title">Drop SAP file here or tap to browse</div>
+          <div class="fulfil-upload-sub">Supports the tab-delimited .xls export from SAP</div>
+          <div class="fulfil-upload-hint">File stays local &#8212; nothing is uploaded to any server</div>
+        </div>
+
+        <div class="fulfil-file-tag" id="fulfil-file-tag" style="display:none">
+          <div class="fulfil-file-tag-ico">&#9989;</div>
+          <div class="fulfil-file-tag-info">
+            <div class="fulfil-file-tag-name" id="fulfil-file-name">&#8212;</div>
+            <div class="fulfil-file-tag-meta" id="fulfil-file-meta">&#8212;</div>
+          </div>
+          <button class="fulfil-file-remove" onclick="clearFulfilFile()" title="Remove file">&#10005;</button>
+        </div>
+
+        <div class="fulfil-period" id="fulfil-period" style="display:none">
+          <span>&#128197;</span>
+          <span id="fulfil-period-txt">Period: &#8212;</span>
+        </div>
+      </div>
+
+      <div id="fulfil-results" style="display:none">
+
+        <div class="fulfil-kpi-row">
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val accent" id="fkpi-customers">&#8212;</div>
+            <div class="fulfil-kpi-lbl">Customers Matched</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val" id="fkpi-rate">&#8212;</div>
+            <div class="fulfil-kpi-lbl">Avg Fulfilment Rate</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val ok" id="fkpi-full">&#8212;</div>
+            <div class="fulfil-kpi-lbl">Fully Fulfilled</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val bad" id="fkpi-zero">&#8212;</div>
+            <div class="fulfil-kpi-lbl">Zero / No Sales</div>
+          </div>
+        </div>
+
+        <div class="fulfil-gauge-wrap">
+          <div class="fulfil-gauge-card">
+            <div class="gauge-ring-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#E3DDD7" stroke-width="12"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#C0392B" stroke-width="12"
+                  id="gauge-arc-bad" stroke-dasharray="0 314" stroke-linecap="round" stroke-dashoffset="0"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#E67E22" stroke-width="12"
+                  id="gauge-arc-warn" stroke-dasharray="0 314" stroke-linecap="round" stroke-dashoffset="0"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#1B6B3A" stroke-width="12"
+                  id="gauge-arc-ok" stroke-dasharray="0 314" stroke-linecap="round" stroke-dashoffset="0"/>
+              </svg>
+              <div class="gauge-center-text">
+                <div class="gauge-pct" id="gauge-pct-text">&#8212;</div>
+                <div class="gauge-sub">fulfilled</div>
+              </div>
+            </div>
+            <div class="gauge-legend">
+              <div class="gl-row">
+                <div class="gl-dot" style="background:#1B6B3A"></div>
+                <div class="gl-label">Full (&#8805;90%)</div>
+                <div class="gl-val" id="gl-ok">&#8212;</div>
+              </div>
+              <div class="gl-row">
+                <div class="gl-dot" style="background:#E67E22"></div>
+                <div class="gl-label">Partial (50&#8211;89%)</div>
+                <div class="gl-val" id="gl-warn">&#8212;</div>
+              </div>
+              <div class="gl-row">
+                <div class="gl-dot" style="background:#C0392B"></div>
+                <div class="gl-label">Low (&lt;50%)</div>
+                <div class="gl-val" id="gl-bad">&#8212;</div>
+              </div>
+              <div class="gl-row">
+                <div class="gl-dot" style="background:#bbb"></div>
+                <div class="gl-label">No Orders in System</div>
+                <div class="gl-val" id="gl-none">&#8212;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fulfil-toolbar">
+          <input class="fulfil-search" type="text" id="fulfil-search" placeholder="Search customer name or ID&#8230;" oninput="renderFulfilTable()">
+          <select class="fulfil-filter-sel" id="fulfil-filter" onchange="renderFulfilTable()">
+            <option value="">All Statuses</option>
+            <option value="ok">Full (&#8805;90%)</option>
+            <option value="warn">Partial (50&#8211;89%)</option>
+            <option value="bad">Low (&lt;50%)</option>
+            <option value="none">No Orders</option>
+          </select>
+          <select class="fulfil-filter-sel" id="fulfil-sort" onchange="renderFulfilTable()">
+            <option value="rate-asc">Rate: Low to High</option>
+            <option value="rate-desc">Rate: High to Low</option>
+            <option value="ordered-desc">Ordered: High to Low</option>
+            <option value="sales-desc">SAP Sales: High to Low</option>
+            <option value="name-asc">Customer A&#8211;Z</option>
+          </select>
+          <button class="fulfil-export-btn" onclick="exportFulfilCSV()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+
+        <div class="fulfil-table-wrap">
+          <table class="fulfil-table">
+            <thead>
+              <tr>
+                <th style="width:28px;text-align:center"></th>
+                <th>Cust. ID</th>
+                <th style="text-align:left">Customer Name</th>
+                <th>Ordered (KES)</th>
+                <th>SAP Sales (KES)</th>
+                <th style="min-width:150px">Fulfilment Rate</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="fulfil-tbody"></tbody>
+          </table>
+          <div class="fulfil-pagination" id="fulfil-pagination">
+            <span id="fulfil-pg-info">&#8212;</span>
+            <div class="fulfil-pg-btns" id="fulfil-pg-btns"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="fulfil-empty" id="fulfil-empty-state">
+        <div class="fulfil-empty-ico">&#128202;</div>
+        <div class="fulfil-empty-title">No SAP file loaded yet</div>
+        <div class="fulfil-empty-sub">Upload your SAP sales export above to see fulfilment rates matched against orders in this system.</div>
+      </div>
+
+    </div>
+  </div><!-- #fulfil-page -->
+
 </div><!-- #dash-app -->
 
 <!-- ══════════════ EXPORT MODAL ══════════════ -->
@@ -4117,6 +4412,470 @@ function tagOrderRowsForSearch() {
     if (typeEl) row.dataset.type = typeEl.textContent.trim();
   });
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ORDER FULFILMENT MODULE
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Page switching ──────────────────────────────────────────────────────
+function switchDashPage(page) {
+  document.getElementById('orders-page').style.display  = page === 'orders'  ? '' : 'none';
+  document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? '' : 'none';
+  document.getElementById('tab-orders').classList.toggle('active', page === 'orders');
+  document.getElementById('tab-fulfil').classList.toggle('active', page === 'fulfil');
+}
+
+// ── State ────────────────────────────────────────────────────────────────
+let _fulfilSapData      = [];   // parsed SAP customers  [{id, name, products[], totalSales}]
+let _fulfilOrdersData   = [];   // from Firebase         [{customerId, customerName, products{code:qty}, totalOrdered}]
+let _fulfilMatched      = [];   // merged rows
+let _fulfilPage         = 1;
+const FULFIL_PAGE_SIZE  = 25;
+
+// ── Drag-and-drop on upload zone ─────────────────────────────────────────
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    const zone = document.getElementById('fulfil-drop-zone');
+    if (!zone) return;
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFulfilFile(file);
+    });
+  });
+})();
+
+// ── File ingestion ───────────────────────────────────────────────────────
+function handleFulfilFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const text = e.target.result;
+    const parsed = parseSapText(text);
+    if (!parsed || !parsed.customers.length) {
+      alert('Could not parse the SAP file. Please make sure it is the tab-delimited Sales per Customer report.');
+      return;
+    }
+    _fulfilSapData = parsed.customers;
+
+    // Update UI
+    document.getElementById('fulfil-drop-zone').style.display   = 'none';
+    document.getElementById('fulfil-file-tag').style.display    = 'flex';
+    document.getElementById('fulfil-file-name').textContent     = file.name;
+    document.getElementById('fulfil-file-meta').textContent     =
+      parsed.customers.length + ' customers · ' + parsed.totalProducts + ' product lines';
+
+    if (parsed.period) {
+      document.getElementById('fulfil-period').style.display    = 'flex';
+      document.getElementById('fulfil-period-txt').textContent  = 'SAP Period: ' + parsed.period;
+    }
+
+    document.getElementById('fulfil-empty-state').style.display = 'none';
+
+    runFulfilMatch();
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function clearFulfilFile() {
+  _fulfilSapData    = [];
+  _fulfilMatched    = [];
+  document.getElementById('fulfil-drop-zone').style.display   = '';
+  document.getElementById('fulfil-file-tag').style.display    = 'none';
+  document.getElementById('fulfil-period').style.display      = 'none';
+  document.getElementById('fulfil-results').style.display     = 'none';
+  document.getElementById('fulfil-empty-state').style.display = '';
+  document.getElementById('fulfil-file-input').value          = '';
+}
+
+// ── SAP text parser ──────────────────────────────────────────────────────
+function parseSapText(text) {
+  const lines        = text.split(/\r?\n/);
+  const customers    = [];
+  let   current      = null;
+  let   period       = null;
+  let   totalProducts = 0;
+
+  // Detect period from first line
+  const periodMatch = lines[0] && lines[0].match(/(\d{2}\.\d{2}\.\d{4})/g);
+  if (periodMatch && periodMatch.length >= 2) {
+    period = periodMatch[0] + ' to ' + periodMatch[1];
+  }
+
+  for (const line of lines) {
+    const parts = line.split('\t').map(p => p.trim()).filter(p => p);
+    if (!parts.length) continue;
+
+    const isCustomerHeader = parts[0] === 'CUSTOMER' && parts.length >= 3 && !parts.includes('TOTALS');
+    const isCustomerTotal  = parts[0] === 'CUSTOMER' && parts.includes('TOTALS');
+    const isProductLine    = /^\d{8,}$/.test(parts[0]) && parts.length >= 4;
+
+    if (isCustomerHeader) {
+      if (current) customers.push(current);
+      // parts: CUSTOMER, id, name
+      const id   = parts[1] || '';
+      const name = parts[2] || '';
+      current = { id, name, products: [], totalSales: 0 };
+    } else if (isCustomerTotal && current) {
+      const numStr = parts[parts.length - 1];
+      current.totalSales = parseFloat(numStr.replace(/,/g, '')) || 0;
+    } else if (isProductLine && current) {
+      try {
+        const code  = parts[0];
+        const desc  = parts[1];
+        const qty   = parseFloat((parts[2] || '0').replace(/,/g, '')) || 0;
+        const unit  = parts[3] && isNaN(parts[3].replace(/,/g,'')) ? parts[3] : '';
+        const sales = parseFloat((parts[parts.length - 1] || '0').replace(/,/g, '')) || 0;
+        current.products.push({ code, desc, qty, unit, sales });
+        totalProducts++;
+      } catch(_) {}
+    }
+  }
+  if (current) customers.push(current);
+
+  return { customers, period, totalProducts };
+}
+
+// ── Match SAP data with Firebase orders ─────────────────────────────────
+async function runFulfilMatch() {
+  showLoad('Matching orders…');
+  try {
+    // Pull ALL orders from Firebase
+    const snap = await db.ref('orders').once('value');
+    const allOrders = [];
+
+    snap.forEach(child => {
+      const o = child.val();
+      if (!o) return;
+
+      // Flatten multi-customer orders
+      const customers = o.customers || [];
+      customers.forEach(co => {
+        const custId   = (co.customerId   || '').replace(/^0+/, ''); // strip leading zeros
+        const custName = co.customerName  || '';
+        let   ordered  = 0;
+        const prodMap  = {};
+
+        (co.items || co.products || []).forEach(item => {
+          const code = String(item.code || item.productCode || '');
+          const qty  = parseFloat(item.qty || item.quantity || 0);
+          const val  = parseFloat(item.total || item.value || item.price || 0);
+          ordered   += val;
+          if (code) prodMap[code] = (prodMap[code] || 0) + qty;
+        });
+
+        if (custId || custName) {
+          allOrders.push({ custId, custName, ordered, prodMap });
+        }
+      });
+    });
+
+    // Group Firebase orders by customer ID (normalised — strip leading zeros)
+    const ordersByCust = {};
+    allOrders.forEach(o => {
+      const key = o.custId || o.custName.toLowerCase();
+      if (!ordersByCust[key]) ordersByCust[key] = { custId: o.custId, custName: o.custName, ordered: 0, prodMap: {} };
+      ordersByCust[key].ordered += o.ordered;
+      Object.entries(o.prodMap).forEach(([code, qty]) => {
+        ordersByCust[key].prodMap[code] = (ordersByCust[key].prodMap[code] || 0) + qty;
+      });
+    });
+
+    // Build matched rows
+    const matched = [];
+    _fulfilSapData.forEach(sap => {
+      const normId   = (sap.id || '').replace(/^0+/, '');
+      const order    = ordersByCust[normId] || ordersByCust[sap.name.toLowerCase()] || null;
+      const ordered  = order ? order.ordered : 0;
+      const sales    = sap.totalSales;
+      const rate     = (ordered > 0 && sales >= 0) ? Math.min(sales / ordered, 1) : (ordered === 0 && sales > 0 ? 1 : -1);
+      // rate = -1 means SAP has sales but no order in system
+
+      matched.push({
+        id:        sap.id,
+        name:      sap.name,
+        ordered:   ordered,
+        sales:     sales,
+        rate:      rate,
+        products:  sap.products,
+        hasOrder:  !!order
+      });
+    });
+
+    // Also add SAP rows that had no match in our system (already in matched above)
+    _fulfilMatched = matched;
+    _fulfilPage    = 1;
+
+    renderFulfilSummary();
+    renderFulfilTable();
+    document.getElementById('fulfil-results').style.display = '';
+
+  } catch (err) {
+    console.error('Fulfil match error', err);
+    alert('Error loading orders from the database. Please try again.');
+  } finally {
+    hideLoad();
+  }
+}
+
+// ── Summary KPIs + gauge ─────────────────────────────────────────────────
+function renderFulfilSummary() {
+  const data     = _fulfilMatched;
+  const withOrder = data.filter(r => r.hasOrder || r.ordered > 0);
+  const nOk      = data.filter(r => r.rate >= 0.9).length;
+  const nWarn    = data.filter(r => r.rate >= 0.5 && r.rate < 0.9).length;
+  const nBad     = data.filter(r => r.rate >= 0 && r.rate < 0.5).length;
+  const nNone    = data.filter(r => r.rate < 0 || (!r.hasOrder && r.ordered === 0)).length;
+  const nMatched = data.filter(r => r.hasOrder || r.ordered > 0).length;
+
+  const ratesWithOrders = data.filter(r => r.ordered > 0).map(r => r.rate);
+  const avgRate = ratesWithOrders.length
+    ? ratesWithOrders.reduce((a, b) => a + b, 0) / ratesWithOrders.length
+    : 0;
+
+  // KPIs
+  document.getElementById('fkpi-customers').textContent = nMatched;
+  const rateEl = document.getElementById('fkpi-rate');
+  rateEl.textContent = Math.round(avgRate * 100) + '%';
+  rateEl.className = 'fulfil-kpi-val ' + rateClass(avgRate);
+  document.getElementById('fkpi-full').textContent = nOk;
+  document.getElementById('fkpi-zero').textContent = data.filter(r => r.sales === 0).length;
+
+  // Gauge legend
+  document.getElementById('gl-ok').textContent   = nOk;
+  document.getElementById('gl-warn').textContent = nWarn;
+  document.getElementById('gl-bad').textContent  = nBad;
+  document.getElementById('gl-none').textContent = nNone;
+
+  // Gauge pct text
+  const gaugeEl = document.getElementById('gauge-pct-text');
+  gaugeEl.textContent = Math.round(avgRate * 100) + '%';
+  gaugeEl.style.color = rateColor(avgRate);
+
+  // Stacked ring — circumference = 2*pi*50 ≈ 314
+  const C     = 314;
+  const total = nOk + nWarn + nBad; // excludes "none" (no order)
+  if (total === 0) return;
+
+  function setArc(id, count, offset) {
+    const el   = document.getElementById(id);
+    const dash = (count / total) * C;
+    el.setAttribute('stroke-dasharray',  dash + ' ' + C);
+    el.setAttribute('stroke-dashoffset', -offset);
+    return offset + dash;
+  }
+
+  let offset = 0;
+  offset = setArc('gauge-arc-bad',  nBad,  offset);
+  offset = setArc('gauge-arc-warn', nWarn, offset);
+  offset = setArc('gauge-arc-ok',   nOk,   offset);
+}
+
+function rateClass(r) {
+  if (r < 0)    return 'bad';
+  if (r < 0.5)  return 'bad';
+  if (r < 0.9)  return 'warn';
+  return 'ok';
+}
+function rateColor(r) {
+  if (r < 0.5)  return '#C0392B';
+  if (r < 0.9)  return '#E67E22';
+  return '#1B6B3A';
+}
+function statusLabel(r) {
+  if (r < 0) return ['none', 'No Orders'];
+  if (r < 0.5) return ['bad', 'Low'];
+  if (r < 0.9) return ['warn', 'Partial'];
+  return ['ok', 'Full'];
+}
+
+// ── Table rendering ──────────────────────────────────────────────────────
+function renderFulfilTable() {
+  const search  = (document.getElementById('fulfil-search')?.value || '').toLowerCase();
+  const filter  = document.getElementById('fulfil-filter')?.value || '';
+  const sortKey = document.getElementById('fulfil-sort')?.value   || 'rate-asc';
+
+  let rows = _fulfilMatched.filter(r => {
+    const q = search
+      ? (r.name.toLowerCase().includes(search) || r.id.includes(search))
+      : true;
+    if (!q) return false;
+    if (filter) {
+      const [cls] = statusLabel(r.rate);
+      if (cls !== filter) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  rows.sort((a, b) => {
+    switch (sortKey) {
+      case 'rate-asc':      return a.rate - b.rate;
+      case 'rate-desc':     return b.rate - a.rate;
+      case 'ordered-desc':  return b.ordered - a.ordered;
+      case 'sales-desc':    return b.sales - a.sales;
+      case 'name-asc':      return a.name.localeCompare(b.name);
+      default:              return 0;
+    }
+  });
+
+  // Pagination
+  const total   = rows.length;
+  const pages   = Math.max(1, Math.ceil(total / FULFIL_PAGE_SIZE));
+  _fulfilPage   = Math.min(_fulfilPage, pages);
+  const start   = (_fulfilPage - 1) * FULFIL_PAGE_SIZE;
+  const pageRows = rows.slice(start, start + FULFIL_PAGE_SIZE);
+
+  // Render rows
+  const tbody = document.getElementById('fulfil-tbody');
+  tbody.innerHTML = '';
+
+  if (!pageRows.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No customers match your filter.</td>';
+    tbody.appendChild(tr);
+  } else {
+    pageRows.forEach((r, i) => {
+      const [cls, label] = statusLabel(r.rate);
+      const pct = r.rate < 0 ? 0 : Math.round(r.rate * 100);
+      const barW = Math.min(pct, 100);
+
+      const tr = document.createElement('tr');
+      tr.className = 'fulfil-row';
+      tr.dataset.idx = start + i;
+      tr.innerHTML = `
+        <td style="text-align:center">
+          <button class="fulfil-expand-btn" onclick="toggleFulfilRow(this, ${start + i})" title="Show products">&#9654;</button>
+        </td>
+        <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px">${r.id}</td>
+        <td style="text-align:left;font-weight:500">${r.name}</td>
+        <td>${r.ordered > 0 ? 'KES ' + fmt(r.ordered) : '<span style="color:var(--muted)">&#8212;</span>'}</td>
+        <td>${r.sales > 0 ? 'KES ' + fmt(r.sales) : '<span style="color:var(--muted)">0</span>'}</td>
+        <td>
+          <div class="fulfil-bar-wrap">
+            <div class="fulfil-bar-bg"><div class="fulfil-bar-fill ${cls}" style="width:${barW}%"></div></div>
+            <div class="fulfil-bar-pct ${cls}">${r.rate < 0 ? '&#8212;' : pct + '%'}</div>
+          </div>
+        </td>
+        <td><span class="fulfil-badge ${cls}">${label}</span></td>
+      `;
+      tbody.appendChild(tr);
+
+      // Detail row (hidden)
+      const detail = document.createElement('tr');
+      detail.className = 'fulfil-detail-row';
+      detail.id = 'fulfil-detail-' + (start + i);
+      detail.style.display = 'none';
+      detail.innerHTML = '<td colspan="7"><div class="fulfil-detail-inner"></div></td>';
+      tbody.appendChild(detail);
+    });
+  }
+
+  // Pagination UI
+  renderFulfilPagination(total, pages);
+}
+
+function toggleFulfilRow(btn, idx) {
+  const detailRow = document.getElementById('fulfil-detail-' + idx);
+  const isOpen    = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  detailRow.style.display = isOpen ? 'none' : '';
+  if (!isOpen) {
+    const r = _fulfilMatched[idx];
+    if (!r) return;
+    const inner = detailRow.querySelector('.fulfil-detail-inner');
+    if (inner && !inner.dataset.loaded) {
+      inner.dataset.loaded = '1';
+      if (!r.products || !r.products.length) {
+        inner.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:8px 0">No product detail in SAP file.</p>';
+      } else {
+        const rows = r.products.map(p => `
+          <tr>
+            <td>${p.code}</td>
+            <td style="text-align:left">${p.desc}</td>
+            <td>${p.qty.toLocaleString()} ${p.unit}</td>
+            <td>KES ${fmt(p.sales)}</td>
+          </tr>`).join('');
+        inner.innerHTML = `
+          <table class="fulfil-detail-table">
+            <thead><tr>
+              <th>Code</th><th style="text-align:left">Product</th><th>Qty (SAP)</th><th>SAP Sales</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+    }
+  }
+}
+
+function renderFulfilPagination(total, pages) {
+  document.getElementById('fulfil-pg-info').textContent =
+    total ? 'Showing ' + Math.min((_fulfilPage-1)*FULFIL_PAGE_SIZE+1, total) + '–' + Math.min(_fulfilPage*FULFIL_PAGE_SIZE, total) + ' of ' + total : '0 customers';
+
+  const btns = document.getElementById('fulfil-pg-btns');
+  btns.innerHTML = '';
+
+  const prev = document.createElement('button');
+  prev.className = 'fulfil-pg-btn';
+  prev.textContent = '\u2039';
+  prev.disabled = _fulfilPage <= 1;
+  prev.onclick = () => { _fulfilPage--; renderFulfilTable(); };
+  btns.appendChild(prev);
+
+  const maxPills = 5;
+  let start = Math.max(1, _fulfilPage - 2);
+  let end   = Math.min(pages, start + maxPills - 1);
+  if (end - start < maxPills - 1) start = Math.max(1, end - maxPills + 1);
+
+  for (let p = start; p <= end; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'fulfil-pg-btn' + (p === _fulfilPage ? ' active' : '');
+    btn.textContent = p;
+    const page = p;
+    btn.onclick = () => { _fulfilPage = page; renderFulfilTable(); };
+    btns.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'fulfil-pg-btn';
+  next.textContent = '\u203a';
+  next.disabled = _fulfilPage >= pages;
+  next.onclick = () => { _fulfilPage++; renderFulfilTable(); };
+  btns.appendChild(next);
+}
+
+// ── CSV Export ───────────────────────────────────────────────────────────
+function exportFulfilCSV() {
+  if (!_fulfilMatched.length) return;
+  const headers = ['Customer ID','Customer Name','Ordered (KES)','SAP Sales (KES)','Fulfilment Rate (%)','Status'];
+  const csvRows = [headers.join(',')];
+  _fulfilMatched.forEach(r => {
+    const [, label] = statusLabel(r.rate);
+    const pct = r.rate < 0 ? '' : Math.round(r.rate * 100);
+    csvRows.push([
+      '"' + r.id + '"',
+      '"' + r.name.replace(/"/g, '""') + '"',
+      r.ordered.toFixed(2),
+      r.sales.toFixed(2),
+      pct,
+      '"' + label + '"'
+    ].join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'order_fulfilment_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── Utility ──────────────────────────────────────────────────────────────
+function fmt(n) {
+  return Number(n).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 
 // Watch for dashboard order renders using MutationObserver
 document.addEventListener('DOMContentLoaded', () => {
