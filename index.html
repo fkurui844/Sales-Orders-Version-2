@@ -2591,8 +2591,16 @@ function buildProductUI() {
   const dk  = findKey(p0, ['Description','Product Name','Item Name','Name','Product','DESCRIPTION','Item']);
   const catk = findKey(p0, ['Category','CATEGORY','Type','TYPE','Product Category','category']);
   const pak  = findKey(p0, ['Packaging','PACKAGING','Pack','Package','Size','Pack Size']);
-  const prk  = findKey(p0, ['Unit Price','Unit Price (KES)','Price','Price (KES)','PRICE','UnitPrice']);
-  const kgk  = findKey(p0, ['Weight','Weight (KG)','KG per Unit','Weight KG','KgPerUnit','Kg','weight','Weight per Unit']);
+  const prk = findKey(p0, [
+  'Unit Price (KES)','Unit Price','Price (KES)',
+  'Price','PRICE','UnitPrice','Selling Price','Rate'
+]);
+  const kgk = findKey(p0, [
+  'Weight (KG)','Weight','Weight KG','KG per Unit',
+  'KgPerUnit','Kg per Unit','Kg','weight',
+  'Weight per Unit','Wt (KG)','KG','kg',
+  'Weight per Carton','Wt per Carton'
+]);
 
   S._pk = { ck, dk, catk, pak, prk, kgk };
 
