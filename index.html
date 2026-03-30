@@ -235,6 +235,24 @@ textarea.inp{resize:vertical;min-height:80px}
 #autosave-indicator.saving{color:var(--accent)}
 #autosave-indicator.saved{color:var(--ok)}
 
+/* ── PARTIAL ORDER BANNER ── */
+#partial-order-banner{display:none;background:#EEF7FF;border:1.5px solid #2563EB;border-radius:10px;padding:14px 16px;margin-bottom:14px;align-items:flex-start;gap:12px}
+#partial-order-banner.show{display:flex}
+.pob-icon{font-size:22px;flex-shrink:0;line-height:1.2}
+.pob-body{flex:1;min-width:0}
+.pob-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#1d4ed8;margin-bottom:3px}
+.pob-meta{font-size:12px;color:#3b6fd4;margin-bottom:10px;line-height:1.4}
+.pob-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-continue{padding:9px 16px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:background .2s}
+.btn-continue:hover{background:#1d4ed8}
+.btn-continue-ghost{padding:9px 14px;background:#fff;border:1.5px solid #2563EB;color:#2563EB;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-continue-ghost:hover{background:#EEF7FF}
+.partial-badge{display:inline-flex;align-items:center;gap:5px;background:#DBEAFE;color:#1d4ed8;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-left:6px}
+
+/* ── "ADD MORE" button on success ── */
+.btn-addmore{width:100%;padding:14px;background:#2563EB;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .2s}
+.btn-addmore:hover{background:#1d4ed8}
+
 /* ── DASHBOARD BUTTON on login ── */
 .btn-dash{width:100%;padding:14px;background:linear-gradient(135deg,#1A1714 0%,#2d2a27 100%);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:10px}
 .btn-dash:hover{opacity:.88}
@@ -802,6 +820,19 @@ textarea.inp{resize:vertical;min-height:80px}
         </div>
       </div>
 
+      <!-- Partial order continue banner -->
+      <div id="partial-order-banner">
+        <div class="pob-icon">📋</div>
+        <div class="pob-body">
+          <div class="pob-title">Continue Today's Order <span class="partial-badge">IN PROGRESS</span></div>
+          <div class="pob-meta" id="pob-meta">You submitted a partial order earlier. Add more customers or products to it.</div>
+          <div class="pob-actions">
+            <button class="btn-continue" onclick="continuePartialOrder()">➕ Add More to This Order</button>
+            <button class="btn-continue-ghost" onclick="dismissPartialBanner()">Start New Order</button>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title"><div class="card-icon">👤</div>Who are you?</div>
 
@@ -970,7 +1001,11 @@ textarea.inp{resize:vertical;min-height:80px}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download as Text
           </button>
-          <button class="btn-dark" onclick="newOrder()">Place Another Order →</button>
+          <button class="btn-addmore" onclick="addMoreToOrder()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add More to This Order
+          </button>
+          <button class="btn-dark" onclick="newOrder()">Start a Brand New Order →</button>
         </div>
       </div>
     </div>
@@ -1375,6 +1410,121 @@ textarea.inp{resize:vertical;min-height:80px}
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxSqnh7_gW3Uq7RCClS9pCX-VDe6YcjyKe7UfLRv-ohmDmKZglZ8bJ4IwP45iGNbhLICg/exec';
 
 // ══════════════════════════════════════════
+//  PARTIAL ORDER (place in pieces)
+//  A salesperson may submit an order in multiple rounds.
+//  After each submission the batch key is saved so the
+//  next round can append to the same logical order.
+// ══════════════════════════════════════════
+const PARTIAL_ORDER_KEY = 'salesorder_partial_v1';
+
+function savePartialOrderMeta(meta) {
+  try { localStorage.setItem(PARTIAL_ORDER_KEY, JSON.stringify(meta)); } catch(e) {}
+}
+
+function loadPartialOrderMeta() {
+  try {
+    const raw = localStorage.getItem(PARTIAL_ORDER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function clearPartialOrderMeta() {
+  try { localStorage.removeItem(PARTIAL_ORDER_KEY); } catch(e) {}
+}
+
+/**
+ * Called after a successful submission.
+ * Stores enough context so the salesman can come back and add more.
+ */
+function persistPartialOrder(order) {
+  const meta = {
+    salesman:   order.salesman,
+    payroll:    order.payroll || '',
+    date:       order.date,
+    location:   order.location,
+    route:      order.route,
+    orderType:  order.type,
+    batchKey:   order.batchKey || (order.salesman + '-' + order.date + '-' + order.route).replace(/[^a-zA-Z0-9-]/g,'_'),
+    submittedAt: new Date().toISOString(),
+    customerNames: order.customerOrders.map(co => co.customer),
+  };
+  savePartialOrderMeta(meta);
+}
+
+/**
+ * Check if a partial order exists for the current logged-in user.
+ * Shows the blue banner on Step 1 if so.
+ */
+function checkForPartialOrder(userName) {
+  const meta = loadPartialOrderMeta();
+  if (!meta) return;
+  // Must be same salesman (loose check — payroll or name)
+  if (meta.salesman !== userName && meta.payroll !== userName) return;
+  // Optional: only show for today's date
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  // Show banner even if different date — salesman may be finishing yesterday's order
+  const banner = document.getElementById('partial-order-banner');
+  const metaEl = document.getElementById('pob-meta');
+  if (!banner) return;
+
+  const custNames = (meta.customerNames || []).slice(0, 3).join(', ');
+  const moreTxt   = meta.customerNames && meta.customerNames.length > 3 ? (' +' + (meta.customerNames.length - 3) + ' more') : '';
+  metaEl.textContent = meta.date + ' · ' + meta.route + ' · ' + meta.customerNames.length + ' customer(s) already submitted (' + custNames + moreTxt + '). Tap below to add more.';
+  banner.classList.add('show');
+}
+
+/**
+ * Restore the session context from the partial order meta, then jump to Step 2.
+ */
+function continuePartialOrder() {
+  const meta = loadPartialOrderMeta();
+  if (!meta) { toast('No partial order found'); return; }
+
+  // Restore step-1 fields from the saved meta
+  S.location  = meta.location  || '';
+  S.route     = meta.route     || '';
+  S.orderDate = meta.date      || '';
+  S.orderType = meta.orderType === 'Morning Projection' ? 'projection' : 'full';
+  S._batchKey = meta.batchKey  || '';
+  S._continuingPartial = true;
+
+  const locSel = document.getElementById('who-loc');
+  if (S.location && locSel) { locSel.value = S.location; onLocChange(); }
+  const rInp = document.getElementById('route-inp');
+  if (rInp && S.route) { rInp.value = S.route; rInp.readOnly = false; }
+  if (S.orderDate) document.getElementById('order-date').value = S.orderDate;
+  pickOT(S.orderType);
+
+  document.getElementById('partial-order-banner').classList.remove('show');
+
+  S.customerOrders = [];  // fresh cart — previous customers already submitted
+  setStep(2);
+  showStep2List();
+  toast('Continuing order — add more customers ✓');
+}
+
+function dismissPartialBanner() {
+  document.getElementById('partial-order-banner').classList.remove('show');
+  // Don't clear the meta — they may want to continue later
+}
+
+/**
+ * "Add More to This Order" button on the success screen.
+ * Keeps the same batchKey and returns to Step 2.
+ */
+function addMoreToOrder() {
+  if (!S._lastOrder) { toast('No order to continue'); return; }
+  // Persist the partial order meta so it survives a page reload
+  persistPartialOrder(S._lastOrder);
+  S._continuingPartial = true;
+  S.customerOrders = [];  // fresh — already submitted customers cleared
+  setStep(2);
+  showStep2List();
+  toast('Add more customers or products ✓');
+}
+
+// ══════════════════════════════════════════
 //  DRAFT AUTO-SAVE (LocalStorage)
 // ══════════════════════════════════════════
 const DRAFT_KEY = 'salesorder_draft_v1';
@@ -1550,6 +1700,8 @@ const S = {
   _lastOrder: null,
   _locKey: '',
   _routeKey: '',
+  _batchKey: '',          // shared across partial submissions
+  _continuingPartial: false,
 };
 
 // ══════════════════════════════════════════
@@ -2011,6 +2163,9 @@ function startApp(sp) {
 
   // Check for a saved draft for this user
   checkForDraft(name);
+
+  // Check for a partial order in progress
+  checkForPartialOrder(name);
 }
 
 function logout() {
@@ -2018,7 +2173,9 @@ function logout() {
 
   const doLogout = () => {
     clearDraft();
+    clearPartialOrderMeta();
     selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = '';
+    S._batchKey = ''; S._continuingPartial = false;
     document.getElementById('ln-inp').value = '';
     document.getElementById('pw-inp').value = '';
     document.getElementById('login-err').style.display = 'none';
@@ -2736,8 +2893,17 @@ async function submitOrder() {
   // Clear any previous submit error
   hideSubmitError();
 
-  const subBtn = document.getElementById('sub-btn');
-  subBtn.disabled = true;
+  // Reuse existing batch ID if we already did a partial submit, else create one now
+  if (!S._batchId) {
+    S._batchId = 'BATCH-' + name.replace(/[^a-zA-Z0-9]/g,'_').substring(0,12)
+      + '-' + S.orderDate.replace(/-/g,'')
+      + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
+  }
+
+  const subBtn     = document.getElementById('sub-btn');
+  const partialBtn = document.getElementById('partial-btn');
+  subBtn.disabled     = true;
+  if (partialBtn) partialBtn.disabled = true;
   const total = S.customerOrders.length;
 
   try {
@@ -2767,7 +2933,7 @@ async function submitOrder() {
       try {
         // Write to Firebase queue instantly (works offline)
         await db.ref('/queue/' + clientOrderId.replace(/[.#$/\[\]]/g,'_')).set({
-          clientOrderId, orderId: 'ORD-' + Date.now(),
+          clientOrderId, batchId: S._batchId, orderId: 'ORD-' + Date.now(),
           status: 'PENDING',
           timestamp: new Date().toISOString(),
           date: S.orderDate, salesman: name, payroll: pay,
@@ -2779,7 +2945,13 @@ async function submitOrder() {
         // Also call GAS (non-blocking belt-and-suspenders write to sheet)
         const res = await gas({
           action: 'submitOrder',
-          clientOrderId,
+          clientOrderId,           salesperson: name, payroll: pay,
+          route: S.route, location: S.location, orderType: otLbl,
+          customer: co.customer, customerCode: co.custCode,
+          orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
+          items: JSON.stringify(items),
+          batchKey: S._batchKey,
+          isContinuation: S._continuingPartial ? '1' : '0'
           salesperson: name, payroll: pay,
           route: S.route, location: S.location, orderType: otLbl,
           customer: co.customer, customerCode: co.custCode,
@@ -2812,6 +2984,7 @@ async function submitOrder() {
       salesman: name, payroll: pay,
       location: S.location, route: S.route, date: S.orderDate,
       type: otLbl, notes,
+      batchKey: S._batchKey,
       customerOrders: S.customerOrders.map(co => ({...co, cart: co.cart.map(i=>({...i}))}))
     };
     buildSuccessPreview(S._lastOrder);
@@ -2828,9 +3001,17 @@ async function submitOrder() {
       S.customerOrders = S.customerOrders.filter((co,i) => results[i] === null);
       saveDraft(); // keep failed ones in draft for retry
     } else {
-      document.getElementById('ok-id').textContent =
-        total === 1 ? succeeded[0] : `${total} orders submitted`;
+      // All succeeded — compute grand batch total including any prior partials
+      const thisRoundKes = S.customerOrders.reduce((s,co)=>s+co.cart.reduce((a,i)=>a+i.total,0),0);
+      const batchTotalKes = S._batchSubmittedKes + thisRoundKes;
+      const batchTotalCusts = S._batchSubmittedCount + succeeded.length;
+      const batchMsg = S._batchSubmittedCount > 0
+        ? `${batchTotalCusts} customers · KES ${batchTotalKes.toLocaleString()} (full batch)`
+        : (total === 1 ? succeeded[0] : `${total} orders submitted`);
+      document.getElementById('ok-id').textContent = batchMsg;
       S.customerOrders = []; S.cart = [];
+      S._batchId = null; S._batchSubmittedCount = 0; S._batchSubmittedKes = 0;
+      hideBatchProgressBanner();
       clearDraft();
     }
 
@@ -2842,6 +3023,8 @@ async function submitOrder() {
   } finally {
     hideLoad();
     subBtn.disabled = false;
+    const pb = document.getElementById('partial-btn');
+    if (pb) pb.disabled = false;
   }
 }
 
@@ -2893,8 +3076,10 @@ function hideSubmitError() {
 
 function newOrder() {
   clearDraft();
+  clearPartialOrderMeta();
   S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null;
   S.route = ''; S.location = '';
+  S._batchKey = ''; S._continuingPartial = false;
   document.getElementById('who-loc').value = '';
   document.getElementById('route-inp').value = '';
   document.getElementById('route-inp').readOnly = true;
