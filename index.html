@@ -2943,20 +2943,16 @@ async function submitOrder() {
         });
 
         // Also call GAS (non-blocking belt-and-suspenders write to sheet)
-        const res = await gas({
+       const res = await gas({
           action: 'submitOrder',
-          clientOrderId,           salesperson: name, payroll: pay,
+          clientOrderId,
+          salesperson: name, payroll: pay,
           route: S.route, location: S.location, orderType: otLbl,
           customer: co.customer, customerCode: co.custCode,
           orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
           items: JSON.stringify(items),
           batchKey: S._batchKey,
           isContinuation: S._continuingPartial ? '1' : '0'
-          salesperson: name, payroll: pay,
-          route: S.route, location: S.location, orderType: otLbl,
-          customer: co.customer, customerCode: co.custCode,
-          orderDate: S.orderDate, deliveryDate: S.orderDate, notes,
-          items: JSON.stringify(items)
         }, { maxRetries: 4, timeoutMs: 35000 });
 
         if (!res.success) throw new Error(res.error || 'Unknown error');
