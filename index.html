@@ -2893,10 +2893,14 @@ function buildSubmitStep() {
 
 
 async function submitOrder() {
-  const sp = S.user, nk = findKey(sp, NAME_KEYS), pk = findKey(sp, PAYROLL_KEYS);
-  const name = sp[nk]||'', pay = sp[pk]||'';
+  const sp   = S.user;
+  const nk   = findKey(sp, NAME_KEYS);
+  const pk   = findKey(sp, PAYROLL_KEYS);
+  const name = sp[nk] || '';
+  const pay  = sp[pk] || '';
   const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
   const notes = document.getElementById('notes-inp').value.trim();
+  const total = S.customerOrders.length;
 
   // Clear any previous submit error
   hideSubmitError();
@@ -3032,47 +3036,35 @@ async function submitOrder() {
   }
 }
 
-// ── Submit error panel ──────────────────────────────────────
+// ── showSubmitError / hideSubmitError (unchanged, keep these) ────────────
 function showSubmitError(failures) {
   let el = document.getElementById('submit-error-panel');
   if (!el) {
     el = document.createElement('div');
     el.id = 'submit-error-panel';
-    el.style.cssText = `
-      background:#FFF0F0;border:1.5px solid #C62828;border-radius:12px;
-      padding:16px 18px;margin-bottom:14px;
-    `;
-    // Insert before the sticky footer in step-submit
+    el.style.cssText =
+      'background:#FFF0F0;border:1.5px solid #C62828;border-radius:12px;' +
+      'padding:16px 18px;margin-bottom:14px;';
     const content = document.querySelector('#step-submit .content');
     if (content) content.appendChild(el);
   }
-
   const list = failures.map(f =>
-    `<div style="font-size:12px;margin-top:6px;padding:6px 10px;background:rgba(198,40,40,.07);border-radius:6px">
-       <strong>${f.customer}</strong><br>
-       <span style="color:#C62828;font-size:11px">${f.error}</span>
-     </div>`
+    `<div style="font-size:12px;margin-top:6px;padding:6px 10px;` +
+    `background:rgba(198,40,40,.07);border-radius:6px">` +
+    `<strong>${f.customer}</strong><br>` +
+    `<span style="color:#C62828;font-size:11px">${f.error}</span></div>`
   ).join('');
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:flex-start;gap:10px">
-      <span style="font-size:22px;line-height:1">⚠️</span>
-      <div style="flex:1">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#C62828;margin-bottom:4px">
-          Submission Failed
-        </div>
-        <div style="font-size:12px;color:#5f1d1d;line-height:1.5;margin-bottom:8px">
-          The orders below could not be sent. Your draft has been saved.
-          Check your connection and tap <strong>Submit</strong> again — the app will retry automatically.
-        </div>
-        ${list}
-      </div>
-    </div>
-  `;
+  el.innerHTML =
+    `<div style="display:flex;align-items:flex-start;gap:10px">` +
+    `<span style="font-size:22px;line-height:1">⚠️</span>` +
+    `<div style="flex:1">` +
+    `<div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;` +
+    `font-weight:700;color:#C62828;margin-bottom:4px">Submission Failed</div>` +
+    `<div style="font-size:12px;color:#5f1d1d;line-height:1.5;margin-bottom:8px">` +
+    `Check your connection and tap Submit again — the app will retry.${list}</div>` +
+    `</div></div>`;
   el.style.display = 'block';
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
 function hideSubmitError() {
   const el = document.getElementById('submit-error-panel');
   if (el) el.style.display = 'none';
