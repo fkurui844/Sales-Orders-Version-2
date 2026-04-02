@@ -907,6 +907,7 @@ tr.tonnage-detail-row td{padding:0}
               <div class="ot-ico">🌅</div>
               <div class="ot-name">Morning Projection</div>
               <div class="ot-desc">Fresh Milk only · 8AM–2PM</div>
+              <div id="proj-time-badge" style="margin-top:7px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:99px;display:inline-block"></div>
             </div>
             <div class="ot-card" id="ot-full" onclick="pickOT('full')">
               <div class="ot-ico">📦</div>
@@ -1876,6 +1877,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initLoginSearch();
   loadData();
+
+  // ── Set order-type default based on time window ──────────────────────────────
+  // If outside 8AM–2PM, default to Full Order and visually lock the card
+  updateProjBadge();
+  if (!isProjectionWindowOpen()) {
+    S.orderType = 'full';
+    const projCard = document.getElementById('ot-proj');
+    const fullCard = document.getElementById('ot-full');
+    if (projCard) {
+      projCard.classList.remove('sel');
+      projCard.style.opacity = '0.5';
+      projCard.style.cursor  = 'not-allowed';
+    }
+    if (fullCard) fullCard.classList.add('sel');
+  }
 });
 
 // ── localStorage master-data cache ─────────────────────────────────────────────
@@ -2447,7 +2463,53 @@ function renderRouteList(q) {
   });
 }
 
+// ── Time-window helpers (8:00 AM – 2:00 PM) ────────────────────────────────
+function isProjectionWindowOpen() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const totalMin = h * 60 + m;
+  return totalMin >= 8 * 60 && totalMin < 14 * 60; // 08:00 – 13:59
+}
+
+function projWindowStatus() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const totalMin = h * 60 + m;
+  if (totalMin < 8 * 60) {
+    const open = 8 * 60 - totalMin;
+    return { open: false, msg: `Opens at 8:00 AM (${open}m away)` };
+  }
+  if (totalMin >= 14 * 60) {
+    return { open: false, msg: 'Window closed at 2:00 PM' };
+  }
+  const rem = 14 * 60 - totalMin;
+  return { open: true, msg: `Open · Closes in ${rem}m` };
+}
+
+function updateProjBadge() {
+  const badge = document.getElementById('proj-time-badge');
+  if (!badge) return;
+  const { open, msg } = projWindowStatus();
+  badge.textContent = open ? '✅ ' + msg : '🔒 ' + msg;
+  badge.style.background = open ? '#E8F5ED' : '#FFF3E8';
+  badge.style.color       = open ? '#1B6B3A' : '#C45B00';
+}
+
+// Refresh the badge every 30 seconds while the page is open
+setInterval(updateProjBadge, 30000);
+window.addEventListener('DOMContentLoaded', updateProjBadge);
+
 function pickOT(type) {
+  if (type === 'projection' && !isProjectionWindowOpen()) {
+    const { msg } = projWindowStatus();
+    toast(`🔒 Morning Projection is locked — ${msg}`);
+    shakeEl('ot-proj');
+    // Force Full Order as default when projection is unavailable
+    S.orderType = 'full';
+    document.getElementById('ot-proj').classList.remove('sel');
+    document.getElementById('ot-full').classList.add('sel');
+    return;
+  }
   S.orderType = type;
   document.getElementById('ot-proj').classList.toggle('sel', type === 'projection');
   document.getElementById('ot-full').classList.toggle('sel', type === 'full');
@@ -2463,6 +2525,14 @@ function shakeEl(id) {
 }
 
 function go2() {
+  // ── Morning Projection time-window guard ──
+  if (S.orderType === 'projection' && !isProjectionWindowOpen()) {
+    const { msg } = projWindowStatus();
+    toast('🔒 Morning Projection is locked — ' + msg);
+    shakeEl('ot-proj');
+    return;
+  }
+
   S.location  = document.getElementById('who-loc').value;
   S.orderDate = document.getElementById('order-date').value;
 
