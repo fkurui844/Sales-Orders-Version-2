@@ -1227,6 +1227,35 @@ tr.tonnage-detail-row td{padding:0}
       </div>
     </div>
 
+    <!-- Route Consolidated Summary Table (shown only when Orders By Route tab is active) -->
+    <div id="route-summary-section" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">Orders by Route</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Consolidated totals per route.</div>
+        </div>
+        <button onclick="exportRouteTable()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="route-summary-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Route</th>
+              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Orders</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Amount (KES)</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Weight (KG)</th>
+            </tr>
+          </thead>
+          <tbody id="route-summary-tbody">
+            <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Order History Search & Filter -->
     <div class="oh-search-wrap">
       <div class="oh-search-inp-wrap">
@@ -4195,6 +4224,10 @@ function renderDashTable(rows) {
 
   // Also refresh the Orders tab SP summary table
   renderSPSummaryTable(rows);
+  // Refresh route table if that tab is active
+  if (currentChartType === 'route-bar' || currentChartType === 'route-line') {
+    renderRouteSummaryTable(rows);
+  }
 }
 
 // ── Salesperson Summary Table (Orders tab) ───────────────────────────────
@@ -4263,6 +4296,73 @@ function exportOrdersSPTable() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'orders_by_salesperson_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── Route Consolidated Summary Table ─────────────────────────────────────
+let _routeTableData = [];
+
+function renderRouteSummaryTable(rows) {
+  const tbody = document.getElementById('route-summary-tbody');
+  if (!tbody) return;
+
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No orders found.</td></tr>';
+    _routeTableData = [];
+    return;
+  }
+
+  // Consolidate by route
+  const routeMap = {};
+  rows.forEach(r => {
+    const route = r['Route']||r['Route Name']||'—';
+    const sp    = r['Salesman']||r['Salesperson']||'';
+    const cust  = r['Customer Name']||r['Customer']||'';
+    const date  = normaliseDate(r['Date']||r['Order Date']||'');
+    const key   = date + '||' + sp + '||' + cust;
+    if (!routeMap[route]) routeMap[route] = { route, orderKeys: new Set(), total: 0, kg: 0 };
+    routeMap[route].orderKeys.add(key);
+    routeMap[route].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+    routeMap[route].kg    += parseFloat(r['Total (KG)']||0) || 0;
+  });
+
+  _routeTableData = Object.values(routeMap).sort((a, b) => a.route.localeCompare(b.route));
+
+  const palette = ['#FFF8F0','#F0F7FF','#F0FFF4','#FFF0F8','#F5F0FF','#FFFFF0','#F0FFFF'];
+  const frag = document.createDocumentFragment();
+
+  _routeTableData.forEach((o, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.background = palette[idx % palette.length];
+    tr.innerHTML = `
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px">${o.route}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${o.orderKeys.size}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--accent)">KES ${o.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:13px;font-weight:600;color:var(--ok)">${o.kg.toFixed(1)} KG</td>
+    `;
+    frag.appendChild(tr);
+  });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+function exportRouteTable() {
+  if (!_routeTableData.length) return;
+  const headers = ['Route','Orders','Total Amount (KES)','Total Weight (KG)'];
+  const csvRows = [headers.join(',')];
+  _routeTableData.forEach(o => {
+    csvRows.push([
+      '"' + o.route.replace(/"/g,'""') + '"',
+      o.orderKeys.size,
+      o.total.toFixed(2),
+      o.kg.toFixed(2)
+    ].join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'orders_by_route_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
 
@@ -4341,13 +4441,22 @@ function switchChart(type) {
   // Show/hide tonnage table vs chart canvas
   const isTonnage  = type === 'tonnage';
   const isProduct  = type === 'product';
+  const isRoute    = type === 'route-bar' || type === 'route-line';
   const isSpecial  = isTonnage || isProduct;
-  const chartCard = document.querySelector('.chart-card');
+  const chartCard  = document.querySelector('.chart-card');
   const tonnageSec = document.getElementById('tonnage-section');
   const productSec = document.getElementById('product-section');
-  if (chartCard)   chartCard.style.display   = isSpecial  ? 'none' : '';
-  if (tonnageSec)  tonnageSec.style.display  = isTonnage  ? ''     : 'none';
-  if (productSec)  productSec.style.display  = isProduct  ? ''     : 'none';
+  if (chartCard)   chartCard.style.display  = isSpecial ? 'none' : '';
+  if (tonnageSec)  tonnageSec.style.display = isTonnage ? ''     : 'none';
+  if (productSec)  productSec.style.display = isProduct ? ''     : 'none';
+  // Show/hide route consolidated table and raw orders table
+  const routeSumSec = document.getElementById('route-summary-section');
+  const ohSearch    = document.querySelector('.oh-search-wrap');
+  const ordersWrap  = document.querySelector('.orders-table-wrap');
+  if (routeSumSec) routeSumSec.style.display = isRoute ? '' : 'none';
+  if (ohSearch)    ohSearch.style.display    = isRoute ? 'none' : '';
+  if (ordersWrap)  ordersWrap.style.display  = isRoute ? 'none' : '';
+  if (isRoute) renderRouteSummaryTable(filteredOrders);
   // Hide metric toggle for tonnage (it has its own kg focus)
   const metricToggle = document.querySelector('.metric-toggle');
   if (metricToggle) metricToggle.style.visibility = isSpecial ? 'hidden' : '';
