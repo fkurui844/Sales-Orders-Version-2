@@ -491,8 +491,8 @@ tr.tonnage-detail-row td{padding:0}
 
 /* ── ORDERS TABLE ── */
 .orders-table-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px}
-.orders-table-head{display:grid;grid-template-columns:70px 90px 1fr 1fr 80px 100px;gap:0;background:var(--bg);border-bottom:2px solid var(--border);padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.order-row{display:grid;grid-template-columns:70px 90px 1fr 1fr 80px 100px;gap:0;padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;align-items:center;transition:background .1s;cursor:pointer}
+.orders-table-head{display:grid;grid-template-columns:70px 90px 1fr 80px 100px;gap:0;background:var(--bg);border-bottom:2px solid var(--border);padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.order-row{display:grid;grid-template-columns:70px 90px 1fr 80px 100px;gap:0;padding:11px 14px;border-bottom:1px solid var(--border);font-size:12px;align-items:center;transition:background .1s;cursor:pointer}
 .order-row:last-child{border-bottom:none}
 .order-row:hover{background:var(--accent-lt)}
 .or-date{color:var(--muted);font-size:11px}
@@ -1227,6 +1227,27 @@ tr.tonnage-detail-row td{padding:0}
       </div>
     </div>
 
+    <!-- Orders By Product — Category Weight Summary (shown only when Orders By Product tab is active) -->
+    <div id="product-section" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em" id="product-section-title">Weight by Category</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Total KG ordered per product category</div>
+        </div>
+        <button onclick="exportProductCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="product-thead"></thead>
+          <tbody id="product-tbody"><tr><td colspan="3" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr></tbody>
+          <tfoot id="product-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
     <!-- Route Consolidated Summary Table (shown only when Orders By Route tab is active) -->
     <div id="route-summary-section" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
@@ -1279,7 +1300,6 @@ tr.tonnage-detail-row td{padding:0}
         <div>Type</div>
         <div>Date</div>
         <div>Salesperson</div>
-        <div>Customer</div>
         <div style="text-align:center">KG</div>
         <div>Amount</div>
       </div>
@@ -4211,7 +4231,6 @@ function renderDashTable(rows) {
       <div class="or-type">${typeTag}</div>
       <div class="or-date">${fmtDate(o.date)}</div>
       <div class="or-sp">${o.sp}</div>
-      <div class="or-cust">${o.cust}</div>
       <div class="or-qty">${o.kg.toFixed(1)} KG</div>
       <div class="or-amt">KES ${o.total.toLocaleString()}</div>
     `;
@@ -4454,8 +4473,8 @@ function switchChart(type) {
   const ohSearch    = document.querySelector('.oh-search-wrap');
   const ordersWrap  = document.querySelector('.orders-table-wrap');
   if (routeSumSec) routeSumSec.style.display = isRoute ? '' : 'none';
-  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage) ? 'none' : '';
-  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage) ? 'none' : '';
+  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage || isProduct) ? 'none' : '';
+  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage || isProduct) ? 'none' : '';
   if (isRoute) renderRouteSummaryTable(filteredOrders);
   // Hide metric toggle for tonnage (it has its own kg focus)
   const metricToggle = document.querySelector('.metric-toggle');
@@ -4738,94 +4757,74 @@ function renderProductTable() {
     return;
   }
 
-  // Gather all salespersons
-  const spSet = [...new Set(filteredOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean))].sort();
-
-  // Build product → { sp: qty } map
-  const prodMap = {};   // key: code+'||'+desc
+  // Build category → { totalKg, totalAmt } map
+  const catMap = {};
   filteredOrders.forEach(r => {
-    const sp   = (r['Salesman']||r['Salesperson']||'').trim();
-    const desc = (r['Description']||r['Product']||'').trim();
-    const code = (r['Product Code']||'').trim();
-    const pack = (r['Packaging']||'').trim();
-    const qty  = parseFloat(r['Qty']||0)||0;
-    const amt  = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
-    if (!desc && !code) return;
-    const key = (code||desc) + '||' + desc;
-    if (!prodMap[key]) prodMap[key] = { code, desc, pack, spQty: {}, totalQty: 0, totalAmt: 0 };
-    if (!prodMap[key].spQty[sp]) prodMap[key].spQty[sp] = 0;
-    prodMap[key].spQty[sp] += qty;
-    prodMap[key].totalQty  += qty;
-    prodMap[key].totalAmt  += amt;
+    const cat = (r['Category'] || 'Uncategorised').trim() || 'Uncategorised';
+    const kg  = parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
+    const amt = parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+    if (!catMap[cat]) catMap[cat] = { cat, totalKg: 0, totalAmt: 0 };
+    catMap[cat].totalKg  += kg;
+    catMap[cat].totalAmt += amt;
   });
 
-  const products = Object.values(prodMap).sort((a,b) => b.totalQty - a.totalQty);
-  _productTableData = { products, spSet };
+  const categories = Object.values(catMap).sort((a, b) => b.totalKg - a.totalKg);
+  _productTableData = { categories };
 
-  // Build header
-  let thHtml = '<tr style="background:var(--bg)">';
-  thHtml += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Product</th>';
-  thHtml += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Pack</th>';
-  spSet.forEach(sp => {
-    thHtml += `<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">${sp}</th>`;
-  });
-  thHtml += '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Qty</th>';
-  thHtml += '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total (KES)</th>';
-  thHtml += '</tr>';
-  thead.innerHTML = thHtml;
+  // Update section title
+  const titleEl = document.getElementById('product-section-title');
+  if (titleEl) titleEl.textContent = 'Weight by Category — ' + categories.length + ' categor' + (categories.length !== 1 ? 'ies' : 'y');
 
-  // Build body rows
+  // Header
+  const thStyle = 'padding:9px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap';
+  thead.innerHTML = `<tr style="background:var(--bg)">
+    <th style="${thStyle};text-align:left">Product Category</th>
+    <th style="${thStyle};text-align:right">Total Weight (KG)</th>
+    <th style="${thStyle};text-align:right">Total Amount (KES)</th>
+  </tr>`;
+
+  // Body rows
+  const tdBase = 'padding:10px 14px;border-bottom:1px solid var(--border)';
   let tbHtml = '';
-  products.forEach((p, idx) => {
+  categories.forEach((c, idx) => {
     const bg = idx % 2 === 0 ? '' : 'background:#FAF7F4';
-    tbHtml += `<tr style="${bg}">`;
-    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);font-weight:500">${p.desc}${p.code ? ' <span style="font-size:10px;color:var(--muted);font-family:monospace">['+p.code+']</span>' : ''}</td>`;
-    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${p.pack||'—'}</td>`;
-    spSet.forEach(sp => {
-      const qty = p.spQty[sp] || 0;
-      tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${qty > 0 ? qty.toLocaleString() : '<span style="color:#ccc">—</span>'}</td>`;
-    });
-    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${p.totalQty.toLocaleString()}</td>`;
-    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">KES ${p.totalAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
-    tbHtml += '</tr>';
+    tbHtml += `<tr style="${bg}">
+      <td style="${tdBase};font-weight:600">${c.cat}</td>
+      <td style="${tdBase};text-align:right;font-variant-numeric:tabular-nums;color:var(--ok);font-weight:700">${c.totalKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})} KG</td>
+      <td style="${tdBase};text-align:right;font-variant-numeric:tabular-nums">KES ${c.totalAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    </tr>`;
   });
   tbody.innerHTML = tbHtml;
 
   // Footer totals
-  const grandQty = products.reduce((s,p) => s + p.totalQty, 0);
-  const grandAmt = products.reduce((s,p) => s + p.totalAmt, 0);
-  let tfHtml = '<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">';
-  tfHtml += `<td style="padding:10px 14px" colspan="2">TOTAL — ${products.length} product${products.length!==1?'s':''}</td>`;
-  spSet.forEach(sp => {
-    const spTotal = products.reduce((s,p) => s + (p.spQty[sp]||0), 0);
-    tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${spTotal.toLocaleString()}</td>`;
-  });
-  tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${grandQty.toLocaleString()}</td>`;
-  tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">KES ${grandAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
-  tfHtml += '</tr>';
-  tfoot.innerHTML = tfHtml;
+  const grandKg  = categories.reduce((s, c) => s + c.totalKg,  0);
+  const grandAmt = categories.reduce((s, c) => s + c.totalAmt, 0);
+  tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">
+    <td style="padding:10px 14px">TOTAL — ${categories.length} categor${categories.length!==1?'ies':'y'}</td>
+    <td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ok)">${grandKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})} KG</td>
+    <td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">KES ${grandAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+  </tr>`;
 }
 
 function exportProductCSV() {
-  if (!_productTableData || !_productTableData.products) return;
-  const { products, spSet } = _productTableData;
-  const headers = ['Product','Code','Pack', ...spSet, 'Total Qty','Total (KES)'];
+  if (!_productTableData || !_productTableData.categories) return;
+  const { categories } = _productTableData;
+  const headers = ['Product Category', 'Total Weight (KG)', 'Total Amount (KES)'];
   const csvRows = [headers.join(',')];
-  products.forEach(p => {
-    const row = [
-      '"' + p.desc.replace(/"/g,'""') + '"',
-      '"' + (p.code||'') + '"',
-      '"' + (p.pack||'') + '"',
-      ...spSet.map(sp => p.spQty[sp]||0),
-      p.totalQty,
-      p.totalAmt.toFixed(2)
-    ];
-    csvRows.push(row.join(','));
+  categories.forEach(c => {
+    csvRows.push([
+      '"' + c.cat.replace(/"/g, '""') + '"',
+      c.totalKg.toFixed(1),
+      c.totalAmt.toFixed(2)
+    ].join(','));
   });
+  const grandKg  = categories.reduce((s, c) => s + c.totalKg, 0);
+  const grandAmt = categories.reduce((s, c) => s + c.totalAmt, 0);
+  csvRows.push(['"TOTAL"', grandKg.toFixed(1), grandAmt.toFixed(2)].join(','));
   const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'orders_by_product_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'weight_by_category_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
 
