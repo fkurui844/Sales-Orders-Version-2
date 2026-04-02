@@ -4068,6 +4068,11 @@ function _doApplyDashFilters() {
   updateDashStats();
   renderDashTable(filteredOrders);
   renderChart();
+  // Re-run fulfilment match if SAP data is already uploaded, so Ordered (KES)
+  // always reflects the currently filtered salesperson / date / route orders
+  if (typeof _fulfilSapData !== 'undefined' && _fulfilSapData.length) {
+    runFulfilMatch();
+  }
 }
 
 function clearDashFilters() {
@@ -5539,112 +5544,66 @@ function parseSapText(text) {
   return { customers, period, totalProducts };
 }
 
-// ── Match SAP data with Firebase orders ─────────────────────────────────
+// ── Match SAP data with salesperson orders from the dashboard ───────────────
+// Uses filteredOrders (already loaded from the sheet via the Orders tab) so
+// the Ordered (KES) column reflects exactly what the salesperson captured —
+// respecting the current salesperson / date / route filters on the dashboard.
 async function runFulfilMatch() {
   showLoad('Matching orders…');
   try {
-    // Pull ALL orders from both /orders/ (processed) and /queue/ (pending)
-    const [ordersSnap, queueSnap] = await Promise.all([
-      db.ref('/orders').once('value').catch(() => null),
-      db.ref('/queue').once('value').catch(() => null)
-    ]);
+    // ── Build ordered-per-customer map from filteredOrders ───────────────────
+    // filteredOrders is the sheet-sourced, dashboard-filtered order line array.
+    // Each row is one product line; we sum Total (KES) per Customer Code.
+    const ordersByCust = {}; // normId → { custId, custName, ordered, prodMap }
 
-    const allOrders = [];
+    const sourceRows = (typeof filteredOrders !== 'undefined' && filteredOrders.length)
+      ? filteredOrders
+      : [];
 
-    // Helper: parse a flat order record (used by both /orders/ and /queue/)
-    function parseFlatOrder(o) {
-      if (!o) return;
-      const custId   = (o.customerCode || o.custCode || '').replace(/^0+/, '');
-      const custName = (o.customer || o.customerName || '').trim();
-      if (!custId && !custName) return;
+    sourceRows.forEach(r => {
+      const custId   = (r['Customer Code'] || r['CustomerCode'] || '').trim().replace(/^0+/, '');
+      const custName = (r['Customer Name'] || r['Customer']     || '').trim();
+      const key      = custId || custName.toLowerCase();
+      if (!key) return;
 
-      let items = o.items || [];
-      if (!items.length && o.itemsJson) {
-        try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+      const val  = parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+      const code = (r['Product Code'] || '').trim();
+      const qty  = parseFloat(r['Qty'] || 0) || 0;
+
+      if (!ordersByCust[key]) {
+        ordersByCust[key] = { custId, custName, ordered: 0, prodMap: {} };
       }
-
-      let   ordered = 0;
-      const prodMap = {};
-      items.forEach(item => {
-        const code = String(item.productCode || item.code || item.product_code || '');
-        const qty  = parseFloat(item.qty || item.quantity || 0);
-        const val  = parseFloat(item.total || item.value || 0);
-        ordered   += val;
-        if (code) prodMap[code] = (prodMap[code] || 0) + qty;
-      });
-
-      allOrders.push({ custId, custName, ordered, prodMap });
-    }
-
-    // Read /orders/ — may have nested customers[] or flat structure
-    if (ordersSnap && ordersSnap.exists()) {
-      ordersSnap.forEach(child => {
-        const o = child.val();
-        if (!o) return;
-        if (Array.isArray(o.customers) && o.customers.length) {
-          // Legacy nested format: { customers: [{customerId, customerName, items[]}] }
-          o.customers.forEach(co => {
-            const custId   = (co.customerId || co.customerCode || '').replace(/^0+/, '');
-            const custName = (co.customerName || co.customer || '').trim();
-            if (!custId && !custName) return;
-            let ordered = 0;
-            const prodMap = {};
-            (co.items || co.products || []).forEach(item => {
-              const code = String(item.code || item.productCode || '');
-              const qty  = parseFloat(item.qty || item.quantity || 0);
-              const val  = parseFloat(item.total || item.value || 0);
-              ordered   += val;
-              if (code) prodMap[code] = (prodMap[code] || 0) + qty;
-            });
-            allOrders.push({ custId, custName, ordered, prodMap });
-          });
-        } else {
-          // Flat format: { customer, customerCode, itemsJson }
-          parseFlatOrder(o);
-        }
-      });
-    }
-
-    // Read /queue/ — always flat format: { customer, customerCode, itemsJson }
-    if (queueSnap && queueSnap.exists()) {
-      queueSnap.forEach(child => {
-        parseFlatOrder(child.val());
-      });
-    }
-
-    // Group Firebase orders by customer ID (normalised — strip leading zeros)
-    const ordersByCust = {};
-    allOrders.forEach(o => {
-      const key = o.custId || o.custName.toLowerCase();
-      if (!ordersByCust[key]) ordersByCust[key] = { custId: o.custId, custName: o.custName, ordered: 0, prodMap: {} };
-      ordersByCust[key].ordered += o.ordered;
-      Object.entries(o.prodMap).forEach(([code, qty]) => {
+      ordersByCust[key].ordered += val;
+      if (code) {
         ordersByCust[key].prodMap[code] = (ordersByCust[key].prodMap[code] || 0) + qty;
-      });
+      }
     });
 
-    // Build matched rows
+    // ── Build matched rows ────────────────────────────────────────────────────
     const matched = [];
     _fulfilSapData.forEach(sap => {
-      const normId   = (sap.id || '').replace(/^0+/, '');
-      const order    = ordersByCust[normId] || ordersByCust[sap.name.toLowerCase()] || null;
-      const ordered  = order ? order.ordered : 0;
-      const sales    = sap.totalSales;
-      const rate     = (ordered > 0 && sales >= 0) ? Math.min(sales / ordered, 1) : (ordered === 0 && sales > 0 ? 1 : -1);
-      // rate = -1 means SAP has sales but no order in system
+      const normId  = (sap.id || '').replace(/^0+/, '');
+      const order   = ordersByCust[normId]
+                   || ordersByCust[sap.name.toLowerCase()]
+                   || null;
+      const ordered = order ? order.ordered : 0;
+      const sales   = sap.totalSales;
+      // rate: -1 = SAP has sales but no order in system; 0–1 = fulfilment ratio
+      const rate    = (ordered > 0 && sales >= 0)
+        ? Math.min(sales / ordered, 1)
+        : (ordered === 0 && sales > 0 ? 1 : -1);
 
       matched.push({
-        id:        sap.id,
-        name:      sap.name,
-        ordered:   ordered,
-        sales:     sales,
-        rate:      rate,
-        products:  sap.products,
-        hasOrder:  !!order
+        id:       sap.id,
+        name:     sap.name,
+        ordered:  ordered,
+        sales:    sales,
+        rate:     rate,
+        products: sap.products,
+        hasOrder: !!order
       });
     });
 
-    // Also add SAP rows that had no match in our system (already in matched above)
     _fulfilMatched = matched;
     _fulfilPage    = 1;
 
@@ -5654,7 +5613,7 @@ async function runFulfilMatch() {
 
   } catch (err) {
     console.error('Fulfil match error', err);
-    alert('Error loading orders from the database. Please try again.');
+    alert('Error matching orders. Please try again.');
   } finally {
     hideLoad();
   }
