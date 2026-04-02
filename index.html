@@ -4542,9 +4542,8 @@ function renderTonnageReport() {
   // ── Header ──────────────────────────────────────────────────────────────
   thead.innerHTML = `<tr>
     <th>Route</th>
-    <th class="num">Orders</th>
+    <th class="num">No of Customers</th>
     <th class="num">Total Weight (KG)</th>
-    <th style="min-width:140px">Share</th>
     <th class="num">Revenue (KES)</th>
   </tr>`;
 
@@ -4570,12 +4569,6 @@ function renderTonnageReport() {
       </td>
       <td class="num">${rd.orders.size}</td>
       <td class="num" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--ok)">${kgFmt}</td>
-      <td>
-        <div class="tonnage-bar-wrap">
-          <div class="tonnage-bar-bg"><div class="tonnage-bar-fill" style="width:${barW}%"></div></div>
-          <div class="tonnage-bar-pct">${sharePct.toFixed(1)}%</div>
-        </div>
-      </td>
       <td class="num">KES ${rd.totalKes.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
     tbody.appendChild(tr);
 
@@ -4584,7 +4577,7 @@ function renderTonnageReport() {
     detailTr.className = 'tonnage-detail-row';
     detailTr.id = 'tonnage-detail-' + idx;
     detailTr.style.display = 'none';
-    detailTr.innerHTML = '<td colspan="5"><div class="tonnage-detail-inner" id="tonnage-inner-' + idx + '"></div></td>';
+    detailTr.innerHTML = '<td colspan="4"><div class="tonnage-detail-inner" id="tonnage-inner-' + idx + '"></div></td>';
     tbody.appendChild(detailTr);
   });
 
@@ -4596,7 +4589,6 @@ function renderTonnageReport() {
     <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px">TOTAL</td>
     <td class="num">${grandOrds}</td>
     <td class="num" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--ok)">${grandKgFmt}</td>
-    <td></td>
     <td class="num">KES ${grandKes.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
   </tr>`;
 }
