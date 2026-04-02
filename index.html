@@ -4454,8 +4454,8 @@ function switchChart(type) {
   const ohSearch    = document.querySelector('.oh-search-wrap');
   const ordersWrap  = document.querySelector('.orders-table-wrap');
   if (routeSumSec) routeSumSec.style.display = isRoute ? '' : 'none';
-  if (ohSearch)    ohSearch.style.display    = isRoute ? 'none' : '';
-  if (ordersWrap)  ordersWrap.style.display  = isRoute ? 'none' : '';
+  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage) ? 'none' : '';
+  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage) ? 'none' : '';
   if (isRoute) renderRouteSummaryTable(filteredOrders);
   // Hide metric toggle for tonnage (it has its own kg focus)
   const metricToggle = document.querySelector('.metric-toggle');
