@@ -1186,6 +1186,10 @@ tr.tonnage-detail-row td{padding:0}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="8" width="3" height="5"/><rect x="5.5" y="5" width="3" height="8"/><rect x="10" y="2" width="3" height="11"/><line x1="0" y1="13.5" x2="14" y2="13.5" stroke-width="1.2"/></svg>
           Weight Per Route
         </button>
+        <button class="chart-tab" onclick="switchChart('proj-timing')" id="tab-proj-timing">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="6"/><polyline points="7 3.5 7 7 9.5 9"/></svg>
+          Projection Timing
+        </button>
         <div style="flex:1"></div>
         <div class="metric-toggle">
           <button class="metric-toggle-btn active" id="metric-revenue" onclick="switchMetric('revenue')">💰 Revenue</button>
@@ -1273,6 +1277,47 @@ tr.tonnage-detail-row td{padding:0}
           </thead>
           <tbody id="route-summary-tbody">
             <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Projection Timing Section -->
+    <div id="proj-timing-section" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">Morning Projection Timing</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Shows what time each salesperson submitted their morning projection. Window: 8:00 AM – 2:00 PM.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)">
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#1B6B3A;display:inline-block"></span>On Time</span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#C0392B;display:inline-block"></span>Late</span>
+          </div>
+          <button onclick="exportProjTimingCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <!-- KPI strip -->
+      <div id="pt-kpi-strip" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border)"></div>
+      <!-- Table -->
+      <div style="overflow-x:auto">
+        <table id="proj-timing-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Salesperson</th>
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Order Date</th>
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Submitted At</th>
+              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Status</th>
+              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Customers</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total (KES)</th>
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Route</th>
+            </tr>
+          </thead>
+          <tbody id="proj-timing-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No projection data found.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1878,20 +1923,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initLoginSearch();
   loadData();
 
-  // ── Set order-type default based on time window ──────────────────────────────
-  // If outside 8AM–2PM, default to Full Order and visually lock the card
+  // Refresh the projection time badge on load
   updateProjBadge();
-  if (!isProjectionWindowOpen()) {
-    S.orderType = 'full';
-    const projCard = document.getElementById('ot-proj');
-    const fullCard = document.getElementById('ot-full');
-    if (projCard) {
-      projCard.classList.remove('sel');
-      projCard.style.opacity = '0.5';
-      projCard.style.cursor  = 'not-allowed';
-    }
-    if (fullCard) fullCard.classList.add('sel');
-  }
 });
 
 // ── localStorage master-data cache ─────────────────────────────────────────────
@@ -2500,16 +2533,7 @@ setInterval(updateProjBadge, 30000);
 window.addEventListener('DOMContentLoaded', updateProjBadge);
 
 function pickOT(type) {
-  if (type === 'projection' && !isProjectionWindowOpen()) {
-    const { msg } = projWindowStatus();
-    toast(`🔒 Morning Projection is locked — ${msg}`);
-    shakeEl('ot-proj');
-    // Force Full Order as default when projection is unavailable
-    S.orderType = 'full';
-    document.getElementById('ot-proj').classList.remove('sel');
-    document.getElementById('ot-full').classList.add('sel');
-    return;
-  }
+  // No time lock — projections allowed any time; timing is recorded & visible in the dashboard
   S.orderType = type;
   document.getElementById('ot-proj').classList.toggle('sel', type === 'projection');
   document.getElementById('ot-full').classList.toggle('sel', type === 'full');
@@ -2525,14 +2549,6 @@ function shakeEl(id) {
 }
 
 function go2() {
-  // ── Morning Projection time-window guard ──
-  if (S.orderType === 'projection' && !isProjectionWindowOpen()) {
-    const { msg } = projWindowStatus();
-    toast('🔒 Morning Projection is locked — ' + msg);
-    shakeEl('ot-proj');
-    return;
-  }
-
   S.location  = document.getElementById('who-loc').value;
   S.orderDate = document.getElementById('order-date').value;
 
@@ -4390,6 +4406,174 @@ function exportOrdersSPTable() {
   a.click();
 }
 
+// ══════════════════════════════════════════
+//  PROJECTION TIMING TABLE
+//  Window: 8:00 AM – 2:00 PM
+//  Reads `Timestamp` (ISO string) stored with every order.
+// ══════════════════════════════════════════
+let _projTimingData = [];
+
+function _projTimingStatus(ts) {
+  // Returns { timeStr, status:'on_time'|'late'|'unknown', hour, minute }
+  if (!ts) return { timeStr: '—', status: 'unknown' };
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return { timeStr: ts, status: 'unknown' };
+  const h = d.getHours(), m = d.getMinutes();
+  const pad = n => String(n).padStart(2, '0');
+  const timeStr = `${pad(h)}:${pad(m)}`;
+  const totalMin = h * 60 + m;
+  const status = (totalMin >= 8 * 60 && totalMin < 14 * 60) ? 'on_time' : 'late';
+  return { timeStr, status, hour: h, minute: m };
+}
+
+function renderProjTimingTable(rows) {
+  const tbody = document.getElementById('proj-timing-tbody');
+  const kpiStrip = document.getElementById('pt-kpi-strip');
+  if (!tbody) return;
+
+  // Filter to Morning Projection orders only
+  const projRows = rows.filter(r =>
+    (r['Order Type']||'').toLowerCase().includes('projection')
+  );
+
+  if (!projRows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No morning projection orders in the current filter.</td></tr>';
+    if (kpiStrip) kpiStrip.innerHTML = '';
+    _projTimingData = [];
+    return;
+  }
+
+  // Group by salesperson + date (one row per unique batch)
+  const batchMap = {};
+  projRows.forEach(r => {
+    const sp    = r['Salesman'] || r['Salesperson'] || '—';
+    const date  = r['Date'] || r['Order Date'] || '';
+    const cust  = r['Customer Name'] || r['Customer'] || '';
+    const ts    = r['Timestamp'] || '';
+    const route = r['Route'] || '';
+    const key   = sp + '||' + date;
+
+    if (!batchMap[key]) {
+      batchMap[key] = {
+        sp, date, route,
+        timestamps: [],
+        customers: new Set(),
+        total: 0
+      };
+    }
+    const b = batchMap[key];
+    if (ts) b.timestamps.push(ts);
+    b.customers.add(cust);
+    b.total += parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+  });
+
+  // Pick earliest timestamp per batch (first submission of that day)
+  const batches = Object.values(batchMap).map(b => {
+    const sortedTs = b.timestamps.slice().sort();
+    const earliest = sortedTs[0] || '';
+    const { timeStr, status } = _projTimingStatus(earliest);
+    return { ...b, earliest, timeStr, status, customers: b.customers.size };
+  });
+
+  // Sort: date desc, then sp asc
+  batches.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return a.sp.localeCompare(b.sp);
+  });
+
+  _projTimingData = batches;
+
+  // ── KPI strip ──
+  const total    = batches.length;
+  const onTime   = batches.filter(b => b.status === 'on_time').length;
+  const late     = batches.filter(b => b.status === 'late').length;
+  const unknown  = batches.filter(b => b.status === 'unknown').length;
+  const pct      = total ? Math.round(onTime / total * 100) : 0;
+
+  if (kpiStrip) {
+    kpiStrip.innerHTML = `
+      <div style="padding:14px 18px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--text)">${total}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Total Projections</div>
+      </div>
+      <div style="padding:14px 18px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#1B6B3A">${onTime}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">On Time (8AM–2PM)</div>
+      </div>
+      <div style="padding:14px 18px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#C0392B">${late}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Late Submissions</div>
+      </div>
+      <div style="padding:14px 18px;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:${pct >= 80 ? '#1B6B3A' : pct >= 50 ? '#E67E22' : '#C0392B'}">${pct}%</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">On-Time Rate</div>
+      </div>
+    `;
+  }
+
+  // ── Table rows ──
+  const palette = ['#FFFFFF','#FAF9F8'];
+  const frag = document.createDocumentFragment();
+
+  batches.forEach((b, idx) => {
+    const isOnTime  = b.status === 'on_time';
+    const isLate    = b.status === 'late';
+    const isUnknown = b.status === 'unknown';
+
+    const statusBadge = isOnTime
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E8F5ED;color:#1B6B3A;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">✓ On Time</span>`
+      : isLate
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#FDECEA;color:#C0392B;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">⚠ Late</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600">— Unknown</span>`;
+
+    const rowBg = isLate ? '#FFF8F5' : isOnTime ? '#F6FBF8' : palette[idx % 2];
+    const leftBorder = isLate
+      ? 'border-left:3px solid #C0392B'
+      : isOnTime
+      ? 'border-left:3px solid #1B6B3A'
+      : '';
+
+    const tr = document.createElement('tr');
+    tr.style.cssText = `background:${rowBg};${leftBorder}`;
+    tr.innerHTML = `
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px">${b.sp}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)">${b.date ? fmtDate(b.date) : '—'}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;color:${isLate ? '#C0392B' : isOnTime ? '#1B6B3A' : 'var(--muted)'}">${b.timeStr}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">${statusBadge}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${b.customers}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)">KES ${b.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${b.route}</td>
+    `;
+    frag.appendChild(tr);
+  });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+function exportProjTimingCSV() {
+  if (!_projTimingData.length) return;
+  const headers = ['Salesperson','Order Date','Submitted At','Status','Customers','Total (KES)','Route'];
+  const csvRows = [headers.join(',')];
+  _projTimingData.forEach(b => {
+    const status = b.status === 'on_time' ? 'On Time' : b.status === 'late' ? 'Late' : 'Unknown';
+    csvRows.push([
+      '"' + b.sp.replace(/"/g,'""') + '"',
+      '"' + (b.date||'') + '"',
+      '"' + b.timeStr + '"',
+      '"' + status + '"',
+      b.customers,
+      b.total.toFixed(2),
+      '"' + (b.route||'').replace(/"/g,'""') + '"'
+    ].join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'projection_timing_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
 // ── Route Consolidated Summary Table ─────────────────────────────────────
 let _routeTableData = [];
 
@@ -4530,25 +4714,29 @@ function switchChart(type) {
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + type).classList.add('active');
   // Show/hide tonnage table vs chart canvas
-  const isTonnage  = type === 'tonnage';
-  const isProduct  = type === 'product';
-  const isRoute    = type === 'route-bar' || type === 'route-line';
-  const isSpecial  = isTonnage || isProduct;
-  const chartCard  = document.querySelector('.chart-card');
-  const tonnageSec = document.getElementById('tonnage-section');
-  const productSec = document.getElementById('product-section');
+  const isTonnage    = type === 'tonnage';
+  const isProduct    = type === 'product';
+  const isRoute      = type === 'route-bar' || type === 'route-line';
+  const isProjTiming = type === 'proj-timing';
+  const isSpecial    = isTonnage || isProduct || isProjTiming;
+  const chartCard    = document.querySelector('.chart-card');
+  const tonnageSec   = document.getElementById('tonnage-section');
+  const productSec   = document.getElementById('product-section');
+  const ptSec        = document.getElementById('proj-timing-section');
   if (chartCard)   chartCard.style.display  = isSpecial ? 'none' : '';
-  if (tonnageSec)  tonnageSec.style.display = isTonnage ? ''     : 'none';
-  if (productSec)  productSec.style.display = isProduct ? ''     : 'none';
+  if (tonnageSec)  tonnageSec.style.display = isTonnage    ? '' : 'none';
+  if (productSec)  productSec.style.display = isProduct    ? '' : 'none';
+  if (ptSec)       ptSec.style.display      = isProjTiming ? '' : 'none';
   // Show/hide route consolidated table and raw orders table
   const routeSumSec = document.getElementById('route-summary-section');
   const ohSearch    = document.querySelector('.oh-search-wrap');
   const ordersWrap  = document.querySelector('.orders-table-wrap');
   if (routeSumSec) routeSumSec.style.display = isRoute ? '' : 'none';
-  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage || isProduct) ? 'none' : '';
-  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage || isProduct) ? 'none' : '';
-  if (isRoute) renderRouteSummaryTable(filteredOrders);
-  // Hide metric toggle for tonnage (it has its own kg focus)
+  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage || isProduct || isProjTiming) ? 'none' : '';
+  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage || isProduct || isProjTiming) ? 'none' : '';
+  if (isRoute)      renderRouteSummaryTable(filteredOrders);
+  if (isProjTiming) renderProjTimingTable(filteredOrders);
+  // Hide metric toggle for special views
   const metricToggle = document.querySelector('.metric-toggle');
   if (metricToggle) metricToggle.style.visibility = isSpecial ? 'hidden' : '';
   renderChart();
@@ -4574,8 +4762,9 @@ function renderChart() {
     return;
   }
 
-  if (currentChartType === 'tonnage') { renderTonnageReport(); return; }
-  if (currentChartType === 'product') { renderProductTable(); return; }
+  if (currentChartType === 'tonnage')    { renderTonnageReport(); return; }
+  if (currentChartType === 'product')    { renderProductTable(); return; }
+  if (currentChartType === 'proj-timing'){ renderProjTimingTable(filteredOrders); return; }
   if (currentChartType === 'bar')        renderBarChart(canvas);
   if (currentChartType === 'line')       renderLineChart(canvas);
   if (currentChartType === 'donut')      renderDonutChart(canvas);
