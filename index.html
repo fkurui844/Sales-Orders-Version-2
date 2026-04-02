@@ -5587,10 +5587,10 @@ async function runFulfilMatch() {
                    || null;
       const ordered = order ? order.ordered : 0;
       const sales   = sap.totalSales;
-      // rate: -1 = no data; 0–1 = fulfilment ratio (ordered / sales)
-      const rate    = (sales > 0 && ordered >= 0)
-        ? Math.min(ordered / sales, 1)
-        : (sales === 0 && ordered === 0 ? -1 : -1);
+      // rate: -1 = no data; 0–1 = fulfilment ratio (sales / ordered)
+      const rate    = (ordered > 0 && sales >= 0)
+        ? Math.min(sales / ordered, 1)
+        : -1;
 
       matched.push({
         id:       sap.id,
