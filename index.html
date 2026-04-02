@@ -1345,12 +1345,13 @@ tr.tonnage-detail-row td{padding:0}
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Submitted At</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Status</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Customers</th>
-              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total (KES)</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Volume Kgs/Lts</th>
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Route</th>
+              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Details</th>
             </tr>
           </thead>
           <tbody id="proj-timing-tbody">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No projection data found.</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">No projection data found.</td></tr>
           </tbody>
         </table>
       </div>
@@ -4863,9 +4864,10 @@ function renderProjTimingTable(rows) {
   );
 
   if (!projRows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No morning projection orders in the current filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No morning projection orders in the current filter.</td></tr>';
     if (kpiStrip) kpiStrip.innerHTML = '';
     _projTimingData = [];
+    renderProjConsolidated([]);
     return;
   }
 
@@ -4884,13 +4886,26 @@ function renderProjTimingTable(rows) {
         sp, date, route,
         timestamps: [],
         customers: new Set(),
-        total: 0
+        totalKg: 0,
+        products: {} // productCode -> { desc, pack, qty, kg }
       };
     }
     const b = batchMap[key];
     if (ts) b.timestamps.push(ts);
     if (cust && cust !== 'PROJECTION') b.customers.add(cust);
-    b.total += parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+    b.totalKg += parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
+
+    // Accumulate product-level data
+    const code = (r['Product Code'] || r['Code'] || '').trim();
+    const desc = (r['Description'] || r['Product'] || code).trim();
+    const pack = (r['Packaging'] || r['Pack'] || '').trim();
+    const qty  = parseFloat(r['Qty'] || 0) || 0;
+    const kg   = parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
+    if (code) {
+      if (!b.products[code]) b.products[code] = { desc, pack, qty: 0, kg: 0 };
+      b.products[code].qty += qty;
+      b.products[code].kg  += kg;
+    }
   });
 
   // Pick earliest timestamp per batch (first submission of that day)
@@ -4913,8 +4928,8 @@ function renderProjTimingTable(rows) {
   const total    = batches.length;
   const onTime   = batches.filter(b => b.status === 'on_time').length;
   const late     = batches.filter(b => b.status === 'late').length;
-  const unknown  = batches.filter(b => b.status === 'unknown').length;
   const pct      = total ? Math.round(onTime / total * 100) : 0;
+  const grandKg  = batches.reduce((s, b) => s + b.totalKg, 0);
 
   if (kpiStrip) {
     kpiStrip.innerHTML = `
@@ -4930,11 +4945,17 @@ function renderProjTimingTable(rows) {
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#C0392B">${late}</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Late Submissions</div>
       </div>
-      <div style="padding:14px 18px;text-align:center">
+      <div style="padding:14px 18px;border-right:1px solid var(--border);text-align:center">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:${pct >= 80 ? '#1B6B3A' : pct >= 50 ? '#E67E22' : '#C0392B'}">${pct}%</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">On-Time Rate</div>
       </div>
+      <div style="padding:14px 18px;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">${grandKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Total Volume (Kgs/Lts)</div>
+      </div>
     `;
+    // Update KPI grid to 5 columns
+    kpiStrip.style.gridTemplateColumns = 'repeat(5,1fr)';
   }
 
   // ── Table rows ──
@@ -4944,7 +4965,6 @@ function renderProjTimingTable(rows) {
   batches.forEach((b, idx) => {
     const isOnTime  = b.status === 'on_time';
     const isLate    = b.status === 'late';
-    const isUnknown = b.status === 'unknown';
 
     const statusBadge = isOnTime
       ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E8F5ED;color:#1B6B3A;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">✓ On Time</span>`
@@ -4953,11 +4973,10 @@ function renderProjTimingTable(rows) {
       : `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600">— Unknown</span>`;
 
     const rowBg = isLate ? '#FFF8F5' : isOnTime ? '#F6FBF8' : palette[idx % 2];
-    const leftBorder = isLate
-      ? 'border-left:3px solid #C0392B'
-      : isOnTime
-      ? 'border-left:3px solid #1B6B3A'
-      : '';
+    const leftBorder = isLate ? 'border-left:3px solid #C0392B' : isOnTime ? 'border-left:3px solid #1B6B3A' : '';
+
+    const prodList = Object.entries(b.products);
+    const detailId = 'pt-detail-' + idx;
 
     const tr = document.createElement('tr');
     tr.style.cssText = `background:${rowBg};${leftBorder}`;
@@ -4967,19 +4986,201 @@ function renderProjTimingTable(rows) {
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;color:${isLate ? '#C0392B' : isOnTime ? '#1B6B3A' : 'var(--muted)'}">${b.timeStr}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">${statusBadge}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${b.customers}</td>
-      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)">KES ${b.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)">${b.totalKg > 0 ? b.totalKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '<span style="color:var(--muted)">—</span>'}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${b.route}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">
+        ${prodList.length ? `<button onclick="togglePtDetail('${detailId}',this)" style="background:var(--accent-lt);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em">▼ ${prodList.length} item${prodList.length>1?'s':''}</button>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
+      </td>
     `;
     frag.appendChild(tr);
+
+    // Detail row (hidden by default)
+    if (prodList.length) {
+      const detailTr = document.createElement('tr');
+      detailTr.id = detailId;
+      detailTr.style.display = 'none';
+      detailTr.style.background = '#FAFAF9';
+      const prodRows = prodList.map(([code, p]) => `
+        <tr>
+          <td style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text)">${code}</td>
+          <td style="padding:8px 12px;font-size:12px;color:var(--text)">${p.desc}</td>
+          <td style="padding:8px 12px;font-size:12px;color:var(--muted)">${p.pack}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;font-size:13px">${p.qty.toLocaleString()}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;font-size:13px;color:var(--accent)">${p.kg > 0 ? p.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
+        </tr>`).join('');
+      detailTr.innerHTML = `
+        <td colspan="8" style="padding:0 14px 12px;border-bottom:1px solid var(--border)">
+          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:4px">
+            <div style="padding:8px 12px;background:var(--bg);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">
+              ${b.sp} — Products in this projection
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="background:#F7F5F2">
+                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Code</th>
+                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Product</th>
+                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Pack</th>
+                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Qty</th>
+                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Kgs/Lts</th>
+                </tr>
+              </thead>
+              <tbody>${prodRows}</tbody>
+            </table>
+          </div>
+        </td>
+      `;
+      frag.appendChild(detailTr);
+    }
   });
 
   tbody.innerHTML = '';
   tbody.appendChild(frag);
+
+  // Render consolidated product table
+  renderProjConsolidated(batches);
+}
+
+function togglePtDetail(id, btn) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : '';
+  btn.textContent = isOpen
+    ? btn.textContent.replace('▲','▼')
+    : btn.textContent.replace('▼','▲');
+  btn.textContent = (isOpen ? '▼ ' : '▲ ') + btn.textContent.replace(/^[▼▲]\s*/,'');
+}
+
+function renderProjConsolidated(batches) {
+  let section = document.getElementById('proj-consolidated-section');
+  if (!section) {
+    // Insert after proj-timing-section
+    const timingSection = document.getElementById('proj-timing-section');
+    if (!timingSection) return;
+    section = document.createElement('div');
+    section.id = 'proj-consolidated-section';
+    section.style.cssText = 'background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-top:16px;margin-bottom:80px';
+    timingSection.insertAdjacentElement('afterend', section);
+  }
+
+  if (!batches || !batches.length) {
+    section.style.display = 'none';
+    return;
+  }
+
+  // Aggregate all products across all batches by product code
+  const consolidated = {}; // code -> { desc, pack, totalQty, totalKg, salespersons: {sp: {qty,kg}} }
+  batches.forEach(b => {
+    Object.entries(b.products).forEach(([code, p]) => {
+      if (!consolidated[code]) consolidated[code] = { desc: p.desc, pack: p.pack, totalQty: 0, totalKg: 0, salespersons: {} };
+      consolidated[code].totalQty += p.qty;
+      consolidated[code].totalKg  += p.kg;
+      if (!consolidated[code].salespersons[b.sp]) consolidated[code].salespersons[b.sp] = { qty: 0, kg: 0 };
+      consolidated[code].salespersons[b.sp].qty += p.qty;
+      consolidated[code].salespersons[b.sp].kg  += p.kg;
+    });
+  });
+
+  const codes = Object.keys(consolidated).sort();
+  if (!codes.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const grandQty = codes.reduce((s, c) => s + consolidated[c].totalQty, 0);
+  const grandKg  = codes.reduce((s, c) => s + consolidated[c].totalKg,  0);
+
+  const prodRows = codes.map(code => {
+    const p = consolidated[code];
+    const spBreakdown = Object.entries(p.salespersons)
+      .map(([sp, v]) => `<span style="display:inline-block;background:var(--accent-lt);color:var(--accent);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;margin:1px">${sp}: ${v.qty.toLocaleString()} qty${v.kg > 0 ? ' · ' + v.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : ''}</span>`).join('');
+    return `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px">${code}</td>
+        <td style="padding:11px 14px;font-size:13px">${p.desc}</td>
+        <td style="padding:11px 14px;font-size:12px;color:var(--muted)">${p.pack}</td>
+        <td style="padding:11px 14px;text-align:right;font-weight:700;font-size:14px">${p.totalQty.toLocaleString()}</td>
+        <td style="padding:11px 14px;text-align:right;font-weight:700;font-size:14px;color:var(--accent)">${p.totalKg > 0 ? p.totalKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '—'}</td>
+        <td style="padding:11px 14px;font-size:11px">${spBreakdown}</td>
+      </tr>`;
+  }).join('');
+
+  section.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">📦 Consolidated Product Totals</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Total volume per product code across all salespersons' projections</div>
+      </div>
+      <button onclick="exportProjConsolidatedCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--bg)">
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Product Code</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Description</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Pack</th>
+            <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Qty</th>
+            <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Volume Kgs/Lts</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)">Salesperson Breakdown</th>
+          </tr>
+        </thead>
+        <tbody>${prodRows}</tbody>
+        <tfoot>
+          <tr style="background:var(--bg);border-top:2px solid var(--border)">
+            <td colspan="3" style="padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em">Grand Total</td>
+            <td style="padding:11px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px">${grandQty.toLocaleString()}</td>
+            <td style="padding:11px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;color:var(--accent)">${grandKg > 0 ? grandKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '—'}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  `;
+
+  // Store for CSV export
+  window._projConsolidatedData = { consolidated, codes };
+}
+
+function exportProjConsolidatedCSV() {
+  const data = window._projConsolidatedData;
+  if (!data || !data.codes.length) return;
+  const { consolidated, codes } = data;
+
+  // Collect all unique salespersons
+  const allSPs = [...new Set(codes.flatMap(c => Object.keys(consolidated[c].salespersons)))].sort();
+
+  const headers = ['Product Code','Description','Pack','Total Qty','Total Volume Kgs/Lts',
+    ...allSPs.flatMap(sp => [sp + ' Qty', sp + ' Kgs/Lts'])];
+  const csvRows = [headers.join(',')];
+
+  codes.forEach(code => {
+    const p = consolidated[code];
+    const spCols = allSPs.flatMap(sp => {
+      const v = p.salespersons[sp] || { qty: 0, kg: 0 };
+      return [v.qty, v.kg.toFixed(1)];
+    });
+    csvRows.push([
+      '"' + code.replace(/"/g,'""') + '"',
+      '"' + p.desc.replace(/"/g,'""') + '"',
+      '"' + p.pack.replace(/"/g,'""') + '"',
+      p.totalQty,
+      p.totalKg.toFixed(1),
+      ...spCols
+    ].join(','));
+  });
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'projection_consolidated_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
 }
 
 function exportProjTimingCSV() {
   if (!_projTimingData.length) return;
-  const headers = ['Salesperson','Order Date','Submitted At','Status','Customers','Total (KES)','Route'];
+  const headers = ['Salesperson','Order Date','Submitted At','Status','Customers','Total Volume Kgs/Lts','Route'];
   const csvRows = [headers.join(',')];
   _projTimingData.forEach(b => {
     const status = b.status === 'on_time' ? 'On Time' : b.status === 'late' ? 'Late' : 'Unknown';
@@ -4989,7 +5190,7 @@ function exportProjTimingCSV() {
       '"' + b.timeStr + '"',
       '"' + status + '"',
       b.customers,
-      b.total.toFixed(2),
+      b.totalKg.toFixed(1),
       '"' + (b.route||'').replace(/"/g,'""') + '"'
     ].join(','));
   });
