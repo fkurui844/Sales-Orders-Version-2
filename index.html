@@ -5088,35 +5088,74 @@ function parseSapText(text) {
 async function runFulfilMatch() {
   showLoad('Matching orders…');
   try {
-    // Pull ALL orders from Firebase
-    const snap = await db.ref('orders').once('value');
+    // Pull ALL orders from both /orders/ (processed) and /queue/ (pending)
+    const [ordersSnap, queueSnap] = await Promise.all([
+      db.ref('/orders').once('value').catch(() => null),
+      db.ref('/queue').once('value').catch(() => null)
+    ]);
+
     const allOrders = [];
 
-    snap.forEach(child => {
-      const o = child.val();
+    // Helper: parse a flat order record (used by both /orders/ and /queue/)
+    function parseFlatOrder(o) {
       if (!o) return;
+      const custId   = (o.customerCode || o.custCode || '').replace(/^0+/, '');
+      const custName = (o.customer || o.customerName || '').trim();
+      if (!custId && !custName) return;
 
-      // Flatten multi-customer orders
-      const customers = o.customers || [];
-      customers.forEach(co => {
-        const custId   = (co.customerId   || '').replace(/^0+/, ''); // strip leading zeros
-        const custName = co.customerName  || '';
-        let   ordered  = 0;
-        const prodMap  = {};
+      let items = o.items || [];
+      if (!items.length && o.itemsJson) {
+        try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+      }
 
-        (co.items || co.products || []).forEach(item => {
-          const code = String(item.code || item.productCode || '');
-          const qty  = parseFloat(item.qty || item.quantity || 0);
-          const val  = parseFloat(item.total || item.value || item.price || 0);
-          ordered   += val;
-          if (code) prodMap[code] = (prodMap[code] || 0) + qty;
-        });
+      let   ordered = 0;
+      const prodMap = {};
+      items.forEach(item => {
+        const code = String(item.productCode || item.code || item.product_code || '');
+        const qty  = parseFloat(item.qty || item.quantity || 0);
+        const val  = parseFloat(item.total || item.value || 0);
+        ordered   += val;
+        if (code) prodMap[code] = (prodMap[code] || 0) + qty;
+      });
 
-        if (custId || custName) {
-          allOrders.push({ custId, custName, ordered, prodMap });
+      allOrders.push({ custId, custName, ordered, prodMap });
+    }
+
+    // Read /orders/ — may have nested customers[] or flat structure
+    if (ordersSnap && ordersSnap.exists()) {
+      ordersSnap.forEach(child => {
+        const o = child.val();
+        if (!o) return;
+        if (Array.isArray(o.customers) && o.customers.length) {
+          // Legacy nested format: { customers: [{customerId, customerName, items[]}] }
+          o.customers.forEach(co => {
+            const custId   = (co.customerId || co.customerCode || '').replace(/^0+/, '');
+            const custName = (co.customerName || co.customer || '').trim();
+            if (!custId && !custName) return;
+            let ordered = 0;
+            const prodMap = {};
+            (co.items || co.products || []).forEach(item => {
+              const code = String(item.code || item.productCode || '');
+              const qty  = parseFloat(item.qty || item.quantity || 0);
+              const val  = parseFloat(item.total || item.value || 0);
+              ordered   += val;
+              if (code) prodMap[code] = (prodMap[code] || 0) + qty;
+            });
+            allOrders.push({ custId, custName, ordered, prodMap });
+          });
+        } else {
+          // Flat format: { customer, customerCode, itemsJson }
+          parseFlatOrder(o);
         }
       });
-    });
+    }
+
+    // Read /queue/ — always flat format: { customer, customerCode, itemsJson }
+    if (queueSnap && queueSnap.exists()) {
+      queueSnap.forEach(child => {
+        parseFlatOrder(child.val());
+      });
+    }
 
     // Group Firebase orders by customer ID (normalised — strip leading zeros)
     const ordersByCust = {};
