@@ -5811,6 +5811,7 @@ function switchDashPage(page) {
 let _fulfilSapData      = [];   // parsed SAP customers  [{id, name, products[], totalSales}]
 let _fulfilOrdersData   = [];   // from Firebase         [{customerId, customerName, products{code:qty}, totalOrdered}]
 let _fulfilMatched      = [];   // merged rows
+let _fulfilDisplayRows  = [];   // currently rendered (filtered+sorted) rows
 let _fulfilPage         = 1;
 const FULFIL_PAGE_SIZE  = 25;
 
@@ -6104,12 +6105,10 @@ function renderFulfilTable() {
     }
   });
 
-  // Pagination
-  const total   = rows.length;
-  const pages   = Math.max(1, Math.ceil(total / FULFIL_PAGE_SIZE));
-  _fulfilPage   = Math.min(_fulfilPage, pages);
-  const start   = (_fulfilPage - 1) * FULFIL_PAGE_SIZE;
-  const pageRows = rows.slice(start, start + FULFIL_PAGE_SIZE);
+  // Show ALL rows — no pagination
+  _fulfilDisplayRows = rows;
+  const total    = rows.length;
+  const pageRows = rows;
 
   // Render rows
   const tbody = document.getElementById('fulfil-tbody');
@@ -6127,7 +6126,7 @@ function renderFulfilTable() {
 
       const tr = document.createElement('tr');
       tr.className = 'fulfil-row';
-      tr.dataset.idx = start + i;
+      tr.dataset.idx = i;
       tr.innerHTML = `
         <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px">${r.id}</td>
         <td style="text-align:left;font-weight:500">${r.name}</td>
@@ -6145,8 +6144,11 @@ function renderFulfilTable() {
     });
   }
 
-  // Pagination UI
-  renderFulfilPagination(total, pages);
+  // Update row count label; hide pagination controls
+  const pgInfo = document.getElementById('fulfil-pg-info');
+  if (pgInfo) pgInfo.textContent = total ? total + ' customer' + (total !== 1 ? 's' : '') : '0 customers';
+  const pgBtns = document.getElementById('fulfil-pg-btns');
+  if (pgBtns) pgBtns.innerHTML = '';
 }
 
 function toggleFulfilRow(btn, idx) {
@@ -6155,7 +6157,7 @@ function toggleFulfilRow(btn, idx) {
   btn.classList.toggle('open', !isOpen);
   detailRow.style.display = isOpen ? 'none' : '';
   if (!isOpen) {
-    const r = _fulfilMatched[idx];
+    const r = _fulfilDisplayRows[idx];
     if (!r) return;
     const inner = detailRow.querySelector('.fulfil-detail-inner');
     if (inner && !inner.dataset.loaded) {
