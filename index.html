@@ -2100,23 +2100,44 @@ async function doLogin() {
   // ── Live fallback ────────────────────────────────────────────────────────
   // If the cached data has no password for this person (e.g. Firebase was
   // synced before the password was first set, or the background refresh
-  // hasn't finished yet), do one live GAS fetch before failing.
+  // hasn't finished yet), do a fast Firebase fetch before failing.
+  // Firebase is a direct DB read (~200-400 ms); no slow GAS round-trip needed.
   if (!stored) {
     showLoad('Checking credentials…');
     try {
-      const fresh = await gas({ action: 'getData' });
-      if (fresh && fresh.salespeople) {
-        S.data = normaliseData(fresh);
-        const nk   = findKey(selSP, NAME_KEYS);
-        const pk   = findKey(selSP, PAYROLL_KEYS);
-        const name = (selSP[nk] || '').trim();
-        const pay  = (selSP[pk] || '').trim();
-        const updated = (S.data.salespeople || []).find(s => {
+      const nk   = findKey(selSP, NAME_KEYS);
+      const pk   = findKey(selSP, PAYROLL_KEYS);
+      const name = (selSP[nk] || '').trim();
+      const pay  = (selSP[pk] || '').trim();
+
+      // Fast path: read just salespeople node from Firebase (~200-400 ms)
+      const snap = await Promise.race([
+        db.ref('/masterData/salespeople').get(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 3000))
+      ]);
+
+      if (snap && snap.exists()) {
+        const spList = snap.val();
+        const arr = Array.isArray(spList) ? spList : Object.values(spList);
+        const updated = arr.find(s => {
           const snk = findKey(s, NAME_KEYS);
           const spk = findKey(s, PAYROLL_KEYS);
           return (s[snk]||'').trim() === name || (pay && (s[spk]||'').trim() === pay);
         });
-        if (updated) { selSP = updated; stored = updated['Password'] || ''; }
+        if (updated) {
+          selSP  = updated;
+          stored = updated['Password'] || '';
+          // Update local cache so next login is instant
+          if (S.data && S.data.salespeople) {
+            const idx = S.data.salespeople.findIndex(s => {
+              const snk = findKey(s, NAME_KEYS);
+              return (s[snk]||'').trim() === name;
+            });
+            if (idx !== -1) S.data.salespeople[idx] = updated;
+            else S.data.salespeople.push(updated);
+            lsDataSave(S.data);
+          }
+        }
       }
     } catch(e) { /* fall through — show "no password" below */ }
     finally { hideLoad(); }
@@ -3426,66 +3447,114 @@ async function openDashboard() {
   await loadDashOrders();
 }
 
+// ── Orders localStorage cache ─────────────────────────────────────────────────
+const LS_ORDERS_KEY = 'salesorder_dashorders_v1';
+const LS_ORDERS_TTL = 5 * 60 * 1000; // 5 minutes
+
+function lsOrdersSave(from, to, rows) {
+  try {
+    localStorage.setItem(LS_ORDERS_KEY, JSON.stringify({ ts: Date.now(), from, to, rows }));
+  } catch(e) { /* storage full — ignore */ }
+}
+
+function lsOrdersLoad(from, to) {
+  try {
+    const raw = localStorage.getItem(LS_ORDERS_KEY);
+    if (!raw) return null;
+    const { ts, from: f, to: t, rows } = JSON.parse(raw);
+    if (Date.now() - ts > LS_ORDERS_TTL) { localStorage.removeItem(LS_ORDERS_KEY); return null; }
+    if (f !== from || t !== to) return null;
+    return rows;
+  } catch(e) { return null; }
+}
+
+function _fbOrdersToRows(obj, from, to) {
+  const rows = [];
+  Object.values(obj).forEach(order => {
+    if (!order) return;
+    const oDate = (order.date || '').trim();
+    if (from && oDate < from) return;
+    if (to   && oDate > to)   return;
+    let items = order.items;
+    if (!items && order.itemsJson) {
+      try { items = JSON.parse(order.itemsJson); } catch(e) { items = []; }
+    }
+    if (!Array.isArray(items)) return;
+    items.forEach(item => {
+      rows.push({
+        'Timestamp'       : order.timestamp || '',
+        'Date'            : oDate,
+        'Salesman'        : order.salesman || '',
+        'Payroll'         : order.payroll  || '',
+        'Route'           : order.route    || '',
+        'Location'        : order.location || '',
+        'Order Type'      : order.orderType || '',
+        'Customer Name'   : order.customer || '',
+        'Customer Code'   : order.customerCode || '',
+        'Product Code'    : item.productCode || item.product_code || '',
+        'Description'     : item.description || item.product || '',
+        'Category'        : item.category  || '',
+        'Packaging'       : item.packaging  || '',
+        'Qty'             : item.qty        || 0,
+        'Unit Price (KES)': item.price      || 0,
+        'Total (KES)'     : item.total      || 0,
+        'Total (KG)'      : item.totalKg    || 0,
+        'Notes'           : order.notes     || '',
+        'Order ID'        : order.orderId   || ''
+      });
+    });
+  });
+  rows.sort((a, b) => (a['Date'] < b['Date'] ? 1 : a['Date'] > b['Date'] ? -1 : 0));
+  return rows;
+}
+
+async function _fetchOrdersFromFirebase(from, to) {
+  try {
+    const snap = await Promise.race([
+      db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+    ]);
+    if (snap && snap.exists()) {
+      return _fbOrdersToRows(snap.val(), from, to);
+    }
+    return [];
+  } catch(fbErr) {
+    const gasRows = await gas({ action: 'getOrders', from, to });
+    return Array.isArray(gasRows) ? gasRows : [];
+  }
+}
+
+function _refreshOrdersBackground(from, to) {
+  _fetchOrdersFromFirebase(from, to).then(rows => {
+    lsOrdersSave(from, to, rows);
+    if (JSON.stringify(rows) !== JSON.stringify(allOrders)) {
+      allOrders = rows;
+      populateSPFilter();
+      applyDashFilters();
+    }
+  }).catch(() => {});
+}
+
 async function loadDashOrders() {
+  const from = document.getElementById('df-from').value.trim();
+  const to   = document.getElementById('df-to').value.trim();
+
+  // ── 1. Serve from localStorage immediately (0 ms) ───────────────────────────
+  const cached = lsOrdersLoad(from, to);
+  if (cached) {
+    allOrders = cached;
+    populateSPFilter();
+    applyDashFilters();
+    _refreshOrdersBackground(from, to);
+    return;
+  }
+
+  // ── 2. No cache — fetch with loading indicator ───────────────────────────────
   showLoad('Loading orders…');
   try {
-    const from = document.getElementById('df-from').value.trim();
-    const to   = document.getElementById('df-to').value.trim();
-
-    // ── Try Firebase /orders first (instant) ──────────────────────────────────
-    let rows = null;
-    try {
-      // Firebase stores orders keyed by orderId; filter client-side by date
-      const snap = await Promise.race([
-        db.ref('/orders').get(),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
-      ]);
-      if (snap && snap.exists()) {
-        const obj = snap.val();
-        rows = [];
-        Object.values(obj).forEach(order => {
-          if (!order || !order.items || !Array.isArray(order.items)) return;
-          const oDate = (order.date || '').trim();
-          if (from && oDate < from) return;
-          if (to   && oDate > to)   return;
-          // Expand to line-item rows (same shape GAS returns)
-          order.items.forEach(item => {
-            rows.push({
-              'Timestamp'       : order.timestamp || '',
-              'Date'            : oDate,
-              'Salesman'        : order.salesman || '',
-              'Payroll'         : order.payroll  || '',
-              'Route'           : order.route    || '',
-              'Location'        : order.location || '',
-              'Order Type'      : order.orderType || '',
-              'Customer Name'   : order.customer || '',
-              'Customer Code'   : order.customerCode || '',
-              'Product Code'    : item.productCode || item.product_code || '',
-              'Description'     : item.description || item.product || '',
-              'Category'        : item.category  || '',
-              'Packaging'       : item.packaging  || '',
-              'Qty'             : item.qty        || 0,
-              'Unit Price (KES)': item.price      || 0,
-              'Total (KES)'     : item.total      || 0,
-              'Total (KG)'      : item.totalKg    || 0,
-              'Notes'           : order.notes     || '',
-              'Order ID'        : order.orderId   || ''
-            });
-          });
-        });
-        rows.sort((a, b) => (a['Date'] < b['Date'] ? 1 : a['Date'] > b['Date'] ? -1 : 0));
-      }
-    } catch (fbErr) {
-      rows = null; // Firebase slow/failed — fall through to GAS
-    }
-
-    // ── Fall back to GAS (slow JSONP, ~5-15 s) ────────────────────────────────
-    if (rows === null) {
-      const gasRows = await gas({ action: 'getOrders', from, to });
-      rows = Array.isArray(gasRows) ? gasRows : [];
-    }
-
+    const rows = await _fetchOrdersFromFirebase(from, to);
     allOrders = rows;
+    lsOrdersSave(from, to, rows);
     populateSPFilter();
     applyDashFilters();
   } catch(e) {
