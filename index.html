@@ -1357,7 +1357,6 @@ tr.tonnage-detail-row td{padding:0}
           <table class="fulfil-table">
             <thead>
               <tr>
-                <th style="width:28px;text-align:center"></th>
                 <th>Cust. ID</th>
                 <th style="text-align:left">Customer Name</th>
                 <th>Ordered (KES)</th>
@@ -5733,7 +5732,7 @@ function renderFulfilTable() {
 
   if (!pageRows.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No customers match your filter.</td>';
+    tr.innerHTML = '<td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No customers match your filter.</td>';
     tbody.appendChild(tr);
   } else {
     pageRows.forEach((r, i) => {
@@ -5745,9 +5744,6 @@ function renderFulfilTable() {
       tr.className = 'fulfil-row';
       tr.dataset.idx = start + i;
       tr.innerHTML = `
-        <td style="text-align:center">
-          <button class="fulfil-expand-btn" onclick="toggleFulfilRow(this, ${start + i})" title="Show products">&#9654;</button>
-        </td>
         <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px">${r.id}</td>
         <td style="text-align:left;font-weight:500">${r.name}</td>
         <td>${r.ordered > 0 ? 'KES ' + fmt(r.ordered) : '<span style="color:var(--muted)">&#8212;</span>'}</td>
@@ -5761,14 +5757,6 @@ function renderFulfilTable() {
         <td><span class="fulfil-badge ${cls}">${label}</span></td>
       `;
       tbody.appendChild(tr);
-
-      // Detail row (hidden)
-      const detail = document.createElement('tr');
-      detail.className = 'fulfil-detail-row';
-      detail.id = 'fulfil-detail-' + (start + i);
-      detail.style.display = 'none';
-      detail.innerHTML = '<td colspan="7"><div class="fulfil-detail-inner"></div></td>';
-      tbody.appendChild(detail);
     });
   }
 
