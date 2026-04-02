@@ -4964,8 +4964,8 @@ function tagOrderRowsForSearch() {
 
 // ── Page switching ──────────────────────────────────────────────────────
 function switchDashPage(page) {
-  document.getElementById('orders-page').style.display  = page === 'orders'  ? '' : 'none';
-  document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? '' : 'none';
+  document.getElementById('orders-page').style.display  = page === 'orders'  ? 'block' : 'none';
+  document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? 'block' : 'none';
   document.getElementById('tab-orders').classList.toggle('active', page === 'orders');
   document.getElementById('tab-fulfil').classList.toggle('active', page === 'fulfil');
 }
