@@ -1457,7 +1457,7 @@ tr.tonnage-detail-row td{padding:0}
         <div class="export-opt-icon" style="background:#EEF2FF">🗺️</div>
         <div class="export-opt-info">
           <div class="export-opt-title">Route Summary</div>
-          <div class="export-opt-desc">Aggregated totals grouped by route and date</div>
+          <div class="export-opt-desc">2 sheets: route totals by date + consolidated products per route</div>
         </div>
       </div>
 
@@ -5260,6 +5260,53 @@ function buildRouteSheet(wb) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   styleSheet(ws, headers);
   XLSX.utils.book_append_sheet(wb, ws, 'By Route');
+
+  // ── Sheet 2: Consolidated Products per Route ──────────────────────────────
+  // Build: { route -> { productKey -> { code, desc, pack, qty, kg, total } } }
+  const routeProducts = {};
+  filteredOrders.forEach(r => {
+    const route   = r['Route']||'Unknown';
+    const code    = r['Product Code']||r['Code']||'';
+    const desc    = r['Description']||r['Product']||'';
+    const pack    = r['Packaging']||r['Pack']||'';
+    const prodKey = code || desc;
+    if (!prodKey) return;
+    if (!routeProducts[route]) routeProducts[route] = {};
+    if (!routeProducts[route][prodKey]) {
+      routeProducts[route][prodKey] = { code, desc, pack, qty: 0, kg: 0, total: 0 };
+    }
+    routeProducts[route][prodKey].qty   += parseFloat(r['Qty']||0)||0;
+    routeProducts[route][prodKey].kg    += parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0;
+    routeProducts[route][prodKey].total += parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+  });
+
+  const pHeaders = ['Route','Product Code','Description','Packaging','Total Qty','Total Weight (KG)','Total Revenue (KES)'];
+  const pRows = [pHeaders];
+
+  Object.keys(routeProducts).sort().forEach(route => {
+    const products = routeProducts[route];
+    pRows.push([route, '', '', '', '', '', '']);
+    Object.values(products)
+      .sort((a, b) => b.total - a.total)
+      .forEach(p => {
+        pRows.push(['', p.code, p.desc, p.pack, +p.qty.toFixed(2), +p.kg.toFixed(2), +p.total.toFixed(2)]);
+      });
+    const subtotalKg  = Object.values(products).reduce((s, p) => s + p.kg, 0);
+    const subtotalAmt = Object.values(products).reduce((s, p) => s + p.total, 0);
+    pRows.push(['', '', 'ROUTE TOTAL', '', '', +subtotalKg.toFixed(2), +subtotalAmt.toFixed(2)]);
+    pRows.push([]);
+  });
+
+  const grandKg  = filteredOrders.reduce((s,r)=>s+(parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0),0);
+  const grandAmt = filteredOrders.reduce((s,r)=>s+(parseFloat(r['Total (KES)']||r['Line Total']||0)||0),0);
+  pRows.push(['GRAND TOTAL','','','','',+grandKg.toFixed(2),+grandAmt.toFixed(2)]);
+
+  const ws2 = XLSX.utils.aoa_to_sheet(pRows);
+  ws2['!cols'] = [
+    { wch: 22 }, { wch: 14 }, { wch: 32 }, { wch: 14 },
+    { wch: 12 }, { wch: 18 }, { wch: 20 },
+  ];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Route Products');
 }
 
 function buildSPSheet(wb) {
