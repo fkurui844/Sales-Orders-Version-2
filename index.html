@@ -5683,9 +5683,15 @@ function rateColor(r) {
   return '#1B6B3A';
 }
 function statusLabel(r) {
-  if (r < 0) return ['none', 'No Orders'];
-  if (r < 0.5) return ['bad', 'Low'];
-  if (r < 0.9) return ['warn', 'Partial'];
+  // Accept either a rate number (legacy) or a full row object
+  const rate    = (typeof r === 'object') ? r.rate    : r;
+  const sales   = (typeof r === 'object') ? r.sales   : 0;
+  const ordered = (typeof r === 'object') ? r.ordered : 0;
+
+  if (ordered === 0 && sales === 0) return ['none', 'No Order / No Sales'];
+  if (ordered === 0 && sales > 0)   return ['none', 'No Orders'];
+  if (rate < 0.5) return ['bad', 'Low'];
+  if (rate < 0.9) return ['warn', 'Partial'];
   return ['ok', 'Full'];
 }
 
@@ -5701,7 +5707,7 @@ function renderFulfilTable() {
       : true;
     if (!q) return false;
     if (filter) {
-      const [cls] = statusLabel(r.rate);
+      const [cls] = statusLabel(r);
       if (cls !== filter) return false;
     }
     return true;
@@ -5736,7 +5742,7 @@ function renderFulfilTable() {
     tbody.appendChild(tr);
   } else {
     pageRows.forEach((r, i) => {
-      const [cls, label] = statusLabel(r.rate);
+      const [cls, label] = statusLabel(r);
       const pct = r.rate < 0 ? 0 : Math.round(r.rate * 100);
       const barW = Math.min(pct, 100);
 
@@ -5839,7 +5845,7 @@ function exportFulfilCSV() {
   const headers = ['Customer ID','Customer Name','Ordered (KES)','SAP Sales (KES)','Fulfilment Rate (%)','Status'];
   const csvRows = [headers.join(',')];
   _fulfilMatched.forEach(r => {
-    const [, label] = statusLabel(r.rate);
+    const [, label] = statusLabel(r);
     const pct = r.rate < 0 ? '' : Math.round(r.rate * 100);
     csvRows.push([
       '"' + r.id + '"',
