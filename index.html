@@ -1188,6 +1188,10 @@ tr.tonnage-detail-row td{padding:0}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="0,12 3,7 6,10 9,3 12,6 14,4"/></svg>
           Orders By Route Trend
         </button>
+        <button class="chart-tab" onclick="switchChart('product')" id="tab-product">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="2" width="14" height="2" rx="1"/><rect x="0" y="6" width="10" height="2" rx="1"/><rect x="0" y="10" width="12" height="2" rx="1"/></svg>
+          Orders By Product
+        </button>
         <button class="chart-tab" onclick="switchChart('tonnage')" id="tab-tonnage">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="8" width="3" height="5"/><rect x="5.5" y="5" width="3" height="8"/><rect x="10" y="2" width="3" height="11"/><line x1="0" y1="13.5" x2="14" y2="13.5" stroke-width="1.2"/></svg>
           Weight Per Route
@@ -4377,14 +4381,18 @@ function switchChart(type) {
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + type).classList.add('active');
   // Show/hide tonnage table vs chart canvas
-  const isTonnage = type === 'tonnage';
+  const isTonnage  = type === 'tonnage';
+  const isProduct  = type === 'product';
+  const isSpecial  = isTonnage || isProduct;
   const chartCard = document.querySelector('.chart-card');
   const tonnageSec = document.getElementById('tonnage-section');
-  if (chartCard)  chartCard.style.display  = isTonnage ? 'none' : '';
-  if (tonnageSec) tonnageSec.style.display = isTonnage ? ''     : 'none';
+  const productSec = document.getElementById('product-section');
+  if (chartCard)   chartCard.style.display   = isSpecial  ? 'none' : '';
+  if (tonnageSec)  tonnageSec.style.display  = isTonnage  ? ''     : 'none';
+  if (productSec)  productSec.style.display  = isProduct  ? ''     : 'none';
   // Hide metric toggle for tonnage (it has its own kg focus)
   const metricToggle = document.querySelector('.metric-toggle');
-  if (metricToggle) metricToggle.style.visibility = isTonnage ? 'hidden' : '';
+  if (metricToggle) metricToggle.style.visibility = isSpecial ? 'hidden' : '';
   renderChart();
 }
 
@@ -4409,6 +4417,7 @@ function renderChart() {
   }
 
   if (currentChartType === 'tonnage') { renderTonnageReport(); return; }
+  if (currentChartType === 'product') { renderProductTable(); return; }
   if (currentChartType === 'bar')        renderBarChart(canvas);
   if (currentChartType === 'line')       renderLineChart(canvas);
   if (currentChartType === 'donut')      renderDonutChart(canvas);
@@ -4642,6 +4651,117 @@ function renderDonutChart(canvas) {
 // ══════════════════════════════════════════
 //  TONNAGE PER ROUTE REPORT
 // ══════════════════════════════════════════
+// ── Orders By Product Table ──────────────────────────────────────────────
+let _productTableData = [];
+
+function renderProductTable() {
+  document.getElementById('chart-title') && (document.getElementById('chart-title').textContent = '');
+  document.getElementById('chart-legend') && (document.getElementById('chart-legend').innerHTML = '');
+
+  const thead = document.getElementById('product-thead');
+  const tbody = document.getElementById('product-tbody');
+  const tfoot = document.getElementById('product-tfoot');
+  if (!thead || !tbody || !tfoot) return;
+
+  if (!filteredOrders.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:32px;color:var(--muted)">No orders match the current filters.</td></tr>';
+    thead.innerHTML = '';
+    tfoot.innerHTML = '';
+    _productTableData = [];
+    return;
+  }
+
+  // Gather all salespersons
+  const spSet = [...new Set(filteredOrders.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean))].sort();
+
+  // Build product → { sp: qty } map
+  const prodMap = {};   // key: code+'||'+desc
+  filteredOrders.forEach(r => {
+    const sp   = (r['Salesman']||r['Salesperson']||'').trim();
+    const desc = (r['Description']||r['Product']||'').trim();
+    const code = (r['Product Code']||'').trim();
+    const pack = (r['Packaging']||'').trim();
+    const qty  = parseFloat(r['Qty']||0)||0;
+    const amt  = parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
+    if (!desc && !code) return;
+    const key = (code||desc) + '||' + desc;
+    if (!prodMap[key]) prodMap[key] = { code, desc, pack, spQty: {}, totalQty: 0, totalAmt: 0 };
+    if (!prodMap[key].spQty[sp]) prodMap[key].spQty[sp] = 0;
+    prodMap[key].spQty[sp] += qty;
+    prodMap[key].totalQty  += qty;
+    prodMap[key].totalAmt  += amt;
+  });
+
+  const products = Object.values(prodMap).sort((a,b) => b.totalQty - a.totalQty);
+  _productTableData = { products, spSet };
+
+  // Build header
+  let thHtml = '<tr style="background:var(--bg)">';
+  thHtml += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Product</th>';
+  thHtml += '<th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Pack</th>';
+  spSet.forEach(sp => {
+    thHtml += `<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">${sp}</th>`;
+  });
+  thHtml += '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Qty</th>';
+  thHtml += '<th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total (KES)</th>';
+  thHtml += '</tr>';
+  thead.innerHTML = thHtml;
+
+  // Build body rows
+  let tbHtml = '';
+  products.forEach((p, idx) => {
+    const bg = idx % 2 === 0 ? '' : 'background:#FAF7F4';
+    tbHtml += `<tr style="${bg}">`;
+    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);font-weight:500">${p.desc}${p.code ? ' <span style="font-size:10px;color:var(--muted);font-family:monospace">['+p.code+']</span>' : ''}</td>`;
+    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${p.pack||'—'}</td>`;
+    spSet.forEach(sp => {
+      const qty = p.spQty[sp] || 0;
+      tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${qty > 0 ? qty.toLocaleString() : '<span style="color:#ccc">—</span>'}</td>`;
+    });
+    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${p.totalQty.toLocaleString()}</td>`;
+    tbHtml += `<td style="padding:9px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">KES ${p.totalAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
+    tbHtml += '</tr>';
+  });
+  tbody.innerHTML = tbHtml;
+
+  // Footer totals
+  const grandQty = products.reduce((s,p) => s + p.totalQty, 0);
+  const grandAmt = products.reduce((s,p) => s + p.totalAmt, 0);
+  let tfHtml = '<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--border)">';
+  tfHtml += `<td style="padding:10px 14px" colspan="2">TOTAL — ${products.length} product${products.length!==1?'s':''}</td>`;
+  spSet.forEach(sp => {
+    const spTotal = products.reduce((s,p) => s + (p.spQty[sp]||0), 0);
+    tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${spTotal.toLocaleString()}</td>`;
+  });
+  tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${grandQty.toLocaleString()}</td>`;
+  tfHtml += `<td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">KES ${grandAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
+  tfHtml += '</tr>';
+  tfoot.innerHTML = tfHtml;
+}
+
+function exportProductCSV() {
+  if (!_productTableData || !_productTableData.products) return;
+  const { products, spSet } = _productTableData;
+  const headers = ['Product','Code','Pack', ...spSet, 'Total Qty','Total (KES)'];
+  const csvRows = [headers.join(',')];
+  products.forEach(p => {
+    const row = [
+      '"' + p.desc.replace(/"/g,'""') + '"',
+      '"' + (p.code||'') + '"',
+      '"' + (p.pack||'') + '"',
+      ...spSet.map(sp => p.spQty[sp]||0),
+      p.totalQty,
+      p.totalAmt.toFixed(2)
+    ];
+    csvRows.push(row.join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'orders_by_product_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
 function renderTonnageReport() {
   const thead = document.getElementById('tonnage-thead');
   const tbody = document.getElementById('tonnage-tbody');
