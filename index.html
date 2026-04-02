@@ -5587,10 +5587,10 @@ async function runFulfilMatch() {
                    || null;
       const ordered = order ? order.ordered : 0;
       const sales   = sap.totalSales;
-      // rate: -1 = SAP has sales but no order in system; 0–1 = fulfilment ratio
-      const rate    = (ordered > 0 && sales >= 0)
-        ? Math.min(sales / ordered, 1)
-        : (ordered === 0 && sales > 0 ? 1 : -1);
+      // rate: -1 = no data; 0–1 = fulfilment ratio (ordered / sales)
+      const rate    = (sales > 0 && ordered >= 0)
+        ? Math.min(ordered / sales, 1)
+        : (sales === 0 && ordered === 0 ? -1 : -1);
 
       matched.push({
         id:       sap.id,
@@ -5690,6 +5690,7 @@ function statusLabel(r) {
 
   if (ordered === 0 && sales === 0) return ['none', 'No Order / No Sales'];
   if (ordered === 0 && sales > 0)   return ['none', 'No Orders'];
+  if (sales === 0 && ordered > 0)   return ['none', 'No Orders'];
   if (rate < 0.5) return ['bad', 'Low'];
   if (rate < 0.9) return ['warn', 'Partial'];
   return ['ok', 'Full'];
