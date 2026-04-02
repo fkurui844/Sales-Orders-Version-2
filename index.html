@@ -422,6 +422,30 @@ textarea.inp{resize:vertical;min-height:80px}
 .metric-toggle-btn:hover{color:var(--text)}
 .metric-toggle-btn.active{background:var(--ok);color:#fff}
 .chart-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+/* ── TONNAGE TABLE ── */
+#tonnage-table th{background:var(--bg);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap}
+#tonnage-table th.num{text-align:right}
+#tonnage-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+#tonnage-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+#tonnage-table tr.route-row{cursor:pointer;transition:background .15s}
+#tonnage-table tr.route-row:hover{background:var(--accent-lt)}
+#tonnage-table tr.route-row td:first-child{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.tonnage-expand-ico{font-size:10px;color:var(--muted);transition:transform .2s;display:inline-block;width:12px}
+.tonnage-expand-ico.open{transform:rotate(90deg)}
+tr.tonnage-detail-row td{padding:0}
+.tonnage-detail-inner{background:#FAFAF8;border-bottom:1px solid var(--border)}
+.tonnage-detail-inner table{width:100%;border-collapse:collapse;font-size:12px}
+.tonnage-detail-inner table th{background:#F0EDE8;padding:7px 14px 7px 40px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tonnage-detail-inner table th.num{text-align:right;padding-right:14px}
+.tonnage-detail-inner table td{padding:7px 14px 7px 40px;border-bottom:1px solid var(--border);color:var(--text)}
+.tonnage-detail-inner table td.num{text-align:right;padding-right:14px;font-variant-numeric:tabular-nums}
+.tonnage-detail-inner table tr:last-child td{border-bottom:none}
+#tonnage-table tfoot td{padding:11px 14px;background:var(--bg);font-weight:700;border-top:2px solid var(--border)}
+#tonnage-table tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tonnage-bar-wrap{display:flex;align-items:center;gap:8px;min-width:100px}
+.tonnage-bar-bg{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.tonnage-bar-fill{height:100%;background:var(--ok);border-radius:99px;transition:width .4s}
+.tonnage-bar-pct{font-size:11px;color:var(--muted);width:36px;text-align:right;flex-shrink:0}
 .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .chart-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)}
 .chart-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
@@ -1129,6 +1153,10 @@ textarea.inp{resize:vertical;min-height:80px}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0a7 7 0 1 0 0 14A7 7 0 0 0 7 0zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
           Split
         </button>
+        <button class="chart-tab" onclick="switchChart('tonnage')" id="tab-tonnage">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="8" width="3" height="5"/><rect x="5.5" y="5" width="3" height="8"/><rect x="10" y="2" width="3" height="11"/><line x1="0" y1="13.5" x2="14" y2="13.5" stroke-width="1.2"/></svg>
+          Tonnage
+        </button>
         <div style="flex:1"></div>
         <div class="metric-toggle">
           <button class="metric-toggle-btn active" id="metric-revenue" onclick="switchMetric('revenue')">💰 Revenue</button>
@@ -1145,6 +1173,28 @@ textarea.inp{resize:vertical;min-height:80px}
         </div>
         <div class="chart-body">
           <canvas id="main-chart" height="220"></canvas>
+        </div>
+      </div>
+      <!-- Tonnage per Route Report Table -->
+      <div id="tonnage-section" style="display:none;margin-top:0">
+        <div class="chart-card" style="padding:0;overflow:hidden">
+          <div class="chart-header" style="padding:18px 20px 14px">
+            <div>
+              <div class="chart-title" id="tonnage-title">Tonnage per Route</div>
+              <div class="chart-subtitle">Total KG loaded per route — tap a route to see product breakdown</div>
+            </div>
+            <button onclick="exportTonnageCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer;white-space:nowrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="tonnage-table" style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead id="tonnage-thead"></thead>
+              <tbody id="tonnage-tbody"></tbody>
+              <tfoot id="tonnage-tfoot"></tfoot>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -4183,6 +4233,15 @@ function switchChart(type) {
   currentChartType = type;
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + type).classList.add('active');
+  // Show/hide tonnage table vs chart canvas
+  const isTonnage = type === 'tonnage';
+  const chartCard = document.querySelector('.chart-card');
+  const tonnageSec = document.getElementById('tonnage-section');
+  if (chartCard)  chartCard.style.display  = isTonnage ? 'none' : '';
+  if (tonnageSec) tonnageSec.style.display = isTonnage ? ''     : 'none';
+  // Hide metric toggle for tonnage (it has its own kg focus)
+  const metricToggle = document.querySelector('.metric-toggle');
+  if (metricToggle) metricToggle.style.visibility = isTonnage ? 'hidden' : '';
   renderChart();
 }
 
@@ -4206,6 +4265,7 @@ function renderChart() {
     return;
   }
 
+  if (currentChartType === 'tonnage') { renderTonnageReport(); return; }
   if (currentChartType === 'bar')        renderBarChart(canvas);
   if (currentChartType === 'line')       renderLineChart(canvas);
   if (currentChartType === 'donut')      renderDonutChart(canvas);
@@ -4434,6 +4494,200 @@ function renderDonutChart(canvas) {
       }
     }
   });
+}
+
+// ══════════════════════════════════════════
+//  TONNAGE PER ROUTE REPORT
+// ══════════════════════════════════════════
+function renderTonnageReport() {
+  const thead = document.getElementById('tonnage-thead');
+  const tbody = document.getElementById('tonnage-tbody');
+  const tfoot = document.getElementById('tonnage-tfoot');
+  if (!thead || !tbody || !tfoot) return;
+
+  // ── Build route → product map ───────────────────────────────────────────
+  const routeMap = {}; // route → { totalKg, totalKes, orders:Set, products:{code→{desc,kg,kes,qty}} }
+
+  filteredOrders.forEach(r => {
+    const route = (r['Route'] || 'Unknown').trim();
+    const kg    = parseFloat(r['Total (KG)']  || r['Weight (KG)'] || r['KG'] || 0) || 0;
+    const kes   = parseFloat(r['Total (KES)'] || r['Line Total']  || 0) || 0;
+    const qty   = parseFloat(r['Qty'] || 0) || 0;
+    const code  = (r['Product Code'] || '').trim();
+    const desc  = (r['Description']  || r['Product'] || code || '').trim();
+    const oKey  = (r['Order ID'] || '') || ((r['Salesman']||'') + '||' + (r['Customer Name']||'') + '||' + (r['Date']||''));
+
+    if (!routeMap[route]) routeMap[route] = { totalKg: 0, totalKes: 0, orders: new Set(), products: {} };
+    routeMap[route].totalKg  += kg;
+    routeMap[route].totalKes += kes;
+    routeMap[route].orders.add(oKey);
+
+    if (code) {
+      if (!routeMap[route].products[code]) routeMap[route].products[code] = { desc, kg: 0, kes: 0, qty: 0 };
+      routeMap[route].products[code].kg  += kg;
+      routeMap[route].products[code].kes += kes;
+      routeMap[route].products[code].qty += qty;
+    }
+  });
+
+  const routes    = Object.keys(routeMap).sort((a, b) => routeMap[b].totalKg - routeMap[a].totalKg);
+  const grandKg   = routes.reduce((s, rt) => s + routeMap[rt].totalKg,  0);
+  const grandKes  = routes.reduce((s, rt) => s + routeMap[rt].totalKes, 0);
+  const grandOrds = new Set(filteredOrders.map(r => r['Order ID'] || (r['Salesman']||'')+'||'+(r['Customer Name']||'')+'||'+(r['Date']||''))).size;
+
+  // Update title
+  const titleEl = document.getElementById('tonnage-title');
+  if (titleEl) titleEl.textContent = 'Tonnage per Route — ' + routes.length + ' route' + (routes.length !== 1 ? 's' : '');
+
+  // ── Header ──────────────────────────────────────────────────────────────
+  thead.innerHTML = `<tr>
+    <th>Route</th>
+    <th class="num">Orders</th>
+    <th class="num">Total Weight (KG)</th>
+    <th style="min-width:140px">Share</th>
+    <th class="num">Revenue (KES)</th>
+  </tr>`;
+
+  // ── Body rows ────────────────────────────────────────────────────────────
+  tbody.innerHTML = '';
+  routes.forEach((route, idx) => {
+    const rd      = routeMap[route];
+    const sharePct = grandKg > 0 ? (rd.totalKg / grandKg * 100) : 0;
+    const barW     = sharePct.toFixed(1);
+    const kgFmt    = rd.totalKg >= 1000
+      ? (rd.totalKg / 1000).toFixed(2) + ' T'
+      : rd.totalKg.toFixed(1) + ' KG';
+
+    // Main route row
+    const tr = document.createElement('tr');
+    tr.className = 'route-row';
+    tr.dataset.route = route;
+    tr.onclick = () => toggleTonnageDetail(tr, route, rd);
+    tr.innerHTML = `
+      <td style="display:flex;align-items:center;gap:8px">
+        <span class="tonnage-expand-ico" id="tnico-${idx}">&#9654;</span>
+        <span>${route}</span>
+      </td>
+      <td class="num">${rd.orders.size}</td>
+      <td class="num" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--ok)">${kgFmt}</td>
+      <td>
+        <div class="tonnage-bar-wrap">
+          <div class="tonnage-bar-bg"><div class="tonnage-bar-fill" style="width:${barW}%"></div></div>
+          <div class="tonnage-bar-pct">${sharePct.toFixed(1)}%</div>
+        </div>
+      </td>
+      <td class="num">KES ${rd.totalKes.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
+    tbody.appendChild(tr);
+
+    // Detail row (hidden by default)
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'tonnage-detail-row';
+    detailTr.id = 'tonnage-detail-' + idx;
+    detailTr.style.display = 'none';
+    detailTr.innerHTML = '<td colspan="5"><div class="tonnage-detail-inner" id="tonnage-inner-' + idx + '"></div></td>';
+    tbody.appendChild(detailTr);
+  });
+
+  // ── Footer totals ─────────────────────────────────────────────────────────
+  const grandKgFmt = grandKg >= 1000
+    ? (grandKg / 1000).toFixed(2) + ' T'
+    : grandKg.toFixed(1) + ' KG';
+  tfoot.innerHTML = `<tr>
+    <td style="font-family:'Barlow Condensed',sans-serif;font-size:15px">TOTAL</td>
+    <td class="num">${grandOrds}</td>
+    <td class="num" style="font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--ok)">${grandKgFmt}</td>
+    <td></td>
+    <td class="num">KES ${grandKes.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+  </tr>`;
+}
+
+function toggleTonnageDetail(tr, route, rd) {
+  const idx       = tr.rowIndex - 1; // approximate index via sibling search
+  // Find the ico and detail row by scanning siblings
+  const icoEl     = tr.querySelector('.tonnage-expand-ico');
+  const detailRow = tr.nextElementSibling;
+  if (!detailRow || !detailRow.classList.contains('tonnage-detail-row')) return;
+
+  const isOpen = detailRow.style.display !== 'none';
+  detailRow.style.display = isOpen ? 'none' : '';
+  if (icoEl) icoEl.classList.toggle('open', !isOpen);
+
+  if (!isOpen) {
+    const inner = detailRow.querySelector('.tonnage-detail-inner');
+    if (inner && !inner.dataset.loaded) {
+      inner.dataset.loaded = '1';
+      const prods = Object.entries(rd.products)
+        .sort(([,a],[,b]) => b.kg - a.kg);
+      if (!prods.length) {
+        inner.innerHTML = '<p style="padding:10px 40px;font-size:12px;color:var(--muted)">No product detail available.</p>';
+        return;
+      }
+      const prodRows = prods.map(([code, p]) => {
+        const pkgFmt = p.kg >= 1000
+          ? (p.kg / 1000).toFixed(2) + ' T'
+          : p.kg.toFixed(1) + ' KG';
+        return `<tr>
+          <td>${code}</td>
+          <td>${p.desc}</td>
+          <td class="num">${p.qty.toLocaleString()}</td>
+          <td class="num" style="font-weight:700;color:var(--ok)">${pkgFmt}</td>
+          <td class="num">KES ${p.kes.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </tr>`;
+      }).join('');
+      inner.innerHTML = `
+        <table>
+          <thead><tr>
+            <th>Code</th>
+            <th>Product</th>
+            <th class="num">Qty</th>
+            <th class="num">Weight (KG)</th>
+            <th class="num">Revenue (KES)</th>
+          </tr></thead>
+          <tbody>${prodRows}</tbody>
+        </table>`;
+    }
+  }
+}
+
+function exportTonnageCSV() {
+  const routeMap = {};
+  filteredOrders.forEach(r => {
+    const route = (r['Route'] || 'Unknown').trim();
+    const kg    = parseFloat(r['Total (KG)']  || r['Weight (KG)'] || r['KG'] || 0) || 0;
+    const kes   = parseFloat(r['Total (KES)'] || r['Line Total']  || 0) || 0;
+    const code  = (r['Product Code'] || '').trim();
+    const desc  = (r['Description']  || r['Product'] || code || '').trim();
+    const qty   = parseFloat(r['Qty'] || 0) || 0;
+    const oKey  = (r['Order ID'] || '') || ((r['Salesman']||'')+'||'+(r['Customer Name']||'')+'||'+(r['Date']||''));
+    if (!routeMap[route]) routeMap[route] = { totalKg: 0, totalKes: 0, orders: new Set(), products: {} };
+    routeMap[route].totalKg  += kg;
+    routeMap[route].totalKes += kes;
+    routeMap[route].orders.add(oKey);
+    if (code) {
+      if (!routeMap[route].products[code]) routeMap[route].products[code] = { desc, kg: 0, kes: 0, qty: 0 };
+      routeMap[route].products[code].kg  += kg;
+      routeMap[route].products[code].kes += kes;
+      routeMap[route].products[code].qty += qty;
+    }
+  });
+
+  const rows = [['Route','Product Code','Description','Qty','Weight (KG)','Revenue (KES)','Route Total KG','Route Total KES','Route Orders']];
+  Object.keys(routeMap).sort((a,b) => routeMap[b].totalKg - routeMap[a].totalKg).forEach(route => {
+    const rd = routeMap[route];
+    Object.entries(rd.products).sort(([,a],[,b]) => b.kg - a.kg).forEach(([code, p]) => {
+      rows.push([route, code, p.desc, p.qty, p.kg.toFixed(2), p.kes.toFixed(2), rd.totalKg.toFixed(2), rd.totalKes.toFixed(2), rd.orders.size]);
+    });
+    if (!Object.keys(rd.products).length) {
+      rows.push([route, '', '', '', rd.totalKg.toFixed(2), rd.totalKes.toFixed(2), rd.totalKg.toFixed(2), rd.totalKes.toFixed(2), rd.orders.size]);
+    }
+  });
+
+  const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'tonnage_per_route_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('Tonnage CSV downloaded ✓');
 }
 
 function renderRouteBarChart(canvas) {
