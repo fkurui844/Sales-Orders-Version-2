@@ -3509,19 +3509,89 @@ function _fbOrdersToRows(obj, from, to) {
 }
 
 async function _fetchOrdersFromFirebase(from, to) {
-  try {
-    const snap = await Promise.race([
-      db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
-    ]);
-    if (snap && snap.exists()) {
-      return _fbOrdersToRows(snap.val(), from, to);
-    }
-    return [];
-  } catch(fbErr) {
-    const gasRows = await gas({ action: 'getOrders', from, to });
-    return Array.isArray(gasRows) ? gasRows : [];
+  // Race GAS (authoritative Google Sheet) against Firebase /orders.
+  // GAS is the source of truth — Firebase /orders may be empty if GAS
+  // hasn't written processed orders back yet, or /orders is not used.
+  // We also check /queue for unprocessed orders as a secondary source.
+
+  // Helper: parse queue entries (stored with itemsJson string, not items array)
+  function queueToRows(obj) {
+    const rows = [];
+    Object.values(obj).forEach(order => {
+      if (!order) return;
+      const oDate = (order.date || '').trim();
+      if (from && oDate < from) return;
+      if (to   && oDate > to)   return;
+      let items = [];
+      if (order.itemsJson) {
+        try { items = JSON.parse(order.itemsJson); } catch(e) {}
+      }
+      if (!Array.isArray(items) || items.length === 0) return;
+      items.forEach(item => {
+        rows.push({
+          'Timestamp'       : order.timestamp || '',
+          'Date'            : oDate,
+          'Salesman'        : order.salesman || '',
+          'Payroll'         : order.payroll  || '',
+          'Route'           : order.route    || '',
+          'Location'        : order.location || '',
+          'Order Type'      : order.orderType || '',
+          'Customer Name'   : order.customer || '',
+          'Customer Code'   : order.customerCode || '',
+          'Product Code'    : item.productCode || item.product_code || '',
+          'Description'     : item.description || item.product || '',
+          'Category'        : item.category  || '',
+          'Packaging'       : item.packaging  || '',
+          'Qty'             : item.qty        || 0,
+          'Unit Price (KES)': item.price      || 0,
+          'Total (KES)'     : item.total      || 0,
+          'Total (KG)'      : item.totalKg    || 0,
+          'Notes'           : order.notes     || '',
+          'Order ID'        : order.orderId   || ''
+        });
+      });
+    });
+    rows.sort((a, b) => (a['Date'] < b['Date'] ? 1 : a['Date'] > b['Date'] ? -1 : 0));
+    return rows;
   }
+
+  // Fire GAS and Firebase in parallel — use whichever returns first with data
+  let gasAborted = false;
+  const gasPromise = gas({ action: 'getOrders', from, to }, { timeoutMs: 20000 })
+    .then(r => ({ src: 'gas', rows: Array.isArray(r) ? r : [] }))
+    .catch(() => ({ src: 'gas', rows: [] }));
+
+  const fbOrdersPromise = Promise.race([
+    db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+  ]).then(snap => ({
+    src: 'fb_orders',
+    rows: (snap && snap.exists()) ? _fbOrdersToRows(snap.val(), from, to) : []
+  })).catch(() => ({ src: 'fb_orders', rows: [] }));
+
+  const fbQueuePromise = Promise.race([
+    db.ref('/queue').get(),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+  ]).then(snap => ({
+    src: 'fb_queue',
+    rows: (snap && snap.exists()) ? queueToRows(snap.val()) : []
+  })).catch(() => ({ src: 'fb_queue', rows: [] }));
+
+  // Return GAS data (authoritative) — but show Firebase data immediately
+  // if it arrives first, then update when GAS resolves.
+  // Strategy: wait for all three, prefer GAS if it has data, else best Firebase source.
+  const [fbOrders, fbQueue, gasResult] = await Promise.all([
+    fbOrdersPromise, fbQueuePromise, gasPromise
+  ]);
+
+  // GAS is authoritative — use it if it returned anything
+  if (gasResult.rows.length > 0) return gasResult.rows;
+
+  // GAS returned empty — use best Firebase source
+  if (fbOrders.rows.length > 0) return fbOrders.rows;
+  if (fbQueue.rows.length  > 0) return fbQueue.rows;
+
+  return [];
 }
 
 function _refreshOrdersBackground(from, to) {
@@ -3545,23 +3615,96 @@ async function loadDashOrders() {
     allOrders = cached;
     populateSPFilter();
     applyDashFilters();
+    // Silently refresh — GAS is authoritative, update if data changed
     _refreshOrdersBackground(from, to);
     return;
   }
 
-  // ── 2. No cache — fetch with loading indicator ───────────────────────────────
+  // ── 2. No cache — show Firebase data fast, then update with GAS ─────────────
   showLoad('Loading orders…');
   try {
-    const rows = await _fetchOrdersFromFirebase(from, to);
-    allOrders = rows;
-    lsOrdersSave(from, to, rows);
-    populateSPFilter();
-    applyDashFilters();
+    // Fire all sources in parallel
+    const fbOrdersPromise = Promise.race([
+      db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+    ]).then(snap => (snap && snap.exists()) ? _fbOrdersToRows(snap.val(), from, to) : [])
+      .catch(() => []);
+
+    const fbQueuePromise = Promise.race([
+      db.ref('/queue').get(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
+    ]).then(snap => {
+      if (!snap || !snap.exists()) return [];
+      const rows = [];
+      Object.values(snap.val()).forEach(order => {
+        if (!order) return;
+        const oDate = (order.date || '').trim();
+        if (from && oDate < from) return;
+        if (to   && oDate > to)   return;
+        let items = [];
+        if (order.itemsJson) { try { items = JSON.parse(order.itemsJson); } catch(e) {} }
+        if (!Array.isArray(items)) return;
+        items.forEach(item => rows.push({
+          'Timestamp': order.timestamp||'', 'Date': oDate,
+          'Salesman': order.salesman||'', 'Payroll': order.payroll||'',
+          'Route': order.route||'', 'Location': order.location||'',
+          'Order Type': order.orderType||'', 'Customer Name': order.customer||'',
+          'Customer Code': order.customerCode||'',
+          'Product Code': item.productCode||item.product_code||'',
+          'Description': item.description||item.product||'',
+          'Category': item.category||'', 'Packaging': item.packaging||'',
+          'Qty': item.qty||0, 'Unit Price (KES)': item.price||0,
+          'Total (KES)': item.total||0, 'Total (KG)': item.totalKg||0,
+          'Notes': order.notes||'', 'Order ID': order.orderId||''
+        }));
+      });
+      rows.sort((a, b) => (a['Date'] < b['Date'] ? 1 : a['Date'] > b['Date'] ? -1 : 0));
+      return rows;
+    }).catch(() => []);
+
+    const gasPromise = gas({ action: 'getOrders', from, to }, { timeoutMs: 20000 })
+      .then(r => Array.isArray(r) ? r : [])
+      .catch(() => []);
+
+    // Show whichever Firebase source arrives first
+    const fbRows = await Promise.race([
+      fbOrdersPromise.then(r => r.length ? r : fbQueuePromise),
+      fbQueuePromise.then(r => r.length ? r : fbOrdersPromise),
+      new Promise(res => setTimeout(() => res([]), 5500)) // max wait for Firebase
+    ]);
+
+    if (fbRows.length > 0) {
+      // Render Firebase data immediately — remove spinner
+      allOrders = fbRows;
+      populateSPFilter();
+      applyDashFilters();
+      hideLoad();
+
+      // Then update with authoritative GAS data silently
+      gasPromise.then(gasRows => {
+        if (gasRows.length === 0) return; // GAS empty — keep Firebase data
+        const rows = gasRows;
+        lsOrdersSave(from, to, rows);
+        if (JSON.stringify(rows) !== JSON.stringify(allOrders)) {
+          allOrders = rows;
+          populateSPFilter();
+          applyDashFilters();
+        }
+      });
+    } else {
+      // No Firebase data — wait for GAS (it's the source of truth)
+      const gasRows = await gasPromise;
+      const rows = gasRows;
+      allOrders = rows;
+      lsOrdersSave(from, to, rows);
+      populateSPFilter();
+      applyDashFilters();
+      hideLoad();
+    }
   } catch(e) {
     toast('Could not load orders: ' + e.message);
     allOrders = [];
     renderDashTable([]);
-  } finally {
     hideLoad();
   }
 }
