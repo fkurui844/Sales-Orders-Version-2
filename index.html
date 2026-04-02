@@ -2651,7 +2651,11 @@ function buildProductUI() {
     'Units Per Pack','Units Per Crate','Units Per Tray','Units Per Carton',
     'Pcs/Pack','Pcs/Crate','Pcs/Tray','Pcs/Carton','PCS PER PACK'
   ]);
-  S._pk = { ck, dk, catk, pak, prk, kgk, ppk };
+  const pppk = findKey(p0, [
+    'Price Per Piece','Price Per Piece (KES)','Price/Piece','Price/Pc',
+    'Piece Price','PricePerPiece','Piece Rate','Unit Piece Price'
+  ]);
+  S._pk = { ck, dk, catk, pak, prk, kgk, ppk, pppk };
 
   let list = prods;
   if (S.orderType === 'projection') {
@@ -2701,6 +2705,7 @@ function buildProductUI() {
       const price = parseFloat(p[prk]) || 0;
       const kg    = parseFloat(p[kgk]) || 0;
       const piecesPerPack = ppk ? (parseFloat(p[ppk]) || 0) : 0;
+      const masterPricePerPiece = pppk ? (parseFloat(p[pppk]) || 0) : 0;
       const isBulkPack = /crate|tray|carton/i.test(pack);
       const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
       const pmKey  = `${code}||${pack}`;
@@ -2717,7 +2722,7 @@ function buildProductUI() {
       // Pieces-mode toggle button (only for Crate/Tray/Carton products)
       const pcsBtnHtml = isBulkPack ? `
         <button class="pcs-toggle-btn" id="pmtoggle-${safeId}"
-          onclick="togglePiecesMode('${code}','${pack}',${piecesPerPack},${price},${kg},'${desc.replace(/'/g,"\'")}','${cat.replace(/'/g,"\'")}',this)"
+          onclick="togglePiecesMode('${code}','${pack}',${piecesPerPack},${price},${kg},'${desc.replace(/'/g,"\'")}','${cat.replace(/'/g,"\'")}',this,${masterPricePerPiece})"
           title="Order in Pieces instead of full ${pack}">
           <span class="pcs-toggle-ico">🔢</span><span class="pcs-toggle-lbl">Pieces</span>
         </button>` : '';
@@ -2822,7 +2827,7 @@ function clearProductSearch() {
 
 // ── PIECES MODE FUNCTIONS ────────────────────────────────────────────────────
 
-function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, btn) {
+function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, btn, masterPricePerPiece = 0) {
   const pmKey  = `${code}||${pack}`;
   const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
 
@@ -2846,7 +2851,7 @@ function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, bt
 
   // ── Switch TO pieces mode ─────────────────────────────────────────────────
   if (masterPcsPerPack > 0) {
-    activatePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, safeId, btn);
+    activatePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, safeId, btn, masterPricePerPiece);
   } else {
     // Show inline prompt for pcsPerPack
     const promptEl = document.getElementById(`pcsprompt-${safeId}`);
@@ -2867,12 +2872,15 @@ function confirmPiecesPerPack(code, pack, price, kg, desc, cat, safeId) {
   const promptEl = document.getElementById(`pcsprompt-${safeId}`);
   if (promptEl) promptEl.style.display = 'none';
   const btn = document.getElementById(`pmtoggle-${safeId}`);
-  activatePiecesMode(code, pack, n, price, kg, desc, cat, safeId, btn);
+  activatePiecesMode(code, pack, n, price, kg, desc, cat, safeId, btn, 0);
 }
 
-function activatePiecesMode(code, pack, pcsPerPack, price, kg, desc, cat, safeId, btn) {
+function activatePiecesMode(code, pack, pcsPerPack, price, kg, desc, cat, safeId, btn, masterPricePerPiece = 0) {
   const pmKey      = `${code}||${pack}`;
-  const pricePerPcs = +(price / pcsPerPack).toFixed(4);
+  // Use master 'Price Per Piece' column if available; otherwise derive from pack price
+  const pricePerPcs = masterPricePerPiece > 0
+    ? +masterPricePerPiece.toFixed(4)
+    : +(price / pcsPerPack).toFixed(4);
   const kgPerPcs    = +(kg    / pcsPerPack).toFixed(4);
   _piecesMode[pmKey] = { pcsPerPack, pricePerPcs, kgPerPcs, packPrice: price, packKg: kg };
 
