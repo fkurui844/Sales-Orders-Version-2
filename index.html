@@ -3773,11 +3773,9 @@ async function openDashboard() {
   document.getElementById('dash-app').style.display      = 'flex';
   document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
 
-  const today = new Date();
-  const from  = new Date(today); from.setDate(from.getDate() - 30);
-  const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  document.getElementById('df-to').value   = fmt(today);
-  document.getElementById('df-from').value = fmt(from);
+  // Leave date filters blank so ALL orders are loaded from the database
+  document.getElementById('df-from').value = '';
+  document.getElementById('df-to').value   = '';
 
   await loadDashOrders();
 }
@@ -3930,7 +3928,9 @@ async function _fetchOrdersFromFirebase(from, to) {
     .catch(() => ({ src: 'gas', rows: [] }));
 
   const fbOrdersPromise = Promise.race([
-    db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
+    (from && to
+      ? db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get()
+      : db.ref('/orders').get()),
     new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
   ]).then(snap => ({
     src: 'fb_orders',
@@ -3993,7 +3993,9 @@ async function loadDashOrders() {
   try {
     // Fire all sources in parallel
     const fbOrdersPromise = Promise.race([
-      db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get(),
+      (from && to
+        ? db.ref('/orders').orderByChild('date').startAt(from).endAt(to).get()
+        : db.ref('/orders').get()),
       new Promise((_, rej) => setTimeout(() => rej(new Error('fb_slow')), 5000))
     ]).then(snap => (snap && snap.exists()) ? _fbOrdersToRows(snap.val(), from, to) : [])
       .catch(() => []);
@@ -4158,7 +4160,7 @@ function clearDashFilters() {
   document.getElementById('df-route').value    = '';
   document.getElementById('df-from').value     = '';
   document.getElementById('df-to').value       = '';
-  applyDashFilters();
+  loadDashOrders(); // Re-fetch so clearing date limits pulls all orders
 }
 
 function updateDashStats() {
@@ -5811,7 +5813,6 @@ function switchDashPage(page) {
 let _fulfilSapData      = [];   // parsed SAP customers  [{id, name, products[], totalSales}]
 let _fulfilOrdersData   = [];   // from Firebase         [{customerId, customerName, products{code:qty}, totalOrdered}]
 let _fulfilMatched      = [];   // merged rows
-let _fulfilDisplayRows  = [];   // currently rendered (filtered+sorted) rows
 let _fulfilPage         = 1;
 const FULFIL_PAGE_SIZE  = 25;
 
@@ -6106,7 +6107,6 @@ function renderFulfilTable() {
   });
 
   // Show ALL rows — no pagination
-  _fulfilDisplayRows = rows;
   const total    = rows.length;
   const pageRows = rows;
 
@@ -6144,7 +6144,7 @@ function renderFulfilTable() {
     });
   }
 
-  // Update row count label; hide pagination controls
+  // Update count label; hide pagination buttons
   const pgInfo = document.getElementById('fulfil-pg-info');
   if (pgInfo) pgInfo.textContent = total ? total + ' customer' + (total !== 1 ? 's' : '') : '0 customers';
   const pgBtns = document.getElementById('fulfil-pg-btns');
@@ -6157,7 +6157,7 @@ function toggleFulfilRow(btn, idx) {
   btn.classList.toggle('open', !isOpen);
   detailRow.style.display = isOpen ? 'none' : '';
   if (!isOpen) {
-    const r = _fulfilDisplayRows[idx];
+    const r = _fulfilMatched[idx];
     if (!r) return;
     const inner = detailRow.querySelector('.fulfil-detail-inner');
     if (inner && !inner.dataset.loaded) {
