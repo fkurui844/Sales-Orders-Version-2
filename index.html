@@ -928,6 +928,39 @@ tr.tonnage-detail-row td{padding:0}
   <!-- ── STEP 2: ADD ITEMS (multi-customer) ── -->
   <div id="step-items" style="display:none">
 
+    <!-- SUB-VIEW P: MORNING PROJECTION (no customers) -->
+    <div id="step2-proj" style="display:none">
+      <div class="content">
+        <div class="banner" style="display:flex">
+          🌅 <span>Morning Projection — <strong>Fresh Milk</strong> products only · Factory production order</span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="prod-header">Select Products to Produce</div>
+          <div class="prod-search-bar" id="proj-search-bar" style="display:none">
+            <input class="prod-search-inp" id="proj-prod-search" type="text" placeholder="Search by name or product code…" oninput="filterProjProducts()">
+            <select class="prod-cat-sel" id="proj-cat-sel" onchange="filterProjProducts()"><option value="">All Categories</option></select>
+            <button class="prod-clear-btn" id="proj-clear-btn" onclick="clearProjProductSearch()">✕ Clear</button>
+          </div>
+          <div class="prod-count-lbl" id="proj-count-lbl" style="display:none"></div>
+          <div id="proj-prod-list"><div style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Loading products…</div></div>
+        </div>
+        <div id="proj-cart-sec" style="display:none">
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="prod-header">Production Lines</div>
+            <div id="proj-cart-lines"></div>
+          </div>
+          <div class="total-bar">
+            <div><div class="tb-lbl">Projection Total</div><div class="tb-val" id="proj-cart-total">KES 0</div></div>
+            <div style="text-align:right"><div class="tb-lbl">Total Weight</div><div class="tb-val" id="proj-cart-kg">0.00 KG</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sticky-ft">
+        <button class="btn-ghost" onclick="setStep(1)">← Back</button>
+        <button class="btn-accent" id="proj-go3-btn" onclick="projGo3()" disabled style="opacity:.45">Review &amp; Submit →</button>
+      </div>
+    </div>
+
     <!-- SUB-VIEW A: list of saved customer orders -->
     <div id="step2-list">
       <div class="content">
@@ -1014,7 +1047,7 @@ tr.tonnage-detail-row td{padding:0}
       </div>
     </div>
     <div class="sticky-ft">
-      <button class="btn-ghost" onclick="setStep(2)">← Back</button>
+      <button class="btn-ghost" onclick="goBackFromSubmit()">← Back</button>
       <button class="btn-accent" id="sub-btn" onclick="submitOrder()">Submit All Orders ✓</button>
     </div>
   </div>
@@ -2417,11 +2450,25 @@ function setStep(n) {
   const map = { 1:'step-who', 2:'step-items', 3:'step-submit', 4:'step-ok' };
   Object.values(map).forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById(map[n]).style.display = 'block';
+  // When returning to step 2, show the right sub-view for the order type
+  if (n === 2) {
+    const isProj = S.orderType === 'projection';
+    document.getElementById('step2-proj').style.display  = isProj ? 'block' : 'none';
+    document.getElementById('step2-list').style.display  = isProj ? 'none'  : 'block';
+    document.getElementById('step2-add').style.display   = 'none';
+  }
   [1,2,3].forEach(i => {
     const el = document.getElementById(`s${i}t`);
     el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
   });
   window.scrollTo(0, 0);
+}
+
+function goBackFromSubmit() {
+  setStep(2);
+  // Reset submit button label in case it was changed to projection wording
+  const subBtn = document.getElementById('sub-btn');
+  if (subBtn) subBtn.textContent = S.orderType === 'projection' ? 'Submit Projection ✓' : 'Submit All Orders ✓';
 }
 
 // ══════════════════════════════════════════
@@ -2580,8 +2627,270 @@ function go2() {
   }
 
   S.customerOrders = [];
+  S.projCart = [];
+  // Update step 2 label to reflect order type
+  const s2label = document.querySelector('#s2t span');
+  if (s2label) s2label.textContent = S.orderType === 'projection' ? 'PRODUCTS' : 'ADD ITEMS';
   setStep(2);
-  showStep2List();
+  if (S.orderType === 'projection') {
+    showProjStep();
+  } else {
+    showStep2List();
+  }
+}
+
+// ══════════════════════════════════════════
+//  MORNING PROJECTION — customer-free flow
+//  S.projCart holds items directly (no customerOrders nesting)
+// ══════════════════════════════════════════
+
+function showProjStep() {
+  document.getElementById('step2-proj').style.display  = 'block';
+  document.getElementById('step2-list').style.display  = 'none';
+  document.getElementById('step2-add').style.display   = 'none';
+  S.projCart = S.projCart || [];
+  buildProjProductUI();
+}
+
+let _projProdListData = [];
+
+function buildProjProductUI() {
+  const prods = S.data.products || [];
+  const container = document.getElementById('proj-prod-list');
+
+  const p0   = prods[0];
+  const ck   = findKey(p0, ['Product Code','ProductCode','Code','SKU','Prod Code','Item Code','PRODUCT CODE']);
+  const dk   = findKey(p0, ['Description','Product Name','Item Name','Name','Product','DESCRIPTION','Item']);
+  const catk = findKey(p0, ['Category','CATEGORY','Type','TYPE','Product Category','category']);
+  const pak  = findKey(p0, ['Packaging','PACKAGING','Pack','Package','Size','Pack Size']);
+  const prk  = findKey(p0, ['Unit Price (KES)','Unit Price','Price (KES)','Price','PRICE','UnitPrice','Selling Price','Rate']);
+  const kgk  = findKey(p0, ['Weight (KG)','Weight','Weight KG','KG per Unit','KgPerUnit','Kg per Unit','Kg','weight','Weight per Unit','Wt (KG)','KG','kg','Weight per Carton','Wt per Carton']);
+  const ppk  = findKey(p0, ['Pieces Per Pack','Pieces Per Crate','Pieces Per Tray','Pieces Per Carton','Pcs Per Pack','Pcs Per Crate','Pcs Per Tray','Pcs Per Carton','Units Per Pack','Units Per Crate','Units Per Tray','Units Per Carton','Pcs/Pack','Pcs/Crate','Pcs/Tray','Pcs/Carton','PCS PER PACK']);
+  const pppk = findKey(p0, ['Price Per Piece','Price Per Piece (KES)','Price/Piece','Price/Pc','Piece Price','PricePerPiece','Piece Rate','Unit Piece Price']);
+
+  // Fresh milk only
+  let list = prods.filter(p => {
+    const cat = (p[catk]||'').toLowerCase();
+    return cat.includes('fresh') || cat.includes('milk');
+  });
+
+  if (!list.length) {
+    container.innerHTML = '<div style="padding:22px;text-align:center;color:var(--muted)">No Fresh Milk products found in master data.</div>';
+    return;
+  }
+
+  const groups = {};
+  list.forEach(p => { const cat = p[catk]||'Fresh Milk'; (groups[cat]=groups[cat]||[]).push(p); });
+
+  const catSel = document.getElementById('proj-cat-sel');
+  if (catSel) {
+    catSel.innerHTML = '<option value="">All Categories</option>';
+    Object.keys(groups).sort().forEach(cat => {
+      const o = document.createElement('option');
+      o.value = o.textContent = cat;
+      catSel.appendChild(o);
+    });
+  }
+
+  const frag = document.createDocumentFragment();
+  _projProdListData = [];
+
+  Object.entries(groups).forEach(([cat, items]) => {
+    const ch = document.createElement('div');
+    ch.className = 'cat-header';
+    ch.dataset.cat = cat;
+    ch.textContent = cat;
+    frag.appendChild(ch);
+
+    items.forEach(p => {
+      const code  = (p[ck]  || '').trim();
+      const desc  = (p[dk]  || '').trim();
+      const pack  = (p[pak] || '').trim();
+      const price = parseFloat(p[prk]) || 0;
+      const kg    = parseFloat(p[kgk]) || 0;
+      const piecesPerPack = ppk ? (parseFloat(p[ppk]) || 0) : 0;
+      const masterPricePerPiece = pppk ? (parseFloat(p[pppk]) || 0) : 0;
+      const safeId = ('pq-' + code + '-' + pack).replace(/[^a-zA-Z0-9_-]/g,'_');
+
+      const existing = (S.projCart||[]).find(c => c.code === code && c.pack === pack);
+      const qty = existing ? existing.qty : 0;
+
+      const row = document.createElement('div');
+      row.className = 'prod-row';
+      row.dataset.code = code;
+      row.dataset.desc = desc.toLowerCase();
+      row.dataset.cat  = cat;
+      row.innerHTML = `
+        <div>
+          <div class="prod-name">${desc}</div>
+          <div class="prod-meta">${pack} <span class="badge">${code}</span></div>
+        </div>
+        <div class="prod-price">KES ${price.toLocaleString()}</div>
+        <div class="qty-ctl">
+          <button class="qty-btn" data-delta="-1">−</button>
+          <input class="qty-inp" id="${safeId}" type="number" min="0" value="${qty}">
+          <button class="qty-btn" data-delta="1">+</button>
+        </div>
+      `;
+      row.querySelectorAll('.qty-btn').forEach(btn => {
+        btn.onclick = () => updateProjCart(code, pack, price, kg, desc, cat, null, parseInt(btn.dataset.delta));
+      });
+      row.querySelector('.qty-inp').onchange = function() {
+        updateProjCart(code, pack, price, kg, desc, cat, parseInt(this.value)||0, 0);
+      };
+      frag.appendChild(row);
+      _projProdListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, cat, catHeader: ch, row });
+    });
+  });
+
+  container.innerHTML = '';
+  container.appendChild(frag);
+
+  const searchBar = document.getElementById('proj-search-bar');
+  const countLbl  = document.getElementById('proj-count-lbl');
+  if (searchBar) searchBar.style.display = 'flex';
+  if (countLbl)  { countLbl.textContent = `${list.length} product${list.length!==1?'s':''}`; countLbl.style.display = 'block'; }
+
+  renderProjCart();
+}
+
+function filterProjProducts() {
+  const q   = (document.getElementById('proj-prod-search')?.value || '').toLowerCase().trim();
+  const cat = (document.getElementById('proj-cat-sel')?.value || '').trim();
+  const countLbl = document.getElementById('proj-count-lbl');
+  const clearBtn = document.getElementById('proj-clear-btn');
+  if (clearBtn) clearBtn.style.display = (q || cat) ? 'inline-flex' : 'none';
+
+  let visible = 0;
+  const visibleCats = new Set();
+  _projProdListData.forEach(({ code, desc, cat: itemCat, catHeader, row }) => {
+    const show = (!cat || itemCat === cat) && (!q || desc.includes(q) || code.toLowerCase().includes(q));
+    row.style.display = show ? '' : 'none';
+    if (show) { visible++; visibleCats.add(itemCat); }
+  });
+  _projProdListData.forEach(({ cat: itemCat, catHeader }) => {
+    if (catHeader) catHeader.style.display = visibleCats.has(itemCat) ? '' : 'none';
+  });
+  if (countLbl) countLbl.textContent = (q || cat)
+    ? `${visible} result${visible!==1?'s':''}`
+    : `${_projProdListData.length} product${_projProdListData.length!==1?'s':''}`;
+}
+
+function clearProjProductSearch() {
+  const inp = document.getElementById('proj-prod-search');
+  const sel = document.getElementById('proj-cat-sel');
+  if (inp) inp.value = '';
+  if (sel) sel.value = '';
+  filterProjProducts();
+}
+
+function updateProjCart(code, pack, price, kg, desc, cat, newQty, delta) {
+  S.projCart = S.projCart || [];
+  let idx = S.projCart.findIndex(c => c.code === code && c.pack === pack);
+  if (idx === -1) {
+    S.projCart.push({ code, pack, price, kg, desc, cat, qty: 0, total: 0, totalKg: 0 });
+    idx = S.projCart.length - 1;
+  }
+  const item = S.projCart[idx];
+  item.qty     = Math.max(0, newQty !== null ? newQty : item.qty + delta);
+  item.total   = item.qty * item.price;
+  item.totalKg = item.qty * item.kg;
+  if (item.qty === 0) S.projCart.splice(idx, 1);
+
+  const safeId = ('pq-' + code + '-' + pack).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const el = document.getElementById(safeId);
+  if (el) el.value = item.qty || 0;
+  renderProjCart();
+}
+
+function renderProjCart() {
+  const lines   = document.getElementById('proj-cart-lines');
+  const section = document.getElementById('proj-cart-sec');
+  const totEl   = document.getElementById('proj-cart-total');
+  const kgEl    = document.getElementById('proj-cart-kg');
+  const go3Btn  = document.getElementById('proj-go3-btn');
+
+  const cart = S.projCart || [];
+  if (!cart.length) {
+    if (section) section.style.display = 'none';
+    if (go3Btn)  { go3Btn.disabled = true; go3Btn.style.opacity = '.45'; }
+    return;
+  }
+  if (section) section.style.display = 'block';
+  if (go3Btn)  { go3Btn.disabled = false; go3Btn.style.opacity = '1'; }
+
+  let totAmt = 0, totKg = 0;
+  const frag = document.createDocumentFragment();
+  cart.forEach((item, i) => {
+    totAmt += item.total; totKg += item.totalKg;
+    const d = document.createElement('div');
+    d.className = 'cart-line';
+    d.innerHTML = `
+      <div class="cl-info">
+        <div class="cl-prod">${item.desc} <span class="badge">${item.code}</span></div>
+        <div class="cl-det">${item.pack} · Qty: ${item.qty} · KES ${item.price.toLocaleString()} · ${item.totalKg.toFixed(2)} KG</div>
+      </div>
+      <div class="cl-total">KES ${item.total.toLocaleString()}</div>
+      <button class="cl-rm" onclick="removeProjCart(${i})" title="Remove">✕</button>
+    `;
+    frag.appendChild(d);
+  });
+  lines.innerHTML = ''; lines.appendChild(frag);
+  totEl.textContent = `KES ${totAmt.toLocaleString()}`;
+  kgEl.textContent  = `${totKg.toFixed(2)} KG`;
+}
+
+function removeProjCart(i) {
+  const item = S.projCart[i];
+  const safeId = ('pq-' + item.code + '-' + item.pack).replace(/[^a-zA-Z0-9_-]/g,'_');
+  const el = document.getElementById(safeId);
+  if (el) el.value = 0;
+  S.projCart.splice(i, 1);
+  renderProjCart();
+}
+
+function buildProjSubmitStep() {
+  const sp  = S.user, nk = findKey(sp, NAME_KEYS), pk = findKey(sp, PAYROLL_KEYS);
+  const name = sp[nk]||'', pay = sp[pk]||'';
+  const cart = S.projCart || [];
+  const grandAmt = cart.reduce((s,i)=>s+i.total,0);
+  const grandKg  = cart.reduce((s,i)=>s+i.totalKg,0);
+
+  document.getElementById('order-summary').innerHTML = `
+    <div class="sum-row"><span class="sum-k">Salesman</span><span class="sum-v">${name}</span></div>
+    <div class="sum-row"><span class="sum-k">Payroll No.</span><span class="sum-v">${pay||'—'}</span></div>
+    <div class="sum-row"><span class="sum-k">Location</span><span class="sum-v">${S.location}</span></div>
+    <div class="sum-row"><span class="sum-k">Route</span><span class="sum-v">${S.route}</span></div>
+    <div class="sum-row"><span class="sum-k">Order Date</span><span class="sum-v">${fmtDate(S.orderDate)}</span></div>
+    <div class="sum-row"><span class="sum-k">Order Type</span><span class="sum-v"><span class="tag">Morning Projection</span></span></div>
+    <div class="sum-row"><span class="sum-k">Note</span><span class="sum-v" style="color:var(--muted);font-size:12px">Factory production — no individual customers</span></div>
+  `;
+
+  // No per-customer cards for projection
+  document.getElementById('submit-customer-orders').innerHTML = '';
+
+  // Product totals table
+  const catMap = {};
+  cart.forEach(item => { (catMap[item.cat||'Fresh Milk']=catMap[item.cat||'Fresh Milk']||[]).push(item); });
+  let tbl = '<thead><tr><th>Product</th><th>Pack</th><th style="text-align:center">Qty</th><th>Total (KES)</th></tr></thead><tbody>';
+  Object.entries(catMap).forEach(([cat, prods]) => {
+    tbl += `<tr class="summary-cat-row"><td colspan="4">${cat}</td></tr>`;
+    prods.sort((a,b)=>b.qty-a.qty).forEach(p => {
+      tbl += `<tr><td><span style="font-weight:500">${p.desc}</span><span class="st-code">${p.code}</span></td><td style="color:var(--muted);font-size:11px">${p.pack}</td><td style="text-align:center"><span class="st-qty">${p.qty}</span></td><td><span class="st-amt">KES ${p.total.toLocaleString()}</span></td></tr>`;
+    });
+  });
+  tbl += '</tbody>';
+  document.getElementById('submit-summary-table').innerHTML = tbl;
+
+  document.getElementById('submit-grand-total').innerHTML = `
+    <div class="gt-main"><span>Production Total</span><span style="color:var(--accent)">KES ${grandAmt.toLocaleString()}</span></div>
+    <div class="gt-row"><span>Products</span><span>${cart.length}</span></div>
+    <div class="gt-row"><span>Total Weight</span><span>${grandKg.toFixed(2)} KG</span></div>
+  `;
+
+  // Swap submit button label
+  const subBtn = document.getElementById('sub-btn');
+  if (subBtn) subBtn.textContent = 'Submit Projection ✓';
 }
 
 function showStep2List() {
@@ -3246,6 +3555,16 @@ function go3() {
   setStep(3);
 }
 
+// Projection-specific go3
+function projGo3() {
+  if (!S.projCart || !S.projCart.length) {
+    toast('⚠️ Please add at least one product');
+    return;
+  }
+  buildProjSubmitStep();
+  setStep(3);
+}
+
 // ══════════════════════════════════════════
 //  STEP 3 — SUBMIT (multi-customer)
 // ══════════════════════════════════════════
@@ -3336,13 +3655,120 @@ function hideBatchProgressBanner() {
 //  All Firebase writes fire simultaneously (one round-trip ~200–400 ms).
 //  Success screen shows instantly; GAS sync runs in background.
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  SUBMIT PROJECTION ORDER
+//  Single Firebase record, no customer loop
+// ══════════════════════════════════════════
+async function submitProjectionOrder() {
+  const sp   = S.user;
+  const nk   = findKey(sp, NAME_KEYS);
+  const pk   = findKey(sp, PAYROLL_KEYS);
+  const name = sp[nk] || '';
+  const pay  = sp[pk] || '';
+  const notes = document.getElementById('notes-inp').value.trim();
+  const cart  = S.projCart || [];
+
+  if (!cart.length) { toast('⚠️ No products in projection'); return; }
+
+  hideSubmitError();
+  const subBtn = document.getElementById('sub-btn');
+  subBtn.disabled = true;
+
+  const items = cart.map(i => ({
+    productCode: i.code, product: i.desc, description: i.desc,
+    category:    i.cat,  packaging: i.pack, qty: i.qty,
+    price:       i.price, total: i.total,  totalKg: i.totalKg
+  }));
+
+  const orderId = 'PROJ-' + Date.now() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  const fbKey   = (name + '-' + S.orderDate + '-PROJECTION-' + S.route)
+                    .replace(/[^a-zA-Z0-9-]/g,'_').substring(0,120);
+
+  const fbPayload = {
+    orderId, status: 'PENDING',
+    timestamp:   new Date().toISOString(),
+    date:        S.orderDate,   salesman:  name,       payroll:   pay,
+    route:       S.route,       location:  S.location, orderType: 'Morning Projection',
+    customer:    'PROJECTION',  customerCode: '',
+    itemsJson:   JSON.stringify(items), notes
+  };
+
+  showLoad('Saving projection…');
+  let fbOk = false;
+  try {
+    await db.ref('/queue/' + fbKey).set(fbPayload);
+    fbOk = true;
+  } catch(e) { /* fall through to GAS */ }
+  hideLoad();
+
+  // Background GAS sync
+  try {
+    gasOnce({
+      action: 'submitOrder', clientOrderId: fbKey,
+      salesperson: name, payroll: pay,
+      route: S.route, location: S.location, orderType: 'Morning Projection',
+      customer: 'PROJECTION', customerCode: '',
+      orderDate: S.orderDate, notes,
+      items: JSON.stringify(items), batchKey: '', isContinuation: '0'
+    }, 45000).catch(()=>{});
+  } catch(e) {}
+
+  if (!fbOk) {
+    showSubmitError('Could not save projection — check your connection and retry.');
+    subBtn.disabled = false;
+    return;
+  }
+
+  // Success
+  S._lastOrder = { orderId, salesman: name, location: S.location, route: S.route, date: S.orderDate, type: 'Morning Projection', notes };
+  document.getElementById('ok-id').textContent = orderId;
+
+  // Update success screen wording
+  const sTitle = document.querySelector('#step-ok .s-title');
+  const sSub   = document.querySelector('#step-ok .s-sub');
+  if (sTitle) sTitle.textContent = 'Projection Submitted!';
+  if (sSub)   sSub.textContent   = 'Your morning projection has been sent to the factory.';
+
+  // Build a simple preview
+  const prevEl = document.getElementById('ok-preview');
+  if (prevEl) {
+    let rows = `<div class="order-preview-head">🌅 Morning Projection</div>
+      <div class="order-preview-meta">
+        <div><div class="opm-k">Salesman</div><div class="opm-v">${name}</div></div>
+        <div><div class="opm-k">Date</div><div class="opm-v">${fmtDate(S.orderDate)}</div></div>
+        <div><div class="opm-k">Route</div><div class="opm-v">${S.route}</div></div>
+        <div><div class="opm-k">Location</div><div class="opm-v">${S.location}</div></div>
+      </div>`;
+    rows += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 0 4px">Products</div>';
+    cart.forEach(item => {
+      rows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span><strong>${item.desc}</strong> <span style="color:var(--muted)">${item.pack}</span></span>
+        <span style="font-weight:700">×${item.qty}</span>
+      </div>`;
+    });
+    const grandAmt = cart.reduce((s,i)=>s+i.total,0);
+    const grandKg  = cart.reduce((s,i)=>s+i.totalKg,0);
+    rows += `<div class="order-preview-total"><span>Total</span><span>KES ${grandAmt.toLocaleString()}</span></div>`;
+    prevEl.innerHTML = rows;
+  }
+
+  S.projCart = []; S._batchId = null;
+  clearDraft();
+  setStep(4);
+  subBtn.disabled = false;
+  subBtn.textContent = 'Submit All Orders ✓'; // reset for next Full Order
+}
+
 async function submitOrder() {
+  // Branch: projection uses its own cart, not customerOrders
+  if (S.orderType === 'projection') { await submitProjectionOrder(); return; }
+
   const sp    = S.user;
   const nk    = findKey(sp, NAME_KEYS);
   const pk    = findKey(sp, PAYROLL_KEYS);
   const name  = sp[nk] || '';
   const pay   = sp[pk] || '';
-  const otLbl = S.orderType === 'projection' ? 'Morning Projection' : 'Full Order';
+  const otLbl = 'Full Order';
   const notes = document.getElementById('notes-inp').value.trim();
   const total = S.customerOrders.length;
 
@@ -4463,7 +4889,7 @@ function renderProjTimingTable(rows) {
     }
     const b = batchMap[key];
     if (ts) b.timestamps.push(ts);
-    b.customers.add(cust);
+    if (cust && cust !== 'PROJECTION') b.customers.add(cust);
     b.total += parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
   });
 
