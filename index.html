@@ -1087,7 +1087,7 @@ tr.tonnage-detail-row td{padding:0}
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
         <div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">Orders by Salesperson</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">All orders — latest first. Click a row to expand.</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Consolidated totals per salesperson.</div>
         </div>
         <button onclick="exportOrdersSPTable()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1098,17 +1098,14 @@ tr.tonnage-detail-row td{padding:0}
         <table id="sp-summary-table" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead>
             <tr style="background:var(--bg)">
-              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Date</th>
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Salesperson</th>
-              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Customer</th>
-              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Route</th>
-              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Amount (KES)</th>
-              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Weight (KG)</th>
-              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Type</th>
+              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Orders</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Amount (KES)</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Weight (KG)</th>
             </tr>
           </thead>
           <tbody id="sp-summary-tbody">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Loading orders…</td></tr>
+            <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">Loading orders…</td></tr>
           </tbody>
         </table>
       </div>
@@ -4208,69 +4205,40 @@ function renderSPSummaryTable(rows) {
   if (!tbody) return;
 
   if (!rows || !rows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No orders found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No orders found.</td></tr>';
     _spTableData = [];
     return;
   }
 
-  // Build order groups (same logic as renderDashTable)
-  const orderMap = {};
-  const orderKeys = [];
+  // Consolidate by salesperson only
+  const spMap = {};
   rows.forEach(r => {
     const sp   = r['Salesman']||r['Salesperson']||'';
     const cust = r['Customer Name']||r['Customer']||'';
     const date = normaliseDate(r['Date']||r['Order Date']||'');
-    const type = r['Order Type']||'';
-    const route = r['Route']||'';
     const key  = date + '||' + sp + '||' + cust;
-    if (!orderMap[key]) {
-      orderMap[key] = { date, sp, cust, type, route, lines: 0, total: 0, kg: 0, items: [] };
-      orderKeys.push(key);
-    }
-    orderMap[key].lines++;
-    orderMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
-    orderMap[key].kg    += parseFloat(r['Total (KG)']||0) || 0;
-    orderMap[key].items.push(r);
+    if (!spMap[sp]) spMap[sp] = { sp, orderKeys: new Set(), total: 0, kg: 0 };
+    spMap[sp].orderKeys.add(key);
+    spMap[sp].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+    spMap[sp].kg    += parseFloat(r['Total (KG)']||0) || 0;
   });
 
-  // Sort latest first
-  orderKeys.sort((a, b) => {
-    const da = orderMap[a].date, db = orderMap[b].date;
-    if (da !== db) return da < db ? 1 : -1;
-    return orderMap[a].sp.localeCompare(orderMap[b].sp);
-  });
+  // Sort by salesperson name
+  const spList = Object.values(spMap).sort((a, b) => a.sp.localeCompare(b.sp));
+  _spTableData = spList;
 
-  _spTableData = orderKeys.map(k => orderMap[k]);
-
-  // Striping by salesperson
-  const spColors = {};
   const palette = ['#FFF8F0','#F0F7FF','#F0FFF4','#FFF0F8','#F5F0FF','#FFFFF0','#F0FFFF'];
-  let colorIdx = 0;
-
   const frag = document.createDocumentFragment();
-  _spTableData.forEach(o => {
-    if (!(o.sp in spColors)) spColors[o.sp] = palette[colorIdx++ % palette.length];
-    const bgColor = spColors[o.sp];
 
-    const typeTag = (o.type||'').toLowerCase().includes('projection')
-      ? '<span style="background:#FEF3E2;color:#E67E22;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Proj</span>'
-      : '<span style="background:#E8F5ED;color:#1B6B3A;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Full</span>';
-
+  spList.forEach((o, idx) => {
+    const bgColor = palette[idx % palette.length];
     const tr = document.createElement('tr');
     tr.style.background = bgColor;
-    tr.style.cursor = 'pointer';
-    tr.style.transition = 'filter .15s';
-    tr.onmouseenter = () => tr.style.filter = 'brightness(0.96)';
-    tr.onmouseleave = () => tr.style.filter = '';
-    tr.onclick = () => openModal(o);
     tr.innerHTML = `
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:12px;color:var(--muted)">${fmtDate(o.date)}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px">${o.sp}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:500">${o.cust}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${o.route||'—'}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${o.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:12px;color:var(--muted)">${o.kg.toFixed(1)}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center">${typeTag}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px">${o.sp}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${o.orderKeys.size}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--accent)">KES ${o.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:13px;font-weight:600;color:var(--ok)">${o.kg.toFixed(1)} KG</td>
     `;
     frag.appendChild(tr);
   });
@@ -4281,17 +4249,14 @@ function renderSPSummaryTable(rows) {
 
 function exportOrdersSPTable() {
   if (!_spTableData.length) return;
-  const headers = ['Date','Salesperson','Customer','Route','Lines','Amount (KES)','Weight (KG)','Type'];
+  const headers = ['Salesperson','Orders','Total Amount (KES)','Total Weight (KG)'];
   const csvRows = [headers.join(',')];
   _spTableData.forEach(o => {
     csvRows.push([
-      '"' + fmtDate(o.date) + '"',
       '"' + o.sp.replace(/"/g,'""') + '"',
-      '"' + o.cust.replace(/"/g,'""') + '"',
-      '"' + (o.route||'').replace(/"/g,'""') + '"',
+      o.orderKeys.size,
       o.total.toFixed(2),
-      o.kg.toFixed(2),
-      '"' + (o.type||'') + '"'
+      o.kg.toFixed(2)
     ].join(','));
   });
   const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
