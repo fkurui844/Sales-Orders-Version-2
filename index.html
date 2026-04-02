@@ -556,6 +556,22 @@ textarea.inp{resize:vertical;min-height:80px}
 .oh-clear-search:hover{color:var(--text)}
 .oh-clear-search.show{display:block}
 .oh-highlight{background:var(--accent-lt);color:var(--accent);border-radius:2px;padding:0 1px}
+
+/* ── PIECES MODE ── */
+.pcs-toggle-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);transition:all .18s;white-space:nowrap;font-family:inherit;letter-spacing:.03em}
+.pcs-toggle-btn:hover{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
+.pcs-toggle-btn.active{background:#7C3AED;border-color:#7C3AED;color:#fff}
+.pcs-toggle-btn.active:hover{background:#6D28D9;border-color:#6D28D9}
+.pcs-toggle-ico{font-size:13px;line-height:1}
+.pcs-toggle-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.pcs-prompt{display:flex;align-items:center;gap:6px;margin-top:2px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.pcs-prompt-lbl{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:500}
+.pcs-prompt-inp{width:60px;padding:4px 8px;border:1.5px solid #7C3AED;border-radius:6px;font-size:12px;font-weight:600;font-family:inherit;color:var(--text);text-align:center}
+.pcs-prompt-inp:focus{outline:none;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+.pcs-prompt-ok{padding:4px 10px;background:#7C3AED;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.pcs-prompt-ok:hover{background:#6D28D9}
+.pcs-mode-badge{display:inline-block;background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;letter-spacing:.04em;margin-left:4px}
 /* ══════════════════════════════════════════
    MOBILE RESPONSIVE — nothing hidden, everything reflows
    ══════════════════════════════════════════ */
@@ -2194,7 +2210,7 @@ function logout() {
   const doLogout = () => {
     clearDraft();
     clearPartialOrderMeta();
-    selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = '';
+    selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = ''; _piecesMode = {};
     S._batchKey = ''; S._continuingPartial = false;
     document.getElementById('ln-inp').value = '';
     document.getElementById('pw-inp').value = '';
@@ -2455,9 +2471,15 @@ function renderCustomerOrdersList() {
     grandAmt += totAmt; grandKg += totKg; grandLines += co.cart.length;
     let linesHtml = '';
     co.cart.forEach(item => {
+      const qtyLabel = item.piecesMode
+        ? `${item.qty} pcs`
+        : `×${item.qty}`;
+      const subLabel = item.piecesMode
+        ? `${item.code} · ${item.qty} pcs ≈ ${(item.qty/item.pcsPerPack).toFixed(2)} ${/crate/i.test(item.pack)?'crates':/tray/i.test(item.pack)?'trays':'cartons'}`
+        : `${item.code} · ${item.pack}`;
       linesHtml += `<div class="co-line">
-        <div class="co-line-name">${item.desc}<span class="co-line-sub">${item.code} · ${item.pack}</span></div>
-        <div class="co-line-right"><div class="co-line-qty">×${item.qty}</div><div class="co-line-amt">KES ${item.total.toLocaleString()}</div></div>
+        <div class="co-line-name">${item.desc}${item.piecesMode?'<span class="pcs-mode-badge" style="margin-left:5px">PCS</span>':''}<span class="co-line-sub">${subLabel}</span></div>
+        <div class="co-line-right"><div class="co-line-qty">${qtyLabel}</div><div class="co-line-amt">KES ${item.total.toLocaleString()}</div></div>
       </div>`;
     });
     const card = document.createElement('div');
@@ -2593,7 +2615,8 @@ function renderCustList(q) {
 }
 
 // All products currently visible in the product list (for filterProducts)
-let _prodListData = []; // [{code,desc,pack,price,kg,cat,row}]
+let _prodListData = []; // [{code,desc,pack,price,kg,cat,piecesPerPack,row}]
+let _piecesMode   = {}; // key:`code||pack` => { pcsPerPack, pricePerPcs, kgPerPcs }
 
 function buildProductUI() {
   document.getElementById('filter-banner').style.display = S.orderType === 'projection' ? 'flex' : 'none';
@@ -2622,7 +2645,13 @@ function buildProductUI() {
   'Weight per Carton','Wt per Carton'
 ]);
 
-  S._pk = { ck, dk, catk, pak, prk, kgk };
+  const ppk = findKey(p0, [
+    'Pieces Per Pack','Pieces Per Crate','Pieces Per Tray','Pieces Per Carton',
+    'Pcs Per Pack','Pcs Per Crate','Pcs Per Tray','Pcs Per Carton',
+    'Units Per Pack','Units Per Crate','Units Per Tray','Units Per Carton',
+    'Pcs/Pack','Pcs/Crate','Pcs/Tray','Pcs/Carton','PCS PER PACK'
+  ]);
+  S._pk = { ck, dk, catk, pak, prk, kgk, ppk };
 
   let list = prods;
   if (S.orderType === 'projection') {
@@ -2671,7 +2700,10 @@ function buildProductUI() {
       const pack  = (p[pak] || '').trim();
       const price = parseFloat(p[prk]) || 0;
       const kg    = parseFloat(p[kgk]) || 0;
+      const piecesPerPack = ppk ? (parseFloat(p[ppk]) || 0) : 0;
+      const isBulkPack = /crate|tray|carton/i.test(pack);
       const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
+      const pmKey  = `${code}||${pack}`;
 
       const existing = S.cart.find(c => c.code === code && c.pack === pack);
       const qty = existing ? existing.qty : 0;
@@ -2681,28 +2713,55 @@ function buildProductUI() {
       row.dataset.code    = code;
       row.dataset.desc    = desc.toLowerCase();
       row.dataset.cat     = cat;
+
+      // Pieces-mode toggle button (only for Crate/Tray/Carton products)
+      const pcsBtnHtml = isBulkPack ? `
+        <button class="pcs-toggle-btn" id="pmtoggle-${safeId}"
+          onclick="togglePiecesMode('${code}','${pack}',${piecesPerPack},${price},${kg},'${desc.replace(/'/g,"\'")}','${cat.replace(/'/g,"\'")}',this)"
+          title="Order in Pieces instead of full ${pack}">
+          <span class="pcs-toggle-ico">🔢</span><span class="pcs-toggle-lbl">Pieces</span>
+        </button>` : '';
+
+      // Inline pcs-per-pack prompt (shown when piecesPerPack not in master data)
+      const pcsPromptHtml = isBulkPack && !piecesPerPack ? `
+        <div class="pcs-prompt" id="pcsprompt-${safeId}" style="display:none">
+          <span class="pcs-prompt-lbl">Pcs per ${/crate/i.test(pack)?'Crate':/tray/i.test(pack)?'Tray':'Carton'}:</span>
+          <input class="pcs-prompt-inp" id="pcsinp-${safeId}" type="number" min="1" step="1" placeholder="e.g. 12">
+          <button class="pcs-prompt-ok" onclick="confirmPiecesPerPack('${code}','${pack}',${price},${kg},'${desc.replace(/'/g,"\'")}','${cat.replace(/'/g,"\'")}','${safeId}')">OK</button>
+        </div>` : '';
+
       row.innerHTML = `
         <div>
           <div class="prod-name">${desc}</div>
-          <div class="prod-meta">${pack} <span class="badge">${code}</span></div>
+          <div class="prod-meta" id="pmeta-${safeId}">${pack} <span class="badge">${code}</span></div>
         </div>
-        <div class="prod-price">KES ${price.toLocaleString()}</div>
-        <div class="qty-ctl">
-          <button class="qty-btn" data-code="${code}" data-pack="${pack}" data-delta="-1">−</button>
-          <input class="qty-inp" id="${safeId}" type="number" min="0" value="${qty}">
-          <button class="qty-btn" data-code="${code}" data-pack="${pack}" data-delta="1">+</button>
+        <div class="prod-price" id="pprice-${safeId}">KES ${price.toLocaleString()}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${pcsBtnHtml}
+          ${pcsPromptHtml}
+          <div class="qty-ctl" id="qctl-${safeId}">
+            <button class="qty-btn" data-code="${code}" data-pack="${pack}" data-delta="-1">−</button>
+            <input class="qty-inp" id="${safeId}" type="number" min="0" value="${qty}">
+            <button class="qty-btn" data-code="${code}" data-pack="${pack}" data-delta="1">+</button>
+          </div>
         </div>
       `;
       frag.appendChild(row);
 
       row.querySelectorAll('.qty-btn').forEach(btn => {
-        btn.onclick = () => changeQty(code, pack, price, kg, desc, cat, parseInt(btn.dataset.delta));
+        btn.onclick = () => {
+          const pm = _piecesMode[pmKey];
+          if (pm) changePiecesQty(code, pack, pm, desc, cat, parseInt(btn.dataset.delta));
+          else changeQty(code, pack, price, kg, desc, cat, parseInt(btn.dataset.delta));
+        };
       });
       row.querySelector('.qty-inp').onchange = function() {
-        setQty(code, pack, price, kg, desc, cat, parseInt(this.value)||0);
+        const pm = _piecesMode[pmKey];
+        if (pm) setPiecesQty(code, pack, pm, desc, cat, parseInt(this.value)||0);
+        else setQty(code, pack, price, kg, desc, cat, parseInt(this.value)||0);
       };
 
-      _prodListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, cat, catHeader: ch, row });
+      _prodListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, piecesPerPack, isBulkPack, cat, catHeader: ch, row });
     });
   });
 
@@ -2761,6 +2820,112 @@ function clearProductSearch() {
 }
 // ── End product search ──────────────────────────────────────────────────────
 
+// ── PIECES MODE FUNCTIONS ────────────────────────────────────────────────────
+
+function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, btn) {
+  const pmKey  = `${code}||${pack}`;
+  const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
+
+  if (_piecesMode[pmKey]) {
+    // ── Switch BACK to pack mode ──────────────────────────────────────────────
+    // Remove any pieces-mode cart item for this product
+    const pIdx = S.cart.findIndex(c => c.code === code && c.pack === pack && c.piecesMode);
+    if (pIdx !== -1) S.cart.splice(pIdx, 1);
+    delete _piecesMode[pmKey];
+    // Restore pack UI
+    btn.classList.remove('active');
+    const qInp = document.getElementById(safeId);
+    if (qInp) { qInp.min = 0; qInp.step = 1; qInp.value = 0; }
+    const metaEl = document.getElementById(`pmeta-${safeId}`);
+    if (metaEl) metaEl.innerHTML = `${pack} <span class="badge">${code}</span>`;
+    const priceEl = document.getElementById(`pprice-${safeId}`);
+    if (priceEl) priceEl.textContent = `KES ${price.toLocaleString()}`;
+    renderCart();
+    return;
+  }
+
+  // ── Switch TO pieces mode ─────────────────────────────────────────────────
+  if (masterPcsPerPack > 0) {
+    activatePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, safeId, btn);
+  } else {
+    // Show inline prompt for pcsPerPack
+    const promptEl = document.getElementById(`pcsprompt-${safeId}`);
+    if (promptEl) {
+      promptEl.style.display = promptEl.style.display === 'none' ? 'flex' : 'none';
+      if (promptEl.style.display === 'flex') {
+        const inp = document.getElementById(`pcsinp-${safeId}`);
+        if (inp) inp.focus();
+      }
+    }
+  }
+}
+
+function confirmPiecesPerPack(code, pack, price, kg, desc, cat, safeId) {
+  const inp = document.getElementById(`pcsinp-${safeId}`);
+  const n   = parseInt(inp ? inp.value : 0);
+  if (!n || n < 1) { inp && inp.focus(); toast('Enter a valid number of pieces'); return; }
+  const promptEl = document.getElementById(`pcsprompt-${safeId}`);
+  if (promptEl) promptEl.style.display = 'none';
+  const btn = document.getElementById(`pmtoggle-${safeId}`);
+  activatePiecesMode(code, pack, n, price, kg, desc, cat, safeId, btn);
+}
+
+function activatePiecesMode(code, pack, pcsPerPack, price, kg, desc, cat, safeId, btn) {
+  const pmKey      = `${code}||${pack}`;
+  const pricePerPcs = +(price / pcsPerPack).toFixed(4);
+  const kgPerPcs    = +(kg    / pcsPerPack).toFixed(4);
+  _piecesMode[pmKey] = { pcsPerPack, pricePerPcs, kgPerPcs, packPrice: price, packKg: kg };
+
+  // Update toggle button
+  if (btn) btn.classList.add('active');
+
+  // Update row meta & price label
+  const packShort = /crate/i.test(pack) ? 'Crate' : /tray/i.test(pack) ? 'Tray' : 'Carton';
+  const metaEl = document.getElementById(`pmeta-${safeId}`);
+  if (metaEl) metaEl.innerHTML =
+    `<span class="pcs-mode-badge">PCS MODE</span> ${pack} · ${pcsPerPack} pcs/${packShort} <span class="badge">${code}</span>`;
+  const priceEl = document.getElementById(`pprice-${safeId}`);
+  if (priceEl) priceEl.innerHTML =
+    `<span style="color:#7C3AED;font-weight:700">KES ${pricePerPcs.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}<span style="font-size:10px;opacity:.7">/pc</span></span>`;
+
+  // Reset qty input to 0
+  const qInp = document.getElementById(safeId);
+  if (qInp) { qInp.min = 0; qInp.step = 1; qInp.value = 0; }
+
+  // Remove any existing pack-mode cart entry for this product
+  const pIdx = S.cart.findIndex(c => c.code === code && c.pack === pack && !c.piecesMode);
+  if (pIdx !== -1) S.cart.splice(pIdx, 1);
+  renderCart();
+}
+
+function changePiecesQty(code, pack, pm, desc, cat, delta) {
+  updatePiecesCart(code, pack, pm, desc, cat, null, delta);
+}
+
+function setPiecesQty(code, pack, pm, desc, cat, val) {
+  updatePiecesCart(code, pack, pm, desc, cat, val, 0);
+}
+
+function updatePiecesCart(code, pack, pm, desc, cat, newVal, delta) {
+  const safeId = `q-${code}-${pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
+  let idx = S.cart.findIndex(c => c.code === code && c.pack === pack && c.piecesMode);
+  if (idx === -1) {
+    S.cart.push({ code, pack, price: pm.pricePerPcs, kg: pm.kgPerPcs, desc, cat,
+                  qty: 0, total: 0, totalKg: 0,
+                  piecesMode: true, pcsPerPack: pm.pcsPerPack,
+                  packPrice: pm.packPrice, packKg: pm.packKg });
+    idx = S.cart.length - 1;
+  }
+  const item = S.cart[idx];
+  item.qty     = Math.max(0, newVal !== null ? newVal : item.qty + delta);
+  item.total   = +(item.qty * pm.pricePerPcs).toFixed(2);
+  item.totalKg = +(item.qty * pm.kgPerPcs).toFixed(4);
+  if (item.qty === 0) S.cart.splice(idx, 1);
+  const el = document.getElementById(safeId);
+  if (el) el.value = item.qty === 0 ? 0 : item.qty;
+  renderCart();
+}
+
 function changeQty(code, pack, price, kg, desc, cat, delta) {
   updateCart(code, pack, price, kg, desc, cat, null, delta);
 }
@@ -2806,10 +2971,18 @@ function renderCart() {
     totKg  += item.totalKg;
     const d = document.createElement('div');
     d.className = 'cart-line';
+    let detailTxt;
+    if (item.piecesMode) {
+      const packEquiv = (item.qty / item.pcsPerPack).toFixed(2);
+      const packShort = /crate/i.test(item.pack) ? 'crates' : /tray/i.test(item.pack) ? 'trays' : 'cartons';
+      detailTxt = `<span class="pcs-mode-badge">PCS</span> ${item.qty} pcs · ≈${packEquiv} ${packShort} · KES ${item.price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}/pc`;
+    } else {
+      detailTxt = `${item.pack} · Qty: ${item.qty} · KES ${item.price.toLocaleString()} · ${item.totalKg.toFixed(2)} KG`;
+    }
     d.innerHTML = `
       <div class="cl-info">
         <div class="cl-prod">${item.desc} <span class="badge">${item.code}</span></div>
-        <div class="cl-det">${item.pack} · Qty: ${item.qty} · KES ${item.price.toLocaleString()} · ${item.totalKg.toFixed(2)} KG</div>
+        <div class="cl-det">${detailTxt}</div>
       </div>
       <div class="cl-total">KES ${item.total.toLocaleString()}</div>
       <button class="cl-rm" onclick="removeCart(${i})" title="Remove">✕</button>
@@ -2829,6 +3002,20 @@ function removeCart(i) {
   const safeId = `q-${item.code}-${item.pack}`.replace(/[^a-zA-Z0-9_-]/g,'_');
   const el = document.getElementById(safeId);
   if (el) el.value = 0;
+  // If removing a pieces-mode item, also revert the toggle button/UI
+  if (item.piecesMode) {
+    const pmKey = `${item.code}||${item.pack}`;
+    const pm    = _piecesMode[pmKey];
+    if (pm) {
+      delete _piecesMode[pmKey];
+      const btn = document.getElementById(`pmtoggle-${safeId}`);
+      if (btn) btn.classList.remove('active');
+      const metaEl  = document.getElementById(`pmeta-${safeId}`);
+      const priceEl = document.getElementById(`pprice-${safeId}`);
+      if (metaEl)  metaEl.innerHTML  = `${item.pack} <span class="badge">${item.code}</span>`;
+      if (priceEl) priceEl.textContent = `KES ${pm.packPrice.toLocaleString()}`;
+    }
+  }
   S.cart.splice(i, 1);
   renderCart();
 }
@@ -2887,8 +3074,8 @@ function buildSubmitStep() {
   const prodMap = {};
   S.customerOrders.forEach(co => {
     co.cart.forEach(item => {
-      const key = item.code+'||'+item.pack;
-      if (!prodMap[key]) prodMap[key]={desc:item.desc,code:item.code,pack:item.pack,cat:item.cat||'General',qty:0,total:0};
+      const key = item.code+'||'+item.pack+(item.piecesMode?'||pcs':'');
+      if (!prodMap[key]) prodMap[key]={desc:item.desc,code:item.code,pack:item.pack,cat:item.cat||'General',qty:0,total:0,piecesMode:!!item.piecesMode};
       prodMap[key].qty+=item.qty; prodMap[key].total+=item.total;
     });
   });
@@ -2898,7 +3085,13 @@ function buildSubmitStep() {
   Object.entries(catMap).forEach(([cat,prods])=>{
     tbl += `<tr class="summary-cat-row"><td colspan="4">${cat}</td></tr>`;
     prods.sort((a,b)=>b.qty-a.qty).forEach(p=>{
-      tbl+=`<tr><td><span style="font-weight:500">${p.desc}</span><span class="st-code">${p.code}</span></td><td style="color:var(--muted);font-size:11px">${p.pack}</td><td style="text-align:center"><span class="st-qty">${p.qty}</span></td><td><span class="st-amt">KES ${p.total.toLocaleString()}</span></td></tr>`;
+      const qtyDisplay = p.piecesMode
+        ? `<span class="st-qty" style="color:#7C3AED">${p.qty}<span style="font-size:10px;font-weight:400"> pcs</span></span>`
+        : `<span class="st-qty">${p.qty}</span>`;
+      const packDisplay = p.piecesMode
+        ? `<span class="pcs-mode-badge">PCS</span> ${p.pack}`
+        : p.pack;
+      tbl+=`<tr><td><span style="font-weight:500">${p.desc}</span><span class="st-code">${p.code}</span></td><td style="color:var(--muted);font-size:11px">${packDisplay}</td><td style="text-align:center">${qtyDisplay}</td><td><span class="st-amt">KES ${p.total.toLocaleString()}</span></td></tr>`;
     });
   });
   tbl+='</tbody>';
@@ -2949,9 +3142,17 @@ async function submitOrder() {
   // ── Build all payloads upfront (no network yet) ────────────────────────────
   const payloads = S.customerOrders.map(co => {
     const items = co.cart.map(i => ({
-      productCode: i.code,  product: i.desc,  description: i.desc,
-      category:    i.cat,   packaging: i.pack, qty:         i.qty,
-      price:       i.price, total:     i.total, totalKg:    i.totalKg
+      productCode:  i.code,      product:     i.desc,    description: i.desc,
+      category:     i.cat,       packaging:   i.pack,    qty:         i.qty,
+      price:        i.price,     total:       i.total,   totalKg:     i.totalKg,
+      // Pieces-mode metadata (only set when ordering in pieces)
+      ...(i.piecesMode ? {
+        piecesMode:    true,
+        pcsPerPack:    i.pcsPerPack,
+        packPrice:     i.packPrice,
+        packEquiv:     +(i.qty / i.pcsPerPack).toFixed(4),
+        pricePerPiece: i.price
+      } : {})
     }));
 
     const clientOrderId = (
@@ -3047,7 +3248,7 @@ async function submitOrder() {
       total === 1
         ? fbSucceeded[0].orderId
         : `${total} orders · KES ${grandAmt.toLocaleString()}`;
-    S.customerOrders = []; S.cart = []; S._batchId = null;
+    S.customerOrders = []; S.cart = []; S._batchId = null; _piecesMode = {};
     S._batchSubmittedCount = 0; S._batchSubmittedKes = 0;
     hideBatchProgressBanner();
     clearDraft();
