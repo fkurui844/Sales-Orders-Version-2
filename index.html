@@ -3447,6 +3447,39 @@ async function openDashboard() {
   await loadDashOrders();
 }
 
+// Normalise any date string to YYYY-MM-DD for consistent comparison.
+// Handles: ISO timestamps, long JS date strings, already-ISO dates, DD/MM/YYYY.
+function normaliseDate(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  // Already ISO YYYY-MM-DD (possibly with time)
+  const isoMatch = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) return isoMatch[1];
+  // ISO with T: 2026-03-30T16:25:53.300Z
+  const tMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if (tMatch) return `${tMatch[1]}-${tMatch[2]}-${tMatch[3]}`;
+  // Long JS date string: "Mon Mar 30 2026 00:00:00 GMT+0300 (...)"
+  // Also handles "Wed Apr 01 2026..."
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
+  }
+  return s; // return as-is if unparseable
+}
+
+// Normalise all Date fields in a rows array (mutates in place, returns array).
+function normaliseDates(rows) {
+  rows.forEach(r => {
+    const raw = r['Date'] || r['Order Date'] || '';
+    const iso = normaliseDate(raw);
+    r['Date'] = iso;
+    if (r['Order Date']) r['Order Date'] = iso;
+  });
+  return rows;
+}
+
 // ── Orders localStorage cache ─────────────────────────────────────────────────
 const LS_ORDERS_KEY = 'salesorder_dashorders_v1';
 const LS_ORDERS_TTL = 5 * 60 * 1000; // 5 minutes
@@ -3585,7 +3618,7 @@ async function _fetchOrdersFromFirebase(from, to) {
   ]);
 
   // GAS is authoritative — use it if it returned anything
-  if (gasResult.rows.length > 0) return gasResult.rows;
+  if (gasResult.rows.length > 0) return normaliseDates(gasResult.rows);
 
   // GAS returned empty — use best Firebase source
   if (fbOrders.rows.length > 0) return fbOrders.rows;
@@ -3683,7 +3716,7 @@ async function loadDashOrders() {
       // Then update with authoritative GAS data silently
       gasPromise.then(gasRows => {
         if (gasRows.length === 0) return; // GAS empty — keep Firebase data
-        const rows = gasRows;
+        const rows = normaliseDates(gasRows);
         lsOrdersSave(from, to, rows);
         if (JSON.stringify(rows) !== JSON.stringify(allOrders)) {
           allOrders = rows;
@@ -3694,7 +3727,7 @@ async function loadDashOrders() {
     } else {
       // No Firebase data — wait for GAS (it's the source of truth)
       const gasRows = await gasPromise;
-      const rows = gasRows;
+      const rows = normaliseDates(gasRows);
       allOrders = rows;
       lsOrdersSave(from, to, rows);
       populateSPFilter();
@@ -3762,7 +3795,7 @@ function _doApplyDashFilters() {
   filteredOrders = allOrders.filter(r => {
     const rSP   = (r['Salesman']||r['Salesperson']||'').trim().toLowerCase();
     const rType = (r['Order Type']||'').trim().toLowerCase();
-    const rDate = (r['Date']||r['Order Date']||'').trim();
+    const rDate = normaliseDate(r['Date']||r['Order Date']||'');
     const rLoc  = (r['Location']||'').trim().toLowerCase();
     const rRt   = (r['Route']||'').trim().toLowerCase();
     return (!sp       || rSP.includes(sp))
@@ -3791,7 +3824,7 @@ function clearDashFilters() {
 function updateDashStats() {
   const orderGroups = {};
   filteredOrders.forEach(r => {
-    const key = (r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
+    const key = normaliseDate(r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
     if (!orderGroups[key]) orderGroups[key] = { lines: 0, total: 0 };
     orderGroups[key].lines++;
     orderGroups[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
@@ -3824,7 +3857,7 @@ function renderDashTable(rows) {
   rows.forEach(r => {
     const sp   = r['Salesman']||r['Salesperson']||'';
     const cust = r['Customer Name']||r['Customer']||'';
-    const date = r['Date']||r['Order Date']||'';
+    const date = normaliseDate(r['Date']||r['Order Date']||'');
     const type = r['Order Type']||'';
     const key  = date + '||' + sp + '||' + cust;
     if (!orderMap[key]) {
@@ -4336,7 +4369,7 @@ function exportToExcel() {
   // Update count label
   const orderGroups = {};
   filteredOrders.forEach(r => {
-    const key = (r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
+    const key = normaliseDate(r['Date']||r['Order Date']||'') + '|' + (r['Salesman']||r['Salesperson']||'') + '|' + (r['Customer Name']||r['Customer']||'');
     orderGroups[key] = true;
   });
   const orderCount = Object.keys(orderGroups).length;
@@ -4398,7 +4431,7 @@ function buildDetailSheet(wb) {
 
   filteredOrders.forEach(r => {
     rows.push([
-      r['Date']||r['Order Date']||'',
+      normaliseDate(r['Date']||r['Order Date']||''),
       r['Salesman']||r['Salesperson']||'',
       r['Customer Name']||r['Customer']||'',
       r['Customer Code']||r['Cust Code']||'',
@@ -4428,10 +4461,10 @@ function buildSummarySheet(wb) {
   const orderMap = {};
   const orderKeys = [];
   filteredOrders.forEach(r => {
-    const key = (r['Date']||r['Order Date']||'') + '||' + (r['Salesman']||r['Salesperson']||'') + '||' + (r['Customer Name']||r['Customer']||'');
+    const key = normaliseDate(r['Date']||r['Order Date']||'') + '||' + (r['Salesman']||r['Salesperson']||'') + '||' + (r['Customer Name']||r['Customer']||'');
     if (!orderMap[key]) {
       orderMap[key] = {
-        date:  r['Date']||r['Order Date']||'',
+        date:  normaliseDate(r['Date']||r['Order Date']||''),
         sp:    r['Salesman']||r['Salesperson']||'',
         cust:  r['Customer Name']||r['Customer']||'',
         code:  r['Customer Code']||r['Cust Code']||'',
@@ -4521,7 +4554,7 @@ function buildSPSheet(wb) {
     const loc   = r['Location']||'';
     const key   = sp + '||' + route + '||' + loc;
     if (!spMap[key]) spMap[key] = { sp, route, loc, orderSet: new Set(), lines: 0, total: 0, kg: 0 };
-    const oKey = (r['Date']||'') + '||' + (r['Customer Name']||r['Customer']||'');
+    const oKey = normaliseDate(r['Date']||'') + '||' + (r['Customer Name']||r['Customer']||'');
     spMap[key].orderSet.add(oKey);
     spMap[key].lines++;
     spMap[key].total += parseFloat(r['Total (KES)']||r['Line Total']||0)||0;
