@@ -1258,6 +1258,10 @@ tr.tonnage-detail-row td{padding:0}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="6"/><polyline points="7 3.5 7 7 9.5 9"/></svg>
           Projection Timing
         </button>
+        <button class="chart-tab" onclick="switchChart('proj-vs-orders')" id="tab-proj-vs-orders">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 10 4 5 7 8 10 3 13 6"/><line x1="1" y1="13" x2="13" y2="13" stroke-width="1.2"/></svg>
+          Proj vs Orders
+        </button>
         <div style="flex:1"></div>
         <div class="metric-toggle">
           <button class="metric-toggle-btn active" id="metric-revenue" onclick="switchMetric('revenue')">💰 Revenue</button>
@@ -1389,6 +1393,46 @@ tr.tonnage-detail-row td{padding:0}
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Projection vs Orders Reconciliation Section -->
+    <div id="proj-vs-orders-section" style="display:none;margin-bottom:80px">
+      <!-- Header card -->
+      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">🌅 Morning Projection vs Full Orders</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Compares Fresh Milk projected quantities against actual Full Order quantities per product code</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <!-- Legend -->
+            <div style="display:flex;gap:10px;font-size:11px;align-items:center">
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1B6B3A;display:inline-block"></span>Match ±10%</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#E67E22;display:inline-block"></span>Over-ordered</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#C0392B;display:inline-block"></span>Under-ordered</span>
+              <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#8E8880;display:inline-block"></span>No Projection</span>
+            </div>
+            <button onclick="exportProjVsOrdersCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+        </div>
+        <!-- KPI strip -->
+        <div id="pvo-kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid var(--border)"></div>
+      </div>
+
+      <!-- Date selector for comparison -->
+      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Compare Date</span>
+        <input type="date" id="pvo-date-pick" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text)" oninput="renderProjVsOrders()">
+        <button onclick="document.getElementById('pvo-date-pick').value='';renderProjVsOrders()" style="font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit">All Dates</button>
+        <span id="pvo-date-hint" style="font-size:11px;color:var(--muted)">Leave blank to aggregate all dates in the current filter</span>
+      </div>
+
+      <!-- Per-date breakdown accordion -->
+      <div id="pvo-dates-container"></div>
     </div>
 
     <!-- Order History Search & Filter -->
@@ -5172,6 +5216,329 @@ function exportProjTimingCSV() {
   a.click();
 }
 
+// ── Projection vs Orders Reconciliation ──────────────────────────────────
+let _projVsOrdersData = [];
+
+function renderProjVsOrders() {
+  const container = document.getElementById('pvo-dates-container');
+  const kpiStrip  = document.getElementById('pvo-kpi-strip');
+  if (!container) return;
+
+  const dateFilter = (document.getElementById('pvo-date-pick') || {}).value || '';
+
+  const rows = filteredOrders;
+  if (!rows || !rows.length) {
+    container.innerHTML = '<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:40px;text-align:center;color:var(--muted)">No order data in the current filter.</div>';
+    if (kpiStrip) kpiStrip.innerHTML = '';
+    return;
+  }
+
+  // Separate projection rows vs full order rows
+  const projRows  = rows.filter(r => (r['Order Type']||'').toLowerCase().includes('projection'));
+  const orderRows = rows.filter(r => (r['Order Type']||'').toLowerCase().includes('full'));
+
+  // Get all unique dates present
+  const allDates = [...new Set(rows.map(r => (r['Date']||r['Order Date']||'').trim()).filter(Boolean))].sort().reverse();
+  const datesToShow = dateFilter ? allDates.filter(d => d === dateFilter) : allDates;
+
+  if (!datesToShow.length) {
+    container.innerHTML = '<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:40px;text-align:center;color:var(--muted)">No matching dates found.</div>';
+    return;
+  }
+
+  // Helper: aggregate rows by product code for a given date (or all dates if null)
+  function aggregateByProduct(rowSet, date) {
+    const map = {};
+    rowSet.forEach(r => {
+      const rowDate = (r['Date']||r['Order Date']||'').trim();
+      if (date && rowDate !== date) return;
+      const code = (r['Product Code'] || r['Code'] || '').trim();
+      const desc = (r['Description']  || r['Product'] || code).trim();
+      const pack = (r['Packaging']    || r['Pack'] || '').trim();
+      const cat  = (r['Category']     || '').trim();
+      const qty  = parseFloat(r['Qty'] || 0) || 0;
+      const kg   = parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
+      const sp   = (r['Salesman'] || r['Salesperson'] || '').trim();
+      if (!code) return;
+      if (!map[code]) map[code] = { code, desc, pack, cat, qty: 0, kg: 0, salespersons: {} };
+      map[code].qty += qty;
+      map[code].kg  += kg;
+      if (!map[code].salespersons[sp]) map[code].salespersons[sp] = { qty: 0, kg: 0 };
+      map[code].salespersons[sp].qty += qty;
+      map[code].salespersons[sp].kg  += kg;
+    });
+    return map;
+  }
+
+  // Status helper: compare projected vs ordered
+  function matchStatus(projQty, ordQty) {
+    if (projQty === 0 && ordQty === 0) return 'none';
+    if (projQty === 0) return 'no-proj';
+    if (ordQty  === 0) return 'no-order';
+    const ratio = ordQty / projQty;
+    if (ratio >= 0.90 && ratio <= 1.10) return 'match';
+    if (ratio > 1.10) return 'over';
+    return 'under';
+  }
+
+  const statusStyle = {
+    'match'   : { bg: '#E8F5ED', color: '#1B6B3A', label: '✓ Match',       border: '#1B6B3A' },
+    'over'    : { bg: '#FFF3E8', color: '#C45B00', label: '↑ Over-ordered', border: '#C45B00' },
+    'under'   : { bg: '#FDECEA', color: '#C0392B', label: '↓ Under-ordered',border: '#C0392B' },
+    'no-proj' : { bg: '#F5F5F5', color: '#8E8880', label: '— No Projection',border: '#C8C2BC' },
+    'no-order': { bg: '#FFF8E1', color: '#E65100', label: '⚠ Not Ordered', border: '#FFB300' },
+    'none'    : { bg: '#F5F5F5', color: '#8E8880', label: '—',              border: '#C8C2BC' }
+  };
+
+  // Grand KPI accumulators
+  let grandProjQty = 0, grandOrdQty = 0, grandProjKg = 0, grandOrdKg = 0;
+  let totalCodes = 0, matchCount = 0, overCount = 0, underCount = 0, noOrdCount = 0;
+
+  // Build per-date sections
+  const allSections = [];
+
+  datesToShow.forEach(date => {
+    const projMap  = aggregateByProduct(projRows,  date);
+    const orderMap = aggregateByProduct(orderRows, date);
+
+    // Union of all product codes on this date
+    const allCodes = [...new Set([...Object.keys(projMap), ...Object.keys(orderMap)])].sort();
+    if (!allCodes.length) return;
+
+    const dateRows = allCodes.map(code => {
+      const p = projMap[code]  || { qty: 0, kg: 0, desc: '', pack: '', salespersons: {} };
+      const o = orderMap[code] || { qty: 0, kg: 0, desc: '', pack: '', salespersons: {} };
+      const desc = p.desc || o.desc || code;
+      const pack = p.pack || o.pack || '';
+      const status = matchStatus(p.qty, o.qty);
+      const variance = p.qty > 0 ? ((o.qty - p.qty) / p.qty * 100) : null;
+      const varKg    = p.kg  > 0 ? ((o.kg  - p.kg)  / p.kg  * 100) : null;
+
+      // KPI tallies
+      grandProjQty += p.qty; grandProjKg += p.kg;
+      grandOrdQty  += o.qty; grandOrdKg  += o.kg;
+      totalCodes++;
+      if (status === 'match')    matchCount++;
+      if (status === 'over')     overCount++;
+      if (status === 'under')    underCount++;
+      if (status === 'no-order') noOrdCount++;
+
+      // SP breakdown
+      const allSPs = [...new Set([...Object.keys(p.salespersons), ...Object.keys(o.salespersons)])].sort();
+      const spBreakdown = allSPs.map(sp => {
+        const pv = p.salespersons[sp] || { qty: 0, kg: 0 };
+        const ov = o.salespersons[sp] || { qty: 0, kg: 0 };
+        return `<tr style="font-size:11px;color:var(--muted)">
+          <td style="padding:4px 10px;padding-left:28px;font-style:italic">${sp}</td>
+          <td style="padding:4px 10px;text-align:right">${pv.qty > 0 ? pv.qty.toLocaleString() : '—'}</td>
+          <td style="padding:4px 10px;text-align:right">${pv.kg  > 0 ? pv.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
+          <td style="padding:4px 10px;text-align:right">${ov.qty > 0 ? ov.qty.toLocaleString() : '—'}</td>
+          <td style="padding:4px 10px;text-align:right">${ov.kg  > 0 ? ov.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
+          <td colspan="3"></td>
+        </tr>`;
+      }).join('');
+
+      return { code, desc, pack, p, o, status, variance, varKg, spBreakdown };
+    });
+
+    allSections.push({ date, dateRows });
+  });
+
+  // ── KPI strip ──
+  const overallMatchRate = totalCodes ? Math.round(matchCount / totalCodes * 100) : 0;
+  if (kpiStrip) {
+    kpiStrip.innerHTML = `
+      <div style="padding:12px 14px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#1B6B3A">${matchCount}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Matched (±10%)</div>
+      </div>
+      <div style="padding:12px 14px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#C45B00">${overCount}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Over-ordered</div>
+      </div>
+      <div style="padding:12px 14px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#C0392B">${underCount}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Under-ordered</div>
+      </div>
+      <div style="padding:12px 14px;border-right:1px solid var(--border);text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#E65100">${noOrdCount}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Projected, Not Ordered</div>
+      </div>
+      <div style="padding:12px 14px;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:${overallMatchRate>=80?'#1B6B3A':overallMatchRate>=50?'#E67E22':'#C0392B'}">${overallMatchRate}%</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Match Rate</div>
+      </div>
+    `;
+  }
+
+  // ── Build date section cards ──
+  container.innerHTML = '';
+
+  allSections.forEach(({ date, dateRows }) => {
+    const sectionEl = document.createElement('div');
+    sectionEl.style.cssText = 'background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px';
+
+    // Date header
+    const dateHeader = document.createElement('div');
+    dateHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;user-select:none';
+    const dateMatch = dateRows.filter(r => r.status === 'match').length;
+    const datePct   = dateRows.length ? Math.round(dateMatch / dateRows.length * 100) : 0;
+    const pctColor  = datePct >= 80 ? '#1B6B3A' : datePct >= 50 ? '#E67E22' : '#C0392B';
+    dateHeader.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800">${fmtDate(date)}</span>
+        <span style="font-size:11px;color:var(--muted)">${dateRows.length} product${dateRows.length!==1?'s':''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:${pctColor}">${datePct}% match</span>
+        <span class="pvo-toggle-arrow" style="color:var(--muted);font-size:14px;transition:transform .2s">▼</span>
+      </div>`;
+
+    const tableWrap = document.createElement('div');
+    tableWrap.style.cssText = 'overflow-x:auto';
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px';
+
+    const thead = `<thead><tr style="background:var(--bg)">
+      <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Product Code</th>
+      <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)">Description</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:#EEF7FF">Proj Qty</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:#EEF7FF">Proj Kgs/Lts</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:#E8F5ED">Order Qty</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:#E8F5ED">Order Kgs/Lts</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Variance Qty</th>
+      <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Variance %</th>
+      <th style="padding:9px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Status</th>
+    </tr></thead>`;
+
+    const tbodyRows = dateRows.map((row, idx) => {
+      const st = statusStyle[row.status];
+      const varQty  = row.o.qty - row.p.qty;
+      const varPct  = row.variance !== null ? (row.variance > 0 ? '+' : '') + row.variance.toFixed(1) + '%' : '—';
+      const varQtyStr = row.p.qty > 0 || row.o.qty > 0 ? (varQty >= 0 ? '+' : '') + varQty.toLocaleString() : '—';
+      const varColor  = row.status === 'match' ? '#1B6B3A' : row.status === 'over' ? '#C45B00' : row.status === 'under' ? '#C0392B' : 'var(--muted)';
+
+      const hasSPs = row.spBreakdown.length > 0;
+      const detailId = 'pvo-sp-' + date.replace(/-/g,'') + '-' + idx;
+
+      return `<tr style="border-bottom:1px solid var(--border);border-left:3px solid ${st.border};background:${idx%2===0?'#fff':'#FAFAF8'}">
+        <td style="padding:10px 14px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px">${row.code}</div>
+          <div style="font-size:10px;color:var(--muted)">${row.pack}</div>
+        </td>
+        <td style="padding:10px 14px;font-size:13px;font-weight:500">${row.desc}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:700;background:#F4F9FF">${row.p.qty > 0 ? row.p.qty.toLocaleString() : '<span style="color:var(--muted)">—</span>'}</td>
+        <td style="padding:10px 14px;text-align:right;font-size:12px;color:#2563EB;background:#F4F9FF">${row.p.kg > 0 ? row.p.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:700;background:#F2FAF5">${row.o.qty > 0 ? row.o.qty.toLocaleString() : '<span style="color:var(--muted)">—</span>'}</td>
+        <td style="padding:10px 14px;text-align:right;font-size:12px;color:#1B6B3A;background:#F2FAF5">${row.o.kg > 0 ? row.o.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:700;color:${varColor}">${varQtyStr}</td>
+        <td style="padding:10px 14px;text-align:right;font-weight:700;color:${varColor}">${varPct}</td>
+        <td style="padding:10px 14px;text-align:center">
+          <div style="display:inline-flex;align-items:center;gap:5px">
+            <span style="background:${st.bg};color:${st.color};border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">${st.label}</span>
+            ${hasSPs ? `<button onclick="togglePvoSP('${detailId}',this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:var(--muted)" title="Per-salesperson breakdown">▼</button>` : ''}
+          </div>
+        </td>
+      </tr>
+      ${hasSPs ? `<tr id="${detailId}" style="display:none;background:#F8F7F5">
+        <td colspan="9" style="padding:0 0 6px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:#F0EEE9">
+              <th style="padding:5px 10px 5px 28px;text-align:left;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Salesperson</th>
+              <th style="padding:5px 10px;text-align:right;font-size:10px;color:#2563EB;font-weight:700;text-transform:uppercase">Proj Qty</th>
+              <th style="padding:5px 10px;text-align:right;font-size:10px;color:#2563EB;font-weight:700;text-transform:uppercase">Proj Kgs/Lts</th>
+              <th style="padding:5px 10px;text-align:right;font-size:10px;color:#1B6B3A;font-weight:700;text-transform:uppercase">Order Qty</th>
+              <th style="padding:5px 10px;text-align:right;font-size:10px;color:#1B6B3A;font-weight:700;text-transform:uppercase">Order Kgs/Lts</th>
+              <th colspan="3"></th>
+            </tr></thead>
+            <tbody>${row.spBreakdown}</tbody>
+          </table>
+        </td>
+      </tr>` : ''}`;
+    }).join('');
+
+    // Grand total row for this date
+    const dateProjQty = dateRows.reduce((s,r) => s+r.p.qty, 0);
+    const dateProjKg  = dateRows.reduce((s,r) => s+r.p.kg,  0);
+    const dateOrdQty  = dateRows.reduce((s,r) => s+r.o.qty,  0);
+    const dateOrdKg   = dateRows.reduce((s,r) => s+r.o.kg,   0);
+    const dateVarQty  = dateOrdQty - dateProjQty;
+    const dateVarPct  = dateProjQty > 0 ? ((dateVarQty/dateProjQty)*100).toFixed(1) : '—';
+    const totalVarColor = dateVarQty > 0 ? '#C45B00' : dateVarQty < 0 ? '#C0392B' : '#1B6B3A';
+
+    const tfootRow = `<tr style="background:var(--bg);border-top:2px solid var(--border)">
+      <td colspan="2" style="padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em">Day Total</td>
+      <td style="padding:10px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;background:#F4F9FF">${dateProjQty.toLocaleString()}</td>
+      <td style="padding:10px 14px;text-align:right;font-weight:700;font-size:13px;color:#2563EB;background:#F4F9FF">${dateProjKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
+      <td style="padding:10px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;background:#F2FAF5">${dateOrdQty.toLocaleString()}</td>
+      <td style="padding:10px 14px;text-align:right;font-weight:700;font-size:13px;color:#1B6B3A;background:#F2FAF5">${dateOrdKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
+      <td style="padding:10px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;color:${totalVarColor}">${(dateVarQty>=0?'+':'')+dateVarQty.toLocaleString()}</td>
+      <td style="padding:10px 14px;text-align:right;font-weight:700;color:${totalVarColor}">${dateVarPct !== '—' ? (dateVarQty>=0?'+':'')+dateVarPct+'%' : '—'}</td>
+      <td></td>
+    </tr>`;
+
+    table.innerHTML = thead + `<tbody>${tbodyRows}</tbody><tfoot>${tfootRow}</tfoot>`;
+    tableWrap.appendChild(table);
+    sectionEl.appendChild(dateHeader);
+    sectionEl.appendChild(tableWrap);
+    container.appendChild(sectionEl);
+
+    // Collapse/expand toggle
+    dateHeader.addEventListener('click', () => {
+      const isHidden = tableWrap.style.display === 'none';
+      tableWrap.style.display = isHidden ? '' : 'none';
+      const arrow = dateHeader.querySelector('.pvo-toggle-arrow');
+      if (arrow) arrow.style.transform = isHidden ? '' : 'rotate(-90deg)';
+    });
+  });
+
+  // Store for CSV export
+  _projVsOrdersData = { allSections, grandProjQty, grandOrdQty, grandProjKg, grandOrdKg };
+}
+
+function togglePvoSP(id, btn) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : '';
+  btn.textContent   = isOpen ? '▼' : '▲';
+}
+
+function exportProjVsOrdersCSV() {
+  const data = _projVsOrdersData;
+  if (!data || !data.allSections || !data.allSections.length) return;
+
+  const headers = ['Date','Product Code','Description','Pack','Proj Qty','Proj Kgs/Lts','Order Qty','Order Kgs/Lts','Variance Qty','Variance %','Status'];
+  const csvRows = [headers.join(',')];
+
+  data.allSections.forEach(({ date, dateRows }) => {
+    dateRows.forEach(row => {
+      const statusLabels = {
+        'match':'Match','over':'Over-ordered','under':'Under-ordered','no-proj':'No Projection','no-order':'Not Ordered','none':'—'
+      };
+      const varQty = row.o.qty - row.p.qty;
+      const varPct = row.p.qty > 0 ? ((varQty / row.p.qty) * 100).toFixed(1) : '';
+      csvRows.push([
+        '"' + date + '"',
+        '"' + row.code.replace(/"/g,'""') + '"',
+        '"' + row.desc.replace(/"/g,'""') + '"',
+        '"' + row.pack.replace(/"/g,'""') + '"',
+        row.p.qty, row.p.kg.toFixed(1),
+        row.o.qty, row.o.kg.toFixed(1),
+        varQty, varPct,
+        '"' + (statusLabels[row.status]||row.status) + '"'
+      ].join(','));
+    });
+  });
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'projection_vs_orders_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
 // ── Route Consolidated Summary Table ─────────────────────────────────────
 let _routeTableData = [];
 
@@ -5316,24 +5683,28 @@ function switchChart(type) {
   const isProduct    = type === 'product';
   const isRoute      = type === 'route-bar' || type === 'route-line';
   const isProjTiming = type === 'proj-timing';
-  const isSpecial    = isTonnage || isProduct || isProjTiming;
+  const isProjVsOrd  = type === 'proj-vs-orders';
+  const isSpecial    = isTonnage || isProduct || isProjTiming || isProjVsOrd;
   const chartCard    = document.querySelector('.chart-card');
   const tonnageSec   = document.getElementById('tonnage-section');
   const productSec   = document.getElementById('product-section');
   const ptSec        = document.getElementById('proj-timing-section');
+  const pvoSec       = document.getElementById('proj-vs-orders-section');
   if (chartCard)   chartCard.style.display  = isSpecial ? 'none' : '';
   if (tonnageSec)  tonnageSec.style.display = isTonnage    ? '' : 'none';
   if (productSec)  productSec.style.display = isProduct    ? '' : 'none';
   if (ptSec)       ptSec.style.display      = isProjTiming ? '' : 'none';
+  if (pvoSec)      pvoSec.style.display     = isProjVsOrd  ? '' : 'none';
   // Show/hide route consolidated table and raw orders table
   const routeSumSec = document.getElementById('route-summary-section');
   const ohSearch    = document.querySelector('.oh-search-wrap');
   const ordersWrap  = document.querySelector('.orders-table-wrap');
   if (routeSumSec) routeSumSec.style.display = isRoute ? '' : 'none';
-  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage || isProduct || isProjTiming) ? 'none' : '';
-  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage || isProduct || isProjTiming) ? 'none' : '';
+  if (ohSearch)    ohSearch.style.display    = (isRoute || isTonnage || isProduct || isProjTiming || isProjVsOrd) ? 'none' : '';
+  if (ordersWrap)  ordersWrap.style.display  = (isRoute || isTonnage || isProduct || isProjTiming || isProjVsOrd) ? 'none' : '';
   if (isRoute)      renderRouteSummaryTable(filteredOrders);
   if (isProjTiming) renderProjTimingTable(filteredOrders);
+  if (isProjVsOrd)  renderProjVsOrders();
   // Hide metric toggle for special views
   const metricToggle = document.querySelector('.metric-toggle');
   if (metricToggle) metricToggle.style.visibility = isSpecial ? 'hidden' : '';
@@ -5360,9 +5731,10 @@ function renderChart() {
     return;
   }
 
-  if (currentChartType === 'tonnage')    { renderTonnageReport(); return; }
-  if (currentChartType === 'product')    { renderProductTable(); return; }
-  if (currentChartType === 'proj-timing'){ renderProjTimingTable(filteredOrders); return; }
+  if (currentChartType === 'tonnage')       { renderTonnageReport(); return; }
+  if (currentChartType === 'product')       { renderProductTable(); return; }
+  if (currentChartType === 'proj-timing')   { renderProjTimingTable(filteredOrders); return; }
+  if (currentChartType === 'proj-vs-orders'){ renderProjVsOrders(); return; }
   if (currentChartType === 'bar')        renderBarChart(canvas);
   if (currentChartType === 'line')       renderLineChart(canvas);
   if (currentChartType === 'donut')      renderDonutChart(canvas);
