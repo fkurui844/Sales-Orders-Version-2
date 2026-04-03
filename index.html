@@ -995,6 +995,14 @@ tr.tonnage-detail-row td{padding:0}
     <!-- SUB-VIEW A: list of saved customer orders -->
     <div id="step2-list">
       <div class="content">
+        <!-- Edit mode banner -->
+        <div id="edit-mode-banner" style="display:none;background:#EEF7FF;border:1.5px solid #2563EB;border-radius:10px;padding:12px 15px;margin-bottom:14px;align-items:flex-start;gap:10px">
+          <span style="font-size:18px;line-height:1.2">✏️</span>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#1d4ed8">Editing Submitted Order</div>
+            <div style="font-size:12px;color:#1e40af;margin-top:2px;line-height:1.5">You can change quantities, add or remove customers and products. Resubmit before <strong>7:00 PM</strong> to save your changes.</div>
+          </div>
+        </div>
         <div class="cust-orders-list" id="cust-orders-list" style="display:none"></div>
         <div class="grand-total-bar" id="grand-total-bar" style="display:none">
           <div class="gt-main"><span>Grand Total</span><span id="gt-amount">KES 0</span></div>
@@ -1060,6 +1068,14 @@ tr.tonnage-detail-row td{padding:0}
   <!-- ── STEP 3: REVIEW & SUBMIT ── -->
   <div id="step-submit" style="display:none">
     <div class="content">
+      <!-- 7PM edit deadline warning -->
+      <div id="edit-deadline-banner" style="display:none;background:#FFF3CD;border:1.5px solid #FFB300;border-radius:10px;padding:12px 15px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:18px;line-height:1.2">⏰</span>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#7A4100">Edit Deadline Approaching</div>
+          <div id="edit-deadline-msg" style="font-size:12px;color:#7A4100;margin-top:2px;line-height:1.5"></div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title"><div class="card-icon">📋</div>Order Summary</div>
         <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
@@ -1104,6 +1120,12 @@ tr.tonnage-detail-row td{padding:0}
           <button class="btn-dl" onclick="downloadOrder()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download as Text
+          </button>
+          <!-- Edit window notice -->
+          <div id="edit-window-notice" style="display:none;margin:6px 0 2px;border-radius:10px;padding:11px 15px;font-size:12px;line-height:1.5;text-align:left"></div>
+          <button id="btn-edit-order" onclick="editSubmittedOrder()" style="display:none;width:100%;padding:14px;background:#2563EB;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:9px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit This Order
           </button>
           <button class="btn-addmore" onclick="addMoreToOrder()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2001,6 +2023,8 @@ const S = {
   _routeKey: '',
   _batchKey: '',          // shared across partial submissions
   _continuingPartial: false,
+  _editMode: false,       // true when editing a previously submitted order
+  _editOriginalOrder: null,
 };
 
 // ══════════════════════════════════════════
@@ -2502,7 +2526,7 @@ function logout() {
     clearPartialOrderMeta();
     stopOrderNotifListener();
     selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = ''; _piecesMode = {};
-    S._batchKey = ''; S._continuingPartial = false;
+    S._batchKey = ''; S._continuingPartial = false; S._editMode = false; S._editOriginalOrder = null;
     document.getElementById('ln-inp').value = '';
     document.getElementById('pw-inp').value = '';
     document.getElementById('login-err').style.display = 'none';
@@ -2539,6 +2563,14 @@ function setStep(n) {
     document.getElementById('step2-proj').style.display  = isProj ? 'block' : 'none';
     document.getElementById('step2-list').style.display  = isProj ? 'none'  : 'block';
     document.getElementById('step2-add').style.display   = 'none';
+  }
+  // Show 7PM deadline banner on step 3 (submit review)
+  if (n === 3 && S.orderType !== 'projection') {
+    updateStep3DeadlineBanner();
+  }
+  // Stop the edit-window refresh timer when leaving success screen
+  if (n !== 4) {
+    clearInterval(window._editWindowTimer);
   }
   [1,2,3].forEach(i => {
     const el = document.getElementById(`s${i}t`);
@@ -2979,6 +3011,9 @@ function buildProjSubmitStep() {
 function showStep2List() {
   document.getElementById('step2-list').style.display = 'block';
   document.getElementById('step2-add').style.display  = 'none';
+  // Show/hide edit mode banner
+  const editBanner = document.getElementById('edit-mode-banner');
+  if (editBanner) editBanner.style.display = S._editMode ? 'flex' : 'none';
   renderCustomerOrdersList();
 }
 
@@ -3846,6 +3881,22 @@ async function submitOrder() {
   // Branch: projection uses its own cart, not customerOrders
   if (S.orderType === 'projection') { await submitProjectionOrder(); return; }
 
+  // Check edit mode — warn if past 7PM
+  if (S._editMode && !isEditWindowOpen()) {
+    openConfirm({
+      ico: '🔒',
+      title: 'Edit Window Closed',
+      msg: 'It is past 7:00 PM. You can no longer edit submitted orders, only submit new ones. Do you want to submit this as a new order instead?',
+      actionLabel: 'Submit as New Order',
+      onConfirm: () => {
+        S._editMode = false;
+        S._editOriginalOrder = null;
+        submitOrder();
+      }
+    });
+    return;
+  }
+
   const sp    = S.user;
   const nk    = findKey(sp, NAME_KEYS);
   const pk    = findKey(sp, PAYROLL_KEYS);
@@ -3889,9 +3940,18 @@ async function submitOrder() {
     ).replace(/[^a-zA-Z0-9-]/g, '_').substring(0, 120)
      + '-' + items.reduce((s, i) => s + i.qty, 0);
 
-    const fbKey   = clientOrderId.replace(/[.#$/\[\]]/g, '_');
-    const orderId = 'ORD-' + Date.now() + '-'
-                  + Math.random().toString(36).slice(2, 6).toUpperCase();
+    const fbKey = clientOrderId.replace(/[.#$/\[\]]/g, '_');
+
+    // In edit mode: reuse original orderId if this customer was in the original order,
+    // so the Firebase node is overwritten (same key) rather than duplicated.
+    let orderId;
+    if (S._editMode && S._editOriginalOrder) {
+      const origCo = (S._editOriginalOrder.customerOrders || []).find(oc => oc.customer === co.customer);
+      orderId = (origCo && origCo.orderId) ? origCo.orderId
+               : 'ORD-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    } else {
+      orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    }
 
     return {
       co, items, clientOrderId, fbKey, orderId,
@@ -3957,6 +4017,19 @@ async function submitOrder() {
       ...co, cart: co.cart.map(i => ({ ...i }))
     }))
   };
+
+  // If this was an edit, update success wording
+  const wasEdit = !!S._editMode;
+  S._editMode = false;
+  S._editOriginalOrder = null;
+
+  const sTitle = document.querySelector('#step-ok .s-title');
+  const sSub   = document.querySelector('#step-ok .s-sub');
+  if (sTitle) sTitle.textContent = wasEdit ? '✏️ Order Updated!' : 'Orders Submitted!';
+  if (sSub)   sSub.textContent   = wasEdit
+    ? 'Your changes have been saved successfully.'
+    : 'All customer orders have been recorded successfully.';
+
   buildSuccessPreview(S._lastOrder);
 
   if (fbFailed.length > 0) {
@@ -3985,6 +4058,7 @@ async function submitOrder() {
 
   setStep(4);
   subBtn.disabled = false;
+  showSuccessEditControls();
 
   // ── Phase 3: Background GAS sync (non-blocking) ───────────────────────────
   // Fire all GAS calls simultaneously in the background.
@@ -4146,6 +4220,7 @@ function newOrder() {
   S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null;
   S.route = ''; S.location = '';
   S._batchKey = ''; S._continuingPartial = false;
+  S._editMode = false; S._editOriginalOrder = null;
   document.getElementById('who-loc').value = '';
   document.getElementById('route-inp').value = '';
   document.getElementById('route-inp').readOnly = true;
@@ -4154,6 +4229,139 @@ function newOrder() {
   document.getElementById('draft-banner').classList.remove('show');
   setStep(1);
 }
+
+// ══════════════════════════════════════════
+//  EDIT ORDER — 7PM CUTOFF SYSTEM
+// ══════════════════════════════════════════
+const EDIT_CUTOFF_HOUR = 19; // 7:00 PM
+
+function isEditWindowOpen() {
+  const now = new Date();
+  return now.getHours() < EDIT_CUTOFF_HOUR;
+}
+
+function minutesUntilCutoff() {
+  const now = new Date();
+  const cutoff = new Date();
+  cutoff.setHours(EDIT_CUTOFF_HOUR, 0, 0, 0);
+  return Math.max(0, Math.floor((cutoff - now) / 60000));
+}
+
+function updateEditWindowUI() {
+  const open    = isEditWindowOpen();
+  const mins    = minutesUntilCutoff();
+  const editBtn = document.getElementById('btn-edit-order');
+  const notice  = document.getElementById('edit-window-notice');
+
+  if (!editBtn || !S._lastOrder || (S._lastOrder.type||'').toLowerCase().includes('projection')) {
+    if (editBtn)  editBtn.style.display  = 'none';
+    if (notice)   notice.style.display   = 'none';
+    return;
+  }
+
+  if (open) {
+    editBtn.style.display = 'flex';
+    if (mins <= 60) {
+      // Warn when less than 60 min left
+      const hrs  = Math.floor(mins / 60);
+      const mStr = mins % 60;
+      const timeLeft = hrs > 0 ? `${hrs}h ${mStr}m` : `${mins} min`;
+      notice.style.display = '';
+      notice.style.cssText += ';background:#FFF3CD;border:1.5px solid #FFB300;color:#7A4100';
+      notice.innerHTML = `<strong>⏰ Edit window closes at 7:00 PM</strong> — ${timeLeft} remaining. After that, orders cannot be edited.`;
+    } else {
+      notice.style.display = 'none';
+    }
+  } else {
+    editBtn.style.display = 'none';
+    notice.style.display  = '';
+    notice.style.cssText += ';background:#FDECEA;border:1.5px solid #C0392B;color:#7B1A1A';
+    notice.innerHTML = `<strong>🔒 Edit window closed</strong> — Orders can only be edited before 7:00 PM. You may still add more customers or start a new order.`;
+  }
+}
+
+function updateStep3DeadlineBanner() {
+  const banner  = document.getElementById('edit-deadline-banner');
+  const msgEl   = document.getElementById('edit-deadline-msg');
+  if (!banner || !msgEl) return;
+  const open = isEditWindowOpen();
+  const mins = minutesUntilCutoff();
+  if (!open) {
+    banner.style.display  = 'flex';
+    banner.style.background = '#FDECEA';
+    banner.style.borderColor = '#C0392B';
+    banner.querySelector('div > div:first-child').style.color = '#7B1A1A';
+    banner.querySelector('div > div:first-child').textContent = '🔒 Edit window closed';
+    msgEl.style.color = '#7B1A1A';
+    msgEl.textContent = 'It is past 7:00 PM — once submitted you will not be able to edit this order. Submit only if you are sure.';
+  } else if (mins <= 60) {
+    banner.style.display  = 'flex';
+    const timeLeft = mins <= 0 ? 'less than a minute' : mins + ' minute' + (mins !== 1 ? 's' : '');
+    msgEl.textContent = `You have ${timeLeft} left to submit and still be able to edit. After 7:00 PM editing is locked.`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+/**
+ * Load a submitted order back into the cart for editing.
+ * Overwrites the same Firebase queue keys on re-submit.
+ */
+function editSubmittedOrder() {
+  if (!S._lastOrder) return;
+  if (!isEditWindowOpen()) {
+    toast('🔒 Edit window closed — orders cannot be edited after 7:00 PM');
+    return;
+  }
+
+  const order = S._lastOrder;
+  // Restore step-1 context
+  S.location  = order.location || '';
+  S.route     = order.route    || '';
+  S.orderDate = order.date     || '';
+  S.orderType = 'full';
+  S._batchKey = order.batchKey || '';
+  S._editMode = true;  // flag so submit overwrites instead of creates new keys
+  S._editOriginalOrder = order; // keep reference for key regeneration
+
+  // Restore form fields
+  const locSel = document.getElementById('who-loc');
+  if (locSel && S.location) { locSel.value = S.location; onLocChange(); }
+  const rInp = document.getElementById('route-inp');
+  if (rInp) { rInp.value = S.route; rInp.readOnly = false; }
+  const dateInp = document.getElementById('order-date');
+  if (dateInp) dateInp.value = S.orderDate;
+  pickOT('full');
+
+  // Restore customer orders from the saved order
+  S.customerOrders = (order.customerOrders || []).map(co => ({
+    customer:  co.customer,
+    custCode:  co.custCode  || '',
+    location:  co.location  || S.location,
+    route:     co.route     || S.route,
+    cart: (co.cart || []).map(i => ({ ...i }))
+  }));
+  S.cart = [];
+
+  // Show edit mode banner
+  document.getElementById('partial-order-banner').classList.remove('show');
+
+  setStep(2);
+  showStep2List();
+  toast('✏️ Editing order — make changes and resubmit');
+}
+
+/**
+ * Show the edit button and notice whenever the success screen appears.
+ * Called at the end of submitOrder success phase.
+ */
+function showSuccessEditControls() {
+  updateEditWindowUI();
+  // Refresh every minute so the warning updates live
+  clearInterval(window._editWindowTimer);
+  window._editWindowTimer = setInterval(updateEditWindowUI, 60000);
+}
+
 
 // ══════════════════════════════════════════
 //  GAS JSONP — with retry & exponential backoff
