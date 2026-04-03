@@ -31,7 +31,22 @@ const db = firebase.database();
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
 
-/* ── LOADING ── */
+/* ── NOTIFICATION TOAST (order alert) ── */
+#order-notif-toast{position:fixed;top:62px;right:12px;background:var(--text);color:#fff;padding:12px 18px 12px 14px;border-radius:12px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.16,1,.3,1);z-index:500;max-width:320px;transform:translateX(20px);box-shadow:0 6px 24px rgba(0,0,0,.22)}
+#order-notif-toast.show{opacity:1;transform:translateX(0);pointer-events:auto}
+#order-notif-toast .ont-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:.03em;margin-bottom:2px;color:#fff}
+#order-notif-toast .ont-sub{font-size:12px;opacity:.75;line-height:1.3}
+.notif-item{padding:13px 16px;border-bottom:1px solid var(--border);animation:notif-slide-in .3s ease}
+.notif-item:last-child{border-bottom:none}
+.notif-item.notif-new{background:var(--accent-lt)}
+.notif-item .ni-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.notif-item .ni-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800}
+.notif-item .ni-time{font-size:10px;color:var(--muted);font-weight:500}
+.notif-item .ni-detail{font-size:12px;color:var(--muted);line-height:1.4}
+.notif-item .ni-type{display:inline-block;background:var(--accent-lt);color:var(--accent);border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-right:5px}
+.notif-item .ni-type.proj{background:#EEF7FF;color:#2563EB}
+@keyframes notif-slide-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+
 #overlay{position:fixed;inset:0;background:rgba(26,23,20,.55);display:flex;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(4px);display:none}
 .spin-card{background:#fff;border-radius:18px;padding:32px 40px;text-align:center}
 .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
@@ -734,6 +749,18 @@ tr.tonnage-detail-row td{padding:0}
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- NOTIFICATION PANEL -->
+<div id="notif-overlay" onclick="toggleNotifPanel()" style="display:none;position:fixed;inset:0;z-index:450;background:rgba(0,0,0,.18)"></div>
+<div id="notif-panel" style="display:none;position:fixed;top:56px;right:12px;width:340px;max-width:94vw;max-height:70vh;background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:460;overflow:hidden;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg)">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:.03em">🔔 Live Order Feed</div>
+    <button onclick="clearNotifs()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Clear all</button>
+  </div>
+  <div id="notif-list" style="overflow-y:auto;flex:1;max-height:calc(70vh - 52px)">
+    <div id="notif-empty" style="padding:32px 18px;text-align:center;color:var(--muted);font-size:13px">No orders yet. New orders will appear here in real time.</div>
+  </div>
+</div>
+
 <!-- ══════════════ LOGIN ══════════════ -->
 <div id="login-screen">
   <div class="login-card">
@@ -832,6 +859,10 @@ tr.tonnage-detail-row td{padding:0}
     <div class="head-logo">SALES<span>ORDER</span></div>
     <div class="head-user">
       <span id="hdr-name"></span>
+      <button id="notif-bell-btn" onclick="toggleNotifPanel()" style="position:relative;background:rgba(255,255,255,.1);border:none;color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background .2s" title="Order notifications">
+        🔔
+        <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:9px;height:9px;background:#C45B00;border-radius:50%;border:1.5px solid var(--text)"></span>
+      </button>
       <button class="head-out" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -1093,6 +1124,10 @@ tr.tonnage-detail-row td{padding:0}
     <div class="dash-head-logo">SALES<span>ORDER</span> <span style="font-size:13px;opacity:.5;font-weight:400;letter-spacing:.1em">DASHBOARD</span></div>
     <div class="dash-head-right">
       <span id="dash-hdr-name"></span>
+      <button id="dash-notif-bell-btn" onclick="toggleNotifPanel()" style="position:relative;background:rgba(255,255,255,.1);border:none;color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background .2s" title="Order notifications">
+        🔔
+        <span id="dash-notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:9px;height:9px;background:#C45B00;border-radius:50%;border:1.5px solid #1A1714"></span>
+      </button>
       <button class="head-out" onclick="dashLogout()">Sign Out</button>
     </div>
   </div>
@@ -1345,13 +1380,12 @@ tr.tonnage-detail-row td{padding:0}
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Submitted At</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Status</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Customers</th>
-              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Volume Kgs/Lts</th>
+              <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total (KES)</th>
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Route</th>
-              <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Details</th>
             </tr>
           </thead>
           <tbody id="proj-timing-tbody">
-            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">No projection data found.</td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No projection data found.</td></tr>
           </tbody>
         </table>
       </div>
@@ -2411,6 +2445,9 @@ function startApp(sp) {
 
   // Check for a partial order in progress
   checkForPartialOrder(name);
+
+  // Start live order notification listener
+  startOrderNotifListener();
 }
 
 function logout() {
@@ -2419,6 +2456,7 @@ function logout() {
   const doLogout = () => {
     clearDraft();
     clearPartialOrderMeta();
+    stopOrderNotifListener();
     selSP = null; S.user = null; S.cart = []; S.customer = null; S.customerOrders = []; S._lastOrder = null; S.route = ''; S.location = ''; _piecesMode = {};
     S._batchKey = ''; S._continuingPartial = false;
     document.getElementById('ln-inp').value = '';
@@ -4165,6 +4203,136 @@ function toast(msg) {
 }
 
 // ══════════════════════════════════════════
+//  LIVE ORDER NOTIFICATIONS
+// ══════════════════════════════════════════
+const _notifs = [];
+let _notifUnread = 0;
+let _notifListener = null;
+let _notifToastTimer = null;
+let _notifInitTime = null; // Only fire for orders AFTER login
+
+function startOrderNotifListener() {
+  if (_notifListener) return; // already listening
+  _notifInitTime = Date.now();
+
+  _notifListener = db.ref('/queue').on('child_added', snap => {
+    const order = snap.val();
+    if (!order) return;
+
+    // Ignore orders that already existed before we logged in
+    // (Firebase fires child_added for all existing children on attach)
+    const ts = order.timestamp ? new Date(order.timestamp).getTime() : 0;
+    if (ts && ts < _notifInitTime - 2000) return;
+
+    // Don't notify the person who submitted this order
+    const myName = (S.user ? (S.user[findKey(S.user, NAME_KEYS)] || '') : '').toLowerCase().trim();
+    const orderName = (order.salesman || '').toLowerCase().trim();
+    if (myName && myName === orderName) return;
+
+    const isProj  = (order.orderType || '').toLowerCase().includes('projection');
+    const sp      = order.salesman || 'Someone';
+    const route   = order.route || '';
+    const custRaw = order.customer || '';
+    const cust    = custRaw && custRaw !== 'PROJECTION' ? custRaw : '';
+    const date    = order.date || '';
+    const timeStr = order.timestamp ? new Date(order.timestamp).toLocaleTimeString('en-KE', { hour:'2-digit', minute:'2-digit' }) : '';
+
+    const notif = { sp, route, cust, date, timeStr, isProj, ts: Date.now() };
+    _notifs.unshift(notif);
+    if (_notifs.length > 50) _notifs.pop();
+
+    _notifUnread++;
+    _updateNotifBadge();
+    _addNotifToPanel(notif, true);
+    _showOrderNotifToast(notif);
+  });
+}
+
+function stopOrderNotifListener() {
+  if (_notifListener) {
+    db.ref('/queue').off('child_added', _notifListener);
+    _notifListener = null;
+  }
+}
+
+function _updateNotifBadge() {
+  ['notif-badge','dash-notif-badge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = _notifUnread > 0 ? 'block' : 'none';
+  });
+}
+
+function _addNotifToPanel(notif, isNew) {
+  const list  = document.getElementById('notif-list');
+  const empty = document.getElementById('notif-empty');
+  if (!list) return;
+  if (empty) empty.style.display = 'none';
+
+  const typeLabel = notif.isProj
+    ? '<span class="ni-type proj">Projection</span>'
+    : '<span class="ni-type">Full Order</span>';
+  const detail = [notif.route ? '📍 ' + notif.route : '', notif.cust ? '🧑‍💼 ' + notif.cust : '', notif.date ? '📅 ' + notif.date : '']
+    .filter(Boolean).join('  ·  ');
+
+  const div = document.createElement('div');
+  div.className = 'notif-item' + (isNew ? ' notif-new' : '');
+  div.innerHTML = `
+    <div class="ni-head">
+      <span class="ni-name">${notif.sp}</span>
+      <span class="ni-time">${notif.timeStr}</span>
+    </div>
+    <div class="ni-detail">${typeLabel}${detail || 'Order submitted'}</div>
+  `;
+  // Insert at top
+  list.insertBefore(div, list.firstChild);
+
+  // Fade "new" highlight after 4s
+  setTimeout(() => div.classList.remove('notif-new'), 4000);
+}
+
+function _showOrderNotifToast(notif) {
+  let toastEl = document.getElementById('order-notif-toast');
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.id = 'order-notif-toast';
+    toastEl.innerHTML = '<div class="ont-title"></div><div class="ont-sub"></div>';
+    document.body.appendChild(toastEl);
+  }
+  const typeWord = notif.isProj ? 'Projection' : 'Order';
+  toastEl.querySelector('.ont-title').textContent = `🛒 New ${typeWord} — ${notif.sp}`;
+  const parts = [notif.route, notif.cust].filter(Boolean);
+  toastEl.querySelector('.ont-sub').textContent = parts.length ? parts.join(' · ') : 'Tap 🔔 to see details';
+  toastEl.classList.add('show');
+  clearTimeout(_notifToastTimer);
+  _notifToastTimer = setTimeout(() => toastEl.classList.remove('show'), 5000);
+}
+
+function toggleNotifPanel() {
+  const panel   = document.getElementById('notif-panel');
+  const overlay = document.getElementById('notif-overlay');
+  if (!panel) return;
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display   = isOpen ? 'none' : 'flex';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    // Mark all as read
+    _notifUnread = 0;
+    _updateNotifBadge();
+  }
+}
+
+function clearNotifs() {
+  _notifs.length = 0;
+  _notifUnread   = 0;
+  _updateNotifBadge();
+  const list  = document.getElementById('notif-list');
+  const empty = document.getElementById('notif-empty');
+  if (list)  list.innerHTML = '';
+  if (empty) { empty.style.display = ''; list && list.appendChild(empty); }
+}
+
+
+// ══════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════
 const DASH_PASSWORD = '123123';
@@ -4291,6 +4459,9 @@ async function openDashboard() {
   document.getElementById('df-to').value   = '';
 
   await loadDashOrders();
+
+  // Start live order notification listener
+  startOrderNotifListener();
 }
 
 // Normalise any date string to YYYY-MM-DD for consistent comparison.
@@ -4864,10 +5035,9 @@ function renderProjTimingTable(rows) {
   );
 
   if (!projRows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No morning projection orders in the current filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No morning projection orders in the current filter.</td></tr>';
     if (kpiStrip) kpiStrip.innerHTML = '';
     _projTimingData = [];
-    renderProjConsolidated([]);
     return;
   }
 
@@ -4886,26 +5056,13 @@ function renderProjTimingTable(rows) {
         sp, date, route,
         timestamps: [],
         customers: new Set(),
-        totalKg: 0,
-        products: {} // productCode -> { desc, pack, qty, kg }
+        total: 0
       };
     }
     const b = batchMap[key];
     if (ts) b.timestamps.push(ts);
     if (cust && cust !== 'PROJECTION') b.customers.add(cust);
-    b.totalKg += parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
-
-    // Accumulate product-level data
-    const code = (r['Product Code'] || r['Code'] || '').trim();
-    const desc = (r['Description'] || r['Product'] || code).trim();
-    const pack = (r['Packaging'] || r['Pack'] || '').trim();
-    const qty  = parseFloat(r['Qty'] || 0) || 0;
-    const kg   = parseFloat(r['Total (KG)'] || r['Weight (KG)'] || r['KG'] || 0) || 0;
-    if (code) {
-      if (!b.products[code]) b.products[code] = { desc, pack, qty: 0, kg: 0 };
-      b.products[code].qty += qty;
-      b.products[code].kg  += kg;
-    }
+    b.total += parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
   });
 
   // Pick earliest timestamp per batch (first submission of that day)
@@ -4928,8 +5085,8 @@ function renderProjTimingTable(rows) {
   const total    = batches.length;
   const onTime   = batches.filter(b => b.status === 'on_time').length;
   const late     = batches.filter(b => b.status === 'late').length;
+  const unknown  = batches.filter(b => b.status === 'unknown').length;
   const pct      = total ? Math.round(onTime / total * 100) : 0;
-  const grandKg  = batches.reduce((s, b) => s + b.totalKg, 0);
 
   if (kpiStrip) {
     kpiStrip.innerHTML = `
@@ -4945,17 +5102,11 @@ function renderProjTimingTable(rows) {
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#C0392B">${late}</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Late Submissions</div>
       </div>
-      <div style="padding:14px 18px;border-right:1px solid var(--border);text-align:center">
+      <div style="padding:14px 18px;text-align:center">
         <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:${pct >= 80 ? '#1B6B3A' : pct >= 50 ? '#E67E22' : '#C0392B'}">${pct}%</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">On-Time Rate</div>
       </div>
-      <div style="padding:14px 18px;text-align:center">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">${grandKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1})}</div>
-        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-top:2px">Total Volume (Kgs/Lts)</div>
-      </div>
     `;
-    // Update KPI grid to 5 columns
-    kpiStrip.style.gridTemplateColumns = 'repeat(5,1fr)';
   }
 
   // ── Table rows ──
@@ -4965,6 +5116,7 @@ function renderProjTimingTable(rows) {
   batches.forEach((b, idx) => {
     const isOnTime  = b.status === 'on_time';
     const isLate    = b.status === 'late';
+    const isUnknown = b.status === 'unknown';
 
     const statusBadge = isOnTime
       ? `<span style="display:inline-flex;align-items:center;gap:5px;background:#E8F5ED;color:#1B6B3A;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">✓ On Time</span>`
@@ -4973,10 +5125,11 @@ function renderProjTimingTable(rows) {
       : `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:600">— Unknown</span>`;
 
     const rowBg = isLate ? '#FFF8F5' : isOnTime ? '#F6FBF8' : palette[idx % 2];
-    const leftBorder = isLate ? 'border-left:3px solid #C0392B' : isOnTime ? 'border-left:3px solid #1B6B3A' : '';
-
-    const prodList = Object.entries(b.products);
-    const detailId = 'pt-detail-' + idx;
+    const leftBorder = isLate
+      ? 'border-left:3px solid #C0392B'
+      : isOnTime
+      ? 'border-left:3px solid #1B6B3A'
+      : '';
 
     const tr = document.createElement('tr');
     tr.style.cssText = `background:${rowBg};${leftBorder}`;
@@ -4986,201 +5139,19 @@ function renderProjTimingTable(rows) {
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;color:${isLate ? '#C0392B' : isOnTime ? '#1B6B3A' : 'var(--muted)'}">${b.timeStr}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">${statusBadge}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${b.customers}</td>
-      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)">${b.totalKg > 0 ? b.totalKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)">KES ${b.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
       <td style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${b.route}</td>
-      <td style="padding:12px 14px;border-bottom:1px solid var(--border);text-align:center">
-        ${prodList.length ? `<button onclick="togglePtDetail('${detailId}',this)" style="background:var(--accent-lt);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em">▼ ${prodList.length} item${prodList.length>1?'s':''}</button>` : '<span style="color:var(--muted);font-size:12px">—</span>'}
-      </td>
     `;
     frag.appendChild(tr);
-
-    // Detail row (hidden by default)
-    if (prodList.length) {
-      const detailTr = document.createElement('tr');
-      detailTr.id = detailId;
-      detailTr.style.display = 'none';
-      detailTr.style.background = '#FAFAF9';
-      const prodRows = prodList.map(([code, p]) => `
-        <tr>
-          <td style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--text)">${code}</td>
-          <td style="padding:8px 12px;font-size:12px;color:var(--text)">${p.desc}</td>
-          <td style="padding:8px 12px;font-size:12px;color:var(--muted)">${p.pack}</td>
-          <td style="padding:8px 12px;text-align:right;font-weight:700;font-size:13px">${p.qty.toLocaleString()}</td>
-          <td style="padding:8px 12px;text-align:right;font-weight:700;font-size:13px;color:var(--accent)">${p.kg > 0 ? p.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) : '—'}</td>
-        </tr>`).join('');
-      detailTr.innerHTML = `
-        <td colspan="8" style="padding:0 14px 12px;border-bottom:1px solid var(--border)">
-          <div style="background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:4px">
-            <div style="padding:8px 12px;background:var(--bg);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">
-              ${b.sp} — Products in this projection
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:12px">
-              <thead>
-                <tr style="background:#F7F5F2">
-                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Code</th>
-                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Product</th>
-                  <th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Pack</th>
-                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Qty</th>
-                  <th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)">Kgs/Lts</th>
-                </tr>
-              </thead>
-              <tbody>${prodRows}</tbody>
-            </table>
-          </div>
-        </td>
-      `;
-      frag.appendChild(detailTr);
-    }
   });
 
   tbody.innerHTML = '';
   tbody.appendChild(frag);
-
-  // Render consolidated product table
-  renderProjConsolidated(batches);
-}
-
-function togglePtDetail(id, btn) {
-  const row = document.getElementById(id);
-  if (!row) return;
-  const isOpen = row.style.display !== 'none';
-  row.style.display = isOpen ? 'none' : '';
-  btn.textContent = isOpen
-    ? btn.textContent.replace('▲','▼')
-    : btn.textContent.replace('▼','▲');
-  btn.textContent = (isOpen ? '▼ ' : '▲ ') + btn.textContent.replace(/^[▼▲]\s*/,'');
-}
-
-function renderProjConsolidated(batches) {
-  let section = document.getElementById('proj-consolidated-section');
-  if (!section) {
-    // Insert after proj-timing-section
-    const timingSection = document.getElementById('proj-timing-section');
-    if (!timingSection) return;
-    section = document.createElement('div');
-    section.id = 'proj-consolidated-section';
-    section.style.cssText = 'background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-top:16px;margin-bottom:80px';
-    timingSection.insertAdjacentElement('afterend', section);
-  }
-
-  if (!batches || !batches.length) {
-    section.style.display = 'none';
-    return;
-  }
-
-  // Aggregate all products across all batches by product code
-  const consolidated = {}; // code -> { desc, pack, totalQty, totalKg, salespersons: {sp: {qty,kg}} }
-  batches.forEach(b => {
-    Object.entries(b.products).forEach(([code, p]) => {
-      if (!consolidated[code]) consolidated[code] = { desc: p.desc, pack: p.pack, totalQty: 0, totalKg: 0, salespersons: {} };
-      consolidated[code].totalQty += p.qty;
-      consolidated[code].totalKg  += p.kg;
-      if (!consolidated[code].salespersons[b.sp]) consolidated[code].salespersons[b.sp] = { qty: 0, kg: 0 };
-      consolidated[code].salespersons[b.sp].qty += p.qty;
-      consolidated[code].salespersons[b.sp].kg  += p.kg;
-    });
-  });
-
-  const codes = Object.keys(consolidated).sort();
-  if (!codes.length) { section.style.display = 'none'; return; }
-  section.style.display = '';
-
-  const grandQty = codes.reduce((s, c) => s + consolidated[c].totalQty, 0);
-  const grandKg  = codes.reduce((s, c) => s + consolidated[c].totalKg,  0);
-
-  const prodRows = codes.map(code => {
-    const p = consolidated[code];
-    const spBreakdown = Object.entries(p.salespersons)
-      .map(([sp, v]) => `<span style="display:inline-block;background:var(--accent-lt);color:var(--accent);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;margin:1px">${sp}: ${v.qty.toLocaleString()} qty${v.kg > 0 ? ' · ' + v.kg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : ''}</span>`).join('');
-    return `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px">${code}</td>
-        <td style="padding:11px 14px;font-size:13px">${p.desc}</td>
-        <td style="padding:11px 14px;font-size:12px;color:var(--muted)">${p.pack}</td>
-        <td style="padding:11px 14px;text-align:right;font-weight:700;font-size:14px">${p.totalQty.toLocaleString()}</td>
-        <td style="padding:11px 14px;text-align:right;font-weight:700;font-size:14px;color:var(--accent)">${p.totalKg > 0 ? p.totalKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '—'}</td>
-        <td style="padding:11px 14px;font-size:11px">${spBreakdown}</td>
-      </tr>`;
-  }).join('');
-
-  section.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
-      <div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">📦 Consolidated Product Totals</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Total volume per product code across all salespersons' projections</div>
-      </div>
-      <button onclick="exportProjConsolidatedCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export CSV
-      </button>
-    </div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr style="background:var(--bg)">
-            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Product Code</th>
-            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Description</th>
-            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Pack</th>
-            <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Qty</th>
-            <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Volume Kgs/Lts</th>
-            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border)">Salesperson Breakdown</th>
-          </tr>
-        </thead>
-        <tbody>${prodRows}</tbody>
-        <tfoot>
-          <tr style="background:var(--bg);border-top:2px solid var(--border)">
-            <td colspan="3" style="padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.05em">Grand Total</td>
-            <td style="padding:11px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px">${grandQty.toLocaleString()}</td>
-            <td style="padding:11px 14px;text-align:right;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;color:var(--accent)">${grandKg > 0 ? grandKg.toLocaleString('en-KE',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' Kgs/Lts' : '—'}</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  `;
-
-  // Store for CSV export
-  window._projConsolidatedData = { consolidated, codes };
-}
-
-function exportProjConsolidatedCSV() {
-  const data = window._projConsolidatedData;
-  if (!data || !data.codes.length) return;
-  const { consolidated, codes } = data;
-
-  // Collect all unique salespersons
-  const allSPs = [...new Set(codes.flatMap(c => Object.keys(consolidated[c].salespersons)))].sort();
-
-  const headers = ['Product Code','Description','Pack','Total Qty','Total Volume Kgs/Lts',
-    ...allSPs.flatMap(sp => [sp + ' Qty', sp + ' Kgs/Lts'])];
-  const csvRows = [headers.join(',')];
-
-  codes.forEach(code => {
-    const p = consolidated[code];
-    const spCols = allSPs.flatMap(sp => {
-      const v = p.salespersons[sp] || { qty: 0, kg: 0 };
-      return [v.qty, v.kg.toFixed(1)];
-    });
-    csvRows.push([
-      '"' + code.replace(/"/g,'""') + '"',
-      '"' + p.desc.replace(/"/g,'""') + '"',
-      '"' + p.pack.replace(/"/g,'""') + '"',
-      p.totalQty,
-      p.totalKg.toFixed(1),
-      ...spCols
-    ].join(','));
-  });
-
-  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'projection_consolidated_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
 }
 
 function exportProjTimingCSV() {
   if (!_projTimingData.length) return;
-  const headers = ['Salesperson','Order Date','Submitted At','Status','Customers','Total Volume Kgs/Lts','Route'];
+  const headers = ['Salesperson','Order Date','Submitted At','Status','Customers','Total (KES)','Route'];
   const csvRows = [headers.join(',')];
   _projTimingData.forEach(b => {
     const status = b.status === 'on_time' ? 'On Time' : b.status === 'late' ? 'Late' : 'Unknown';
@@ -5190,7 +5161,7 @@ function exportProjTimingCSV() {
       '"' + b.timeStr + '"',
       '"' + status + '"',
       b.customers,
-      b.totalKg.toFixed(1),
+      b.total.toFixed(2),
       '"' + (b.route||'').replace(/"/g,'""') + '"'
     ].join(','));
   });
@@ -6302,6 +6273,7 @@ document.getElementById('export-modal').addEventListener('click', function(e) {
 });
 
 function dashLogout() {
+  stopOrderNotifListener();
   dashUser = null; allOrders = []; filteredOrders = [];
   document.getElementById('dash-app').style.display  = 'none';
   document.getElementById('login-screen').style.display = 'flex';
