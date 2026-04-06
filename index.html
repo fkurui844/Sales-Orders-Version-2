@@ -1238,6 +1238,7 @@ tr.tonnage-detail-row td{padding:0}
     <button class="dash-page-tab active" id="tab-orders" onclick="switchDashPage('orders')">&#128203; Orders</button>
     <button class="dash-page-tab" id="tab-filters" onclick="switchDashPage('filters')">&#128269; Filters</button>
     <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">&#128202; Order Fulfilment</button>
+    <button class="dash-page-tab" id="tab-tracker" onclick="switchDashPage('tracker')">&#128681; Route Tracker</button>
   </div>
 
   <!-- PAGE: ORDERS — Salesperson Summary Table -->
@@ -1719,6 +1720,98 @@ tr.tonnage-detail-row td{padding:0}
 
     </div>
   </div><!-- #fulfil-page -->
+
+  <!-- ══════════════ ROUTE DAILY TRACKER PAGE ══════════════ -->
+  <div id="tracker-page" style="display:none">
+  <div class="content" style="max-width:960px;padding-bottom:60px">
+
+    <!-- Header -->
+    <div style="margin:18px 0 14px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:10px">
+          🚦 Route Daily Tracker
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Monitor daily orders per route. Unusual activity triggers automatic warnings.</div>
+      </div>
+      <button onclick="loadTrackerData()" style="display:flex;align-items:center;gap:7px;padding:10px 18px;background:var(--text);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:background .2s" onmouseover="this.style.background='#2d2a27'" onmouseout="this.style.background='var(--text)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.32"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Controls row -->
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="fg" style="min-width:160px;flex:1;margin-bottom:0">
+        <label class="lbl">Date to Analyse</label>
+        <input type="date" class="inp" id="rt-date" style="padding:10px 14px">
+      </div>
+      <div class="fg" style="min-width:160px;flex:1;margin-bottom:0">
+        <label class="lbl">Anomaly Threshold</label>
+        <select class="inp" id="rt-threshold" style="padding:10px 14px">
+          <option value="20">±20% deviation</option>
+          <option value="30" selected>±30% deviation</option>
+          <option value="50">±50% deviation</option>
+          <option value="75">±75% deviation</option>
+        </select>
+      </div>
+      <div class="fg" style="min-width:160px;flex:1;margin-bottom:0">
+        <label class="lbl">Baseline Period</label>
+        <select class="inp" id="rt-baseline" style="padding:10px 14px">
+          <option value="7">Last 7 days</option>
+          <option value="14" selected>Last 14 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+      </div>
+      <button onclick="loadTrackerData()" style="padding:11px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--accent-hov)'" onmouseout="this.style.background='var(--accent)'">
+        Analyse Route →
+      </button>
+    </div>
+
+    <!-- Summary KPI strip -->
+    <div id="rt-kpi-strip" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+
+    <!-- Warnings panel -->
+    <div id="rt-warnings-panel" style="display:none;margin-bottom:14px"></div>
+
+    <!-- Per-route cards container -->
+    <div id="rt-route-cards">
+      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px">
+        Select a date and click <strong>Analyse Route</strong> to see daily tracking data.
+      </div>
+    </div>
+
+    <!-- Notification modal -->
+    <div id="rt-notify-modal" style="display:none;position:fixed;inset:0;background:rgba(26,23,20,.6);z-index:500;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#fff;border-radius:18px;padding:28px 28px 24px;width:100%;max-width:440px;box-shadow:0 16px 60px rgba(0,0,0,.25)">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">📣 Send Alert</div>
+        <div id="rt-notify-context" style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.5"></div>
+        <div class="fg">
+          <label class="lbl">Salesperson Name</label>
+          <input class="inp" id="rt-notify-sp" placeholder="Salesperson to notify" readonly style="background:var(--bg)">
+        </div>
+        <div class="fg">
+          <label class="lbl">Route</label>
+          <input class="inp" id="rt-notify-route" placeholder="Route" readonly style="background:var(--bg)">
+        </div>
+        <div class="fg">
+          <label class="lbl">Alert Message</label>
+          <textarea class="inp" id="rt-notify-msg" rows="5" style="resize:vertical;min-height:100px"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button onclick="closeNotifyModal()" style="flex:1;padding:13px;background:#fff;border:1.5px solid var(--border);border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;cursor:pointer;color:var(--muted)">Cancel</button>
+          <button onclick="sendWhatsAppAlert()" style="flex:2;padding:13px;background:#25D366;color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp Alert
+          </button>
+        </div>
+        <div id="rt-notify-copy-row" style="margin-top:10px;text-align:center">
+          <button onclick="copyAlertToClipboard()" style="font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">📋 Copy message to clipboard instead</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div><!-- #tracker-page -->
 
 </div><!-- #dash-app -->
 
@@ -7330,12 +7423,20 @@ function switchDashPage(page) {
   document.getElementById('orders-page').style.display  = page === 'orders'  ? 'block' : 'none';
   document.getElementById('filters-page').style.display = page === 'filters' ? 'block' : 'none';
   document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? 'block' : 'none';
+  document.getElementById('tracker-page').style.display = page === 'tracker' ? 'block' : 'none';
   document.getElementById('tab-orders').classList.toggle('active',  page === 'orders');
   document.getElementById('tab-filters').classList.toggle('active', page === 'filters');
   document.getElementById('tab-fulfil').classList.toggle('active',  page === 'fulfil');
+  document.getElementById('tab-tracker').classList.toggle('active', page === 'tracker');
   // Re-render chart when switching to filters so canvas sizes correctly
   if (page === 'filters' && typeof renderChart === 'function') {
     setTimeout(renderChart, 50);
+  }
+  // Auto-load tracker with today's date on first visit
+  if (page === 'tracker' && !_trackerLoaded) {
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('rt-date').value = today;
+    loadTrackerData();
   }
 }
 
@@ -8071,6 +8172,333 @@ function _motRenderFullOrders(fullOrders) {
 
   card.style.display = 'block';
 }
+
+// ══════════════════════════════════════════
+//  ROUTE DAILY TRACKER
+// ══════════════════════════════════════════
+
+let _trackerLoaded = false;
+let _trackerCurrentAlert = {};
+
+async function loadTrackerData() {
+  _trackerLoaded = true;
+  const dateVal = document.getElementById('rt-date').value.trim();
+  if (!dateVal) { toast('⚠️ Please select a date'); return; }
+
+  const baselineDays = parseInt(document.getElementById('rt-baseline').value) || 14;
+  const threshold    = parseInt(document.getElementById('rt-threshold').value) || 30;
+
+  // Compute baseline date range (excludes the target date)
+  const targetDate = new Date(dateVal + 'T00:00:00');
+  const baselineEnd = new Date(targetDate);
+  baselineEnd.setDate(baselineEnd.getDate() - 1);
+  const baselineStart = new Date(baselineEnd);
+  baselineStart.setDate(baselineStart.getDate() - (baselineDays - 1));
+  const bFrom = baselineStart.toISOString().slice(0,10);
+  const bTo   = baselineEnd.toISOString().slice(0,10);
+
+  const cards = document.getElementById('rt-route-cards');
+  cards.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px"><div class="spinner" style="margin:0 auto 12px"></div>Loading route data…</div>`;
+  document.getElementById('rt-kpi-strip').innerHTML = '';
+  document.getElementById('rt-warnings-panel').style.display = 'none';
+
+  try {
+    // Pull both target day and baseline from Firebase /queue
+    const snap = await db.ref('/queue').get();
+    if (!snap || !snap.exists()) {
+      cards.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px">No orders found in the database.</div>`;
+      return;
+    }
+
+    const allQueueOrders = Object.values(snap.val()).filter(Boolean);
+
+    // Separate target-day orders and baseline orders
+    const todayOrders    = allQueueOrders.filter(o => (o.date||'').trim() === dateVal);
+    const baselineOrders = allQueueOrders.filter(o => {
+      const d = (o.date||'').trim();
+      return d >= bFrom && d <= bTo;
+    });
+
+    // Build per-route aggregates for target day
+    const todayByRoute    = _rtGroupByRoute(todayOrders);
+    // Build per-route aggregates for baseline (average per day)
+    const baselineByRoute = _rtBaselineByRoute(baselineOrders, baselineDays);
+
+    // Combine all routes
+    const allRoutes = new Set([...Object.keys(todayByRoute), ...Object.keys(baselineByRoute)]);
+
+    // KPI strip
+    const totalRoutes   = allRoutes.size;
+    const totalOrders   = Object.values(todayByRoute).reduce((s,r) => s + r.orderCount, 0);
+    const totalRevenue  = Object.values(todayByRoute).reduce((s,r) => s + r.revenue, 0);
+    const warnings      = [];
+
+    allRoutes.forEach(route => {
+      const today  = todayByRoute[route]    || { orderCount:0, revenue:0, customers:new Set(), salesman:'—', items:[] };
+      const base   = baselineByRoute[route] || { avgOrders:0, avgRevenue:0 };
+      const anomalies = _rtDetectAnomalies(today, base, threshold);
+      if (anomalies.length) warnings.push({ route, today, base, anomalies });
+    });
+
+    // Render KPI strip
+    document.getElementById('rt-kpi-strip').innerHTML = `
+      <div class="stat-card"><div class="stat-val">${totalRoutes}</div><div class="stat-lbl">Routes</div></div>
+      <div class="stat-card"><div class="stat-val">${totalOrders}</div><div class="stat-lbl">Orders</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${totalRevenue >= 1000 ? (totalRevenue/1000).toFixed(1)+'K' : totalRevenue.toLocaleString()}</div><div class="stat-lbl">Revenue (KES)</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:${warnings.length ? '#C62828' : 'var(--ok)'}">${warnings.length}</div><div class="stat-lbl">⚠️ Alerts</div></div>
+    `;
+
+    // Render warnings panel
+    if (warnings.length) {
+      const wpEl = document.getElementById('rt-warnings-panel');
+      wpEl.style.display = 'block';
+      wpEl.innerHTML = `
+        <div style="background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:var(--radius);overflow:hidden">
+          <div style="background:#FFD54F;padding:12px 18px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">⚠️</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#5D4037">${warnings.length} Unusual Order Pattern${warnings.length!==1?'s':''} Detected</span>
+          </div>
+          <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+            ${warnings.map(w => `
+              <div style="background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #FFE082;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:220px">
+                  <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#E65100;margin-bottom:4px">📍 ${w.route}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Salesperson: <strong style="color:var(--text)">${w.today.salesman || '—'}</strong></div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    ${w.anomalies.map(a => `<span style="display:inline-block;background:${a.type==='over'?'#FFF3E0':'#FFEBEE'};color:${a.type==='over'?'#E65100':'#C62828'};border:1px solid ${a.type==='over'?'#FFCC80':'#EF9A9A'};border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700">${a.label}</span>`).join('')}
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
+                  <div style="text-align:right;font-size:11px;color:var(--muted)">
+                    <div>Today: <strong style="color:var(--text)">${w.today.orderCount} orders</strong></div>
+                    <div>Avg: <strong>${w.base.avgOrders.toFixed(1)} orders</strong></div>
+                  </div>
+                  <button onclick="openNotifyModal('${encodeURIComponent(JSON.stringify({route:w.route,salesman:w.today.salesman,anomalies:w.anomalies,todayOrders:w.today.orderCount,avgOrders:w.base.avgOrders,todayRevenue:w.today.revenue,avgRevenue:w.base.avgRevenue,date:dateVal}))}','salesperson')" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+                    📣 Notify SP
+                  </button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    // Render per-route cards
+    if (!allRoutes.size) {
+      cards.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px">No orders found for <strong>${dateVal}</strong>.</div>`;
+      return;
+    }
+
+    // Sort routes: warnings first, then alphabetical
+    const sortedRoutes = [...allRoutes].sort((a, b) => {
+      const aWarn = warnings.some(w => w.route === a) ? 0 : 1;
+      const bWarn = warnings.some(w => w.route === b) ? 0 : 1;
+      return aWarn - bWarn || a.localeCompare(b);
+    });
+
+    cards.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    sortedRoutes.forEach(route => {
+      const today  = todayByRoute[route]    || { orderCount:0, revenue:0, customers:new Set(), salesman:'—', items:[] };
+      const base   = baselineByRoute[route] || { avgOrders:0, avgRevenue:0 };
+      const anomalies = _rtDetectAnomalies(today, base, threshold);
+      const hasWarn   = anomalies.length > 0;
+
+      // Direction indicators
+      const ordersDelta = base.avgOrders > 0
+        ? ((today.orderCount - base.avgOrders) / base.avgOrders * 100).toFixed(0)
+        : null;
+      const revDelta = base.avgRevenue > 0
+        ? ((today.revenue - base.avgRevenue) / base.avgRevenue * 100).toFixed(0)
+        : null;
+
+      const deltaChip = (delta, label) => {
+        if (delta === null) return `<span style="font-size:10px;color:var(--muted)">No baseline</span>`;
+        const num = parseFloat(delta);
+        const col = num > 0 ? 'var(--ok)' : num < 0 ? '#C62828' : 'var(--muted)';
+        const arrow = num > 0 ? '▲' : num < 0 ? '▼' : '=';
+        return `<span style="font-size:11px;font-weight:700;color:${col}">${arrow} ${Math.abs(num)}% vs avg ${label}</span>`;
+      };
+
+      // Customer list (from today)
+      const custList = [...today.customers].slice(0,6).map(c => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:10px;font-weight:600;color:var(--muted);margin:2px">${c}</span>`).join('');
+      const extraCusts = today.customers.size > 6 ? `<span style="font-size:10px;color:var(--muted)">+${today.customers.size-6} more</span>` : '';
+
+      const card = document.createElement('div');
+      card.style.cssText = `background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;border-left:4px solid ${hasWarn ? '#E65100' : 'var(--ok)'}`;
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:${hasWarn ? '#FFF8F2' : 'var(--bg)'};border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">${hasWarn ? '⚠️' : '✅'}</span>
+            <div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.02em">${route}</div>
+              <div style="font-size:11px;color:var(--muted)">SP: <strong style="color:var(--text)">${today.salesman || '—'}</strong> · ${today.customers.size} customer${today.customers.size!==1?'s':''}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            ${hasWarn ? `<button onclick="openNotifyModal('${encodeURIComponent(JSON.stringify({route,salesman:today.salesman,anomalies,todayOrders:today.orderCount,avgOrders:base.avgOrders,todayRevenue:today.revenue,avgRevenue:base.avgRevenue,date:dateVal}))}','salesperson')" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer">📣 Alert SP</button>` : ''}
+            <div style="text-align:right">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">KES ${today.revenue.toLocaleString()}</div>
+              <div style="font-size:10px;color:var(--muted)">${today.orderCount} order${today.orderCount!==1?'s':''}</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:14px 18px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div style="background:var(--bg);border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px">Orders Today</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800">${today.orderCount}</div>
+              <div style="margin-top:2px">${deltaChip(ordersDelta, 'orders')}</div>
+            </div>
+            <div style="background:var(--bg);border-radius:8px;padding:10px 14px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px">Revenue Today</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--accent)">KES ${today.revenue >= 1000 ? (today.revenue/1000).toFixed(1)+'K' : today.revenue.toLocaleString()}</div>
+              <div style="margin-top:2px">${deltaChip(revDelta, 'revenue')}</div>
+            </div>
+          </div>
+          ${hasWarn ? `<div style="background:#FFF3E0;border:1px solid #FFCC80;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#E65100;line-height:1.5"><strong>⚠️ Anomaly:</strong> ${anomalies.map(a=>a.detail).join(' · ')}</div>` : ''}
+          ${today.customers.size ? `<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Customers Ordered</div><div style="display:flex;flex-wrap:wrap;gap:3px">${custList}${extraCusts}</div></div>` : ''}
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+            <span>Baseline avg: <strong style="color:var(--text)">${base.avgOrders.toFixed(1)} orders / ${base.avgRevenue >= 1000 ? (base.avgRevenue/1000).toFixed(1)+'K' : 'KES '+Math.round(base.avgRevenue).toLocaleString()} revenue</strong> per day (last ${baselineDays}d)</span>
+          </div>
+        </div>`;
+      frag.appendChild(card);
+    });
+
+    cards.appendChild(frag);
+
+  } catch(e) {
+    document.getElementById('rt-route-cards').innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:#C62828;font-size:13px">Error loading data: ${e.message}</div>`;
+  }
+}
+
+// ── Group today's orders by route ────────────────────────────────────────────
+function _rtGroupByRoute(orders) {
+  const map = {};
+  orders.forEach(o => {
+    const route = (o.route || 'Unknown Route').trim();
+    if (!map[route]) map[route] = { orderCount:0, revenue:0, customers:new Set(), salesman:'', items:[] };
+    let items = [];
+    if (o.itemsJson) { try { items = JSON.parse(o.itemsJson); } catch(e) {} }
+    const rev = items.reduce((s, i) => s + (i.total || 0), 0);
+    map[route].orderCount++;
+    map[route].revenue += rev;
+    if (o.customer && o.customer !== 'PROJECTION') map[route].customers.add(o.customer);
+    if (!map[route].salesman && o.salesman) map[route].salesman = o.salesman;
+    map[route].items.push(...items);
+  });
+  return map;
+}
+
+// ── Compute baseline averages per route ──────────────────────────────────────
+function _rtBaselineByRoute(orders, days) {
+  const map = {};
+  orders.forEach(o => {
+    const route = (o.route || 'Unknown Route').trim();
+    let items = [];
+    if (o.itemsJson) { try { items = JSON.parse(o.itemsJson); } catch(e) {} }
+    const rev = items.reduce((s, i) => s + (i.total || 0), 0);
+    if (!map[route]) map[route] = { totalOrders:0, totalRevenue:0, activeDays:new Set() };
+    map[route].totalOrders++;
+    map[route].totalRevenue += rev;
+    if (o.date) map[route].activeDays.add(o.date);
+  });
+  const result = {};
+  Object.entries(map).forEach(([route, d]) => {
+    const activeDays = Math.max(d.activeDays.size, 1);
+    result[route] = {
+      avgOrders:  d.totalOrders  / activeDays,
+      avgRevenue: d.totalRevenue / activeDays
+    };
+  });
+  return result;
+}
+
+// ── Detect anomalies for a route ─────────────────────────────────────────────
+function _rtDetectAnomalies(today, base, threshold) {
+  const anomalies = [];
+  if (!base || (!base.avgOrders && !base.avgRevenue)) return anomalies;
+
+  if (base.avgOrders > 0) {
+    const pct = (today.orderCount - base.avgOrders) / base.avgOrders * 100;
+    if (pct > threshold) anomalies.push({
+      type: 'over',
+      label: `+${pct.toFixed(0)}% orders`,
+      detail: `Orders (${today.orderCount}) are ${pct.toFixed(0)}% above the ${base.avgOrders.toFixed(1)}-order daily average — unusually high.`
+    });
+    if (pct < -threshold) anomalies.push({
+      type: 'under',
+      label: `${pct.toFixed(0)}% orders`,
+      detail: `Orders (${today.orderCount}) are ${Math.abs(pct).toFixed(0)}% below the ${base.avgOrders.toFixed(1)}-order daily average — unusually low.`
+    });
+  }
+
+  if (base.avgRevenue > 0) {
+    const pct = (today.revenue - base.avgRevenue) / base.avgRevenue * 100;
+    if (pct > threshold) anomalies.push({
+      type: 'over',
+      label: `+${pct.toFixed(0)}% revenue`,
+      detail: `Revenue (KES ${today.revenue.toLocaleString()}) is ${pct.toFixed(0)}% above average — possible duplicate or inflated order.`
+    });
+    if (pct < -threshold) anomalies.push({
+      type: 'under',
+      label: `${pct.toFixed(0)}% revenue`,
+      detail: `Revenue (KES ${today.revenue.toLocaleString()}) is ${Math.abs(pct).toFixed(0)}% below average — route may have under-ordered.`
+    });
+  }
+
+  return anomalies;
+}
+
+// ── Notification modal ────────────────────────────────────────────────────────
+function openNotifyModal(encodedData, target) {
+  const data = JSON.parse(decodeURIComponent(encodedData));
+  _trackerCurrentAlert = data;
+
+  document.getElementById('rt-notify-sp').value    = data.salesman || '—';
+  document.getElementById('rt-notify-route').value = data.route   || '—';
+
+  const anomalyLines = (data.anomalies || []).map(a => `• ${a.detail}`).join('\n');
+  const msg = `⚠️ *Sales Order Alert – ${data.route}*\n\nHi ${data.salesman || 'Team'},\n\nWe noticed an unusual order pattern on your route for *${data.date}*:\n\n${anomalyLines}\n\nToday's orders: *${data.todayOrders}* (avg: ${(data.avgOrders||0).toFixed(1)})\nToday's revenue: *KES ${(data.todayRevenue||0).toLocaleString()}* (avg: KES ${Math.round(data.avgRevenue||0).toLocaleString()})\n\nPlease confirm this is correct or contact us if there is an issue.\n\nThank you,\nSalesOrder System`;
+
+  document.getElementById('rt-notify-msg').value    = msg;
+  document.getElementById('rt-notify-context').textContent = `Sending alert for route "${data.route}" (${data.salesman}) on ${data.date}`;
+
+  const modal = document.getElementById('rt-notify-modal');
+  modal.style.display = 'flex';
+}
+
+function closeNotifyModal() {
+  document.getElementById('rt-notify-modal').style.display = 'none';
+}
+
+function sendWhatsAppAlert() {
+  const msg = document.getElementById('rt-notify-msg').value.trim();
+  if (!msg) { toast('⚠️ Message is empty'); return; }
+  const encoded = encodeURIComponent(msg);
+  window.open('https://wa.me/?text=' + encoded, '_blank');
+  closeNotifyModal();
+  toast('✅ WhatsApp opened with alert message');
+}
+
+function copyAlertToClipboard() {
+  const msg = document.getElementById('rt-notify-msg').value.trim();
+  if (!msg) return;
+  navigator.clipboard.writeText(msg).then(() => {
+    toast('✅ Alert message copied to clipboard');
+    closeNotifyModal();
+  }).catch(() => {
+    toast('Could not copy — please copy manually');
+  });
+}
+
+// Close modal on outside click
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('rt-notify-modal');
+  if (modal && modal.style.display === 'flex' && e.target === modal) {
+    closeNotifyModal();
+  }
+});
 
 </script>
 </body>
