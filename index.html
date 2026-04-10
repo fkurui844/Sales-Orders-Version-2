@@ -1245,6 +1245,16 @@ tr.tonnage-detail-row td{padding:0}
   <div id="orders-page">
   <div class="content" style="max-width:960px">
 
+
+    <!-- Today-only notice -->
+    <div id="orders-today-banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-lt);border:1px solid #F5C99A;border-radius:10px;padding:11px 16px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style="font-size:13px;color:var(--accent);font-weight:600">Showing orders for <span id="orders-today-label" style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:800;letter-spacing:.02em"></span></span>
+      </div>
+      <button onclick="switchDashPage('filters')" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;white-space:nowrap">View past dates &#8594; Filter</button>
+    </div>
+
     <!-- Stats (kept for live counts) -->
     <div class="stats-row" id="dash-stats">
       <div class="stat-card"><div class="stat-val" id="ds-orders">—</div><div class="stat-lbl">Orders</div></div>
@@ -4890,9 +4900,15 @@ async function openDashboard() {
   document.getElementById('dash-app').style.display      = 'flex';
   document.getElementById('dash-hdr-name').textContent   = dashUser.name + ' (' + dashUser.payroll + ')';
 
-  // Leave date filters blank so ALL orders are loaded from the database
-  document.getElementById('df-from').value = '';
-  document.getElementById('df-to').value   = '';
+  // Default Orders tab to today only; Filters tab is for past-date exploration
+  const _todayISO = new Date().toISOString().slice(0, 10);
+  document.getElementById('df-from').value = _todayISO;
+  document.getElementById('df-to').value   = _todayISO;
+
+  // Show human-readable date in the Orders banner
+  const _todayFmt = new Date().toLocaleDateString('en-KE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const _lbl = document.getElementById('orders-today-label');
+  if (_lbl) _lbl.textContent = _todayFmt;
 
   await loadDashOrders();
 
@@ -7428,9 +7444,20 @@ function switchDashPage(page) {
   document.getElementById('tab-filters').classList.toggle('active', page === 'filters');
   document.getElementById('tab-fulfil').classList.toggle('active',  page === 'fulfil');
   document.getElementById('tab-tracker').classList.toggle('active', page === 'tracker');
-  // Re-render chart when switching to filters so canvas sizes correctly
-  if (page === 'filters' && typeof renderChart === 'function') {
-    setTimeout(renderChart, 50);
+  // Orders tab always shows today's data only
+  if (page === 'orders') {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    document.getElementById('df-from').value = todayStr;
+    document.getElementById('df-to').value   = todayStr;
+    applyDashFilters();
+  }
+  // Filters tab: clear date locks so user can explore all historical data
+  if (page === 'filters') {
+    document.getElementById('df-from').value = '';
+    document.getElementById('df-to').value   = '';
+    loadDashOrders();
+    // Re-render chart so canvas sizes correctly
+    if (typeof renderChart === 'function') setTimeout(renderChart, 50);
   }
   // Auto-load tracker with today's date on first visit
   if (page === 'tracker' && !_trackerLoaded) {
