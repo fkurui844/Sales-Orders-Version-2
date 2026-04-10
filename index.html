@@ -160,16 +160,32 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 /* ── PRODUCT LIST ── */
 .prod-header{padding:11px 16px;background:var(--bg);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .cat-header{padding:7px 16px;background:#FAF7F4;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
-.prod-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)}
+.prod-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);transition:background .15s}
 .prod-row:last-child{border-bottom:none}
-.prod-name{font-weight:500;font-size:13px;line-height:1.3}
-.prod-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.prod-price{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap;min-width:70px}
-.qty-ctl{display:flex;align-items:center;gap:5px}
-.qty-btn{width:28px;height:28px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;flex-shrink:0}
+.prod-row:hover{background:#FAFAF9}
+.prod-row.has-qty{background:var(--accent-lt);border-left:3px solid var(--accent)}
+.prod-name{font-weight:600;font-size:13px;line-height:1.3}
+.prod-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.prod-price{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text);text-align:right;white-space:nowrap;min-width:80px}
+.qty-ctl{display:flex;align-items:center;gap:6px}
+.qty-btn{width:38px;height:38px;border:1.5px solid var(--border);border-radius:9px;background:#fff;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;flex-shrink:0;font-weight:700}
 .qty-btn:hover{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
-.qty-inp{width:42px;text-align:center;border:1.5px solid var(--border);border-radius:7px;padding:4px;font-family:inherit;font-size:13px;font-weight:600;color:var(--text)}
-.qty-inp:focus{outline:none;border-color:var(--accent)}
+.qty-btn[data-delta="1"]{border-color:var(--accent);color:var(--accent)}
+.qty-btn[data-delta="1"]:hover{background:var(--accent);color:#fff}
+.qty-inp{width:52px;text-align:center;border:1.5px solid var(--border);border-radius:9px;padding:6px 4px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+.qty-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
+/* ── PRODUCT SEARCH BAR ── */
+.prod-search-bar{padding:12px 14px;background:#fff;border-bottom:2px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.prod-search-inp-wrap{flex:1;min-width:160px;position:relative}
+.prod-search-inp-wrap::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238E8880' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;pointer-events:none}
+.prod-search-inp{width:100%;padding:10px 12px 10px 34px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--text);background:#fff;transition:border-color .2s}
+.prod-search-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
+.prod-search-inp::placeholder{color:#bbb}
+.prod-cat-sel{padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;cursor:pointer;min-width:130px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%238E8880'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.prod-cat-sel:focus{outline:none;border-color:var(--accent)}
+.prod-clear-btn{padding:9px 14px;background:none;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s}
+.prod-clear-btn:hover{border-color:#C62828;color:#C62828}
+.prod-count-lbl{padding:6px 14px;font-size:11px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);font-weight:500}
 
 /* ── CART ── */
 .cart-line{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);gap:10px}
@@ -597,12 +613,12 @@ tr.tonnage-detail-row td{padding:0}
 .oh-highlight{background:var(--accent-lt);color:var(--accent);border-radius:2px;padding:0 1px}
 
 /* ── PIECES MODE ── */
-.pcs-toggle-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1.5px solid var(--border);border-radius:7px;background:#fff;cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);transition:all .18s;white-space:nowrap;font-family:inherit;letter-spacing:.03em}
-.pcs-toggle-btn:hover{border-color:#7C3AED;color:#7C3AED;background:#F5F3FF}
-.pcs-toggle-btn.active{background:#7C3AED;border-color:#7C3AED;color:#fff}
+.pcs-toggle-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border:1.5px solid #C4B5FD;border-radius:8px;background:#F5F3FF;cursor:pointer;font-size:11px;font-weight:700;color:#6D28D9;transition:all .18s;white-space:nowrap;font-family:inherit;letter-spacing:.02em}
+.pcs-toggle-btn:hover{border-color:#7C3AED;background:#EDE9FE;color:#5B21B6}
+.pcs-toggle-btn.active{background:#7C3AED;border-color:#7C3AED;color:#fff;box-shadow:0 2px 6px rgba(124,58,237,.3)}
 .pcs-toggle-btn.active:hover{background:#6D28D9;border-color:#6D28D9}
-.pcs-toggle-ico{font-size:13px;line-height:1}
-.pcs-toggle-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.pcs-toggle-ico{font-size:12px;line-height:1}
+.pcs-toggle-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em}
 .pcs-prompt{display:flex;align-items:center;gap:6px;margin-top:2px;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 .pcs-prompt-lbl{font-size:11px;color:var(--muted);white-space:nowrap;font-weight:500}
@@ -966,9 +982,9 @@ tr.tonnage-detail-row td{padding:0}
           🌅 <span>Morning Projection — <strong>Fresh Milk</strong> products only · Factory production order</span>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="prod-header">Select Products to Produce</div>
+          <div class="prod-header" style="font-size:11px;display:flex;align-items:center;gap:6px;padding:12px 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10H3M16 2v4M8 2v4M3 6h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg> SELECT PRODUCTS TO PRODUCE</div>
           <div class="prod-search-bar" id="proj-search-bar" style="display:none">
-            <input class="prod-search-inp" id="proj-prod-search" type="text" placeholder="Search by name or product code…" oninput="filterProjProducts()">
+            <div class="prod-search-inp-wrap"><input class="prod-search-inp" id="proj-prod-search" type="text" placeholder="Search product name or code…" oninput="filterProjProducts()"></div>
             <select class="prod-cat-sel" id="proj-cat-sel" onchange="filterProjProducts()"><option value="">All Categories</option></select>
             <button class="prod-clear-btn" id="proj-clear-btn" onclick="clearProjProductSearch()">✕ Clear</button>
           </div>
@@ -1037,9 +1053,9 @@ tr.tonnage-detail-row td{padding:0}
           🌅 <span>Morning Projection — showing <strong>Fresh Milk</strong> products only</span>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="prod-header">Select Products</div>
+          <div class="prod-header" style="font-size:11px;display:flex;align-items:center;gap:6px;padding:12px 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SELECT PRODUCTS &nbsp;<span style="font-weight:400;color:#bbb">— use search or category to find quickly</span></div>
           <div class="prod-search-bar" id="prod-search-bar" style="display:none">
-            <input class="prod-search-inp" id="prod-search" type="text" placeholder="Search by name or product code…" oninput="filterProducts()">
+            <div class="prod-search-inp-wrap"><input class="prod-search-inp" id="prod-search" type="text" placeholder="Search product name or code…" oninput="filterProducts()"></div>
             <select class="prod-cat-sel" id="prod-cat-sel" onchange="filterProducts()"><option value="">All Categories</option></select>
             <button class="prod-clear-btn" id="prod-clear-btn" onclick="clearProductSearch()">✕ Clear</button>
           </div>
@@ -3042,10 +3058,10 @@ function buildProjProductUI() {
         </div>
       `;
       row.querySelectorAll('.qty-btn').forEach(btn => {
-        btn.onclick = () => updateProjCart(code, pack, price, kg, desc, cat, null, parseInt(btn.dataset.delta));
+        btn.onclick = () => { updateProjCart(code, pack, price, kg, desc, cat, null, parseInt(btn.dataset.delta)); markQtyRows(); };
       });
       row.querySelector('.qty-inp').onchange = function() {
-        updateProjCart(code, pack, price, kg, desc, cat, parseInt(this.value)||0, 0);
+        updateProjCart(code, pack, price, kg, desc, cat, parseInt(this.value)||0, 0); markQtyRows();
       };
       frag.appendChild(row);
       _projProdListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, cat, catHeader: ch, row });
@@ -3054,6 +3070,7 @@ function buildProjProductUI() {
 
   container.innerHTML = '';
   container.appendChild(frag);
+  markQtyRows();
 
   const searchBar = document.getElementById('proj-search-bar');
   const countLbl  = document.getElementById('proj-count-lbl');
@@ -3557,7 +3574,7 @@ function buildProductUI() {
         <button class="pcs-toggle-btn" id="pmtoggle-${safeId}"
           onclick="togglePiecesMode('${code}','${pack}',${piecesPerPack},${price},${kg},'${desc.replace(/'/g,"\'")}','${cat.replace(/'/g,"\'")}',this,${masterPricePerPiece})"
           title="Order in Pieces instead of full ${pack}">
-          <span class="pcs-toggle-ico">🔢</span><span class="pcs-toggle-lbl">Pieces</span>
+          <span class="pcs-toggle-ico">📦</span><span class="pcs-toggle-lbl">Order by Piece</span>
         </button>` : '';
 
       // Inline pcs-per-pack prompt (shown when piecesPerPack not in master data)
@@ -3591,12 +3608,14 @@ function buildProductUI() {
           const pm = _piecesMode[pmKey];
           if (pm) changePiecesQty(code, pack, pm, desc, cat, parseInt(btn.dataset.delta));
           else changeQty(code, pack, price, kg, desc, cat, parseInt(btn.dataset.delta));
+          markQtyRows();
         };
       });
       row.querySelector('.qty-inp').onchange = function() {
         const pm = _piecesMode[pmKey];
         if (pm) setPiecesQty(code, pack, pm, desc, cat, parseInt(this.value)||0);
         else setQty(code, pack, price, kg, desc, cat, parseInt(this.value)||0);
+        markQtyRows();
       };
 
       _prodListData.push({ code, desc: desc.toLowerCase(), pack, price, kg, piecesPerPack, isBulkPack, cat, catHeader: ch, row });
@@ -3605,6 +3624,7 @@ function buildProductUI() {
 
   container.innerHTML = '';
   container.appendChild(frag);
+  markQtyRows();
 
   // Show search bar now that products are loaded
   const searchBar = document.getElementById('prod-search-bar');
@@ -3617,6 +3637,16 @@ function buildProductUI() {
 
 // ── Product search / filter ──────────────────────────────────────────────────
 let _prodFilterTimer = null;
+function markQtyRows() {
+  document.querySelectorAll('.prod-row').forEach(row => {
+    const inp = row.querySelector('.qty-inp');
+    if (inp) {
+      const v = parseInt(inp.value) || 0;
+      row.classList.toggle('has-qty', v > 0);
+    }
+  });
+}
+
 function filterProducts() {
   clearTimeout(_prodFilterTimer);
   _prodFilterTimer = setTimeout(_doFilterProducts, 80);
