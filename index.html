@@ -1267,8 +1267,8 @@ tr.tonnage-detail-row td{padding:0}
     <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">Orders by Salesperson</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">Consolidated totals per salesperson.</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">Orders by Location &amp; Salesperson</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Grouped by location — consolidated totals per salesperson.</div>
         </div>
         <button onclick="exportOrdersSPTable()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1280,13 +1280,14 @@ tr.tonnage-detail-row td{padding:0}
           <thead>
             <tr style="background:var(--bg)">
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Salesperson</th>
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Location</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Orders</th>
               <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Amount (KES)</th>
               <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Total Weight (KG)</th>
             </tr>
           </thead>
           <tbody id="sp-summary-tbody">
-            <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">Loading orders…</td></tr>
+            <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">Loading orders…</td></tr>
           </tbody>
         </table>
       </div>
@@ -5395,43 +5396,79 @@ function renderSPSummaryTable(rows) {
   if (!tbody) return;
 
   if (!rows || !rows.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No orders found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--muted)">No orders found.</td></tr>';
     _spTableData = [];
     return;
   }
 
-  // Consolidate by salesperson only
-  const spMap = {};
+  // ── Group by Location → Salesperson ──────────────────────────────────────
+  const locMap = {};
   rows.forEach(r => {
-    const sp   = r['Salesman']||r['Salesperson']||'';
+    const loc  = ((r['Location']||'').trim()) || 'Unknown Location';
+    const sp   = ((r['Salesman']||r['Salesperson']||'').trim()) || 'Unknown';
     const cust = r['Customer Name']||r['Customer']||'';
     const date = normaliseDate(r['Date']||r['Order Date']||'');
     const key  = date + '||' + sp + '||' + cust;
-    if (!spMap[sp]) spMap[sp] = { sp, orderKeys: new Set(), total: 0, kg: 0 };
-    spMap[sp].orderKeys.add(key);
-    spMap[sp].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
-    spMap[sp].kg    += parseFloat(r['Total (KG)']||0) || 0;
+    if (!locMap[loc]) locMap[loc] = {};
+    if (!locMap[loc][sp]) locMap[loc][sp] = { sp, loc, orderKeys: new Set(), total: 0, kg: 0 };
+    locMap[loc][sp].orderKeys.add(key);
+    locMap[loc][sp].total += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+    locMap[loc][sp].kg    += parseFloat(r['Total (KG)']||0) || 0;
   });
 
-  // Sort by salesperson name
-  const spList = Object.values(spMap).sort((a, b) => a.sp.localeCompare(b.sp));
-  _spTableData = spList;
+  const sortedLocs = Object.keys(locMap).sort();
+  _spTableData = [];
+  sortedLocs.forEach(loc => Object.values(locMap[loc]).forEach(d => _spTableData.push(d)));
 
-  const palette = ['#FFF8F0','#F0F7FF','#F0FFF4','#FFF0F8','#F5F0FF','#FFFFF0','#F0FFFF'];
+  // ── Render rows ───────────────────────────────────────────────────────────
+  const locColors = ['#FFF8F0','#F0F7FF','#F0FFF4','#FFF0F8','#F5F0FF','#FFFFF0','#F0FFFF'];
   const frag = document.createDocumentFragment();
+  let grandTotal = 0, grandKg = 0, grandOrders = 0;
 
-  spList.forEach((o, idx) => {
-    const bgColor = palette[idx % palette.length];
-    const tr = document.createElement('tr');
-    tr.style.background = bgColor;
-    tr.innerHTML = `
-      <td style="padding:13px 14px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px">${o.sp}</td>
-      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${o.orderKeys.size}</td>
-      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--accent)">KES ${o.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:13px;font-weight:600;color:var(--ok)">${o.kg.toFixed(1)} KG</td>
-    `;
-    frag.appendChild(tr);
+  sortedLocs.forEach((loc, locIdx) => {
+    const locBg  = locColors[locIdx % locColors.length];
+    const spList = Object.values(locMap[loc]).sort((a, b) => a.sp.localeCompare(b.sp));
+    const locTotal = spList.reduce((s, o) => s + o.total, 0);
+    const locKg    = spList.reduce((s, o) => s + o.kg, 0);
+    const locOrds  = spList.reduce((s, o) => s + o.orderKeys.size, 0);
+    grandTotal += locTotal; grandKg += locKg; grandOrders += locOrds;
+
+    // Location header row
+    const locTr = document.createElement('tr');
+    locTr.innerHTML = `<td colspan="5" style="padding:9px 14px;background:#1A1714;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase"><span style="opacity:.5;margin-right:7px">&#9679;</span>${loc}<span style="float:right;font-size:11px;font-weight:600;opacity:.65">${locOrds} order${locOrds!==1?'s':''}&nbsp;&nbsp;KES ${locTotal.toLocaleString('en-KE',{maximumFractionDigits:0})}</span></td>`;
+    frag.appendChild(locTr);
+
+    // Salesperson rows
+    spList.forEach(o => {
+      const tr = document.createElement('tr');
+      tr.style.background = locBg;
+      tr.innerHTML = `
+        <td style="padding:11px 14px 11px 26px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px">${o.sp}</td>
+        <td style="padding:11px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:500">${o.loc}</td>
+        <td style="padding:11px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:13px;font-weight:600;color:var(--muted)">${o.orderKeys.size}</td>
+        <td style="padding:11px 14px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--accent)">KES ${o.total.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:11px 14px;border-bottom:1px solid var(--border);text-align:right;font-size:13px;font-weight:600;color:var(--ok)">${o.kg.toFixed(1)} KG</td>`;
+      frag.appendChild(tr);
+    });
+
+    // Location subtotal row
+    const subTr = document.createElement('tr');
+    subTr.innerHTML = `
+      <td colspan="2" style="padding:8px 14px 8px 26px;border-bottom:2px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:${locBg}">${loc} subtotal</td>
+      <td style="padding:8px 14px;border-bottom:2px solid var(--border);text-align:center;font-size:12px;font-weight:700;color:var(--text);background:${locBg}">${locOrds}</td>
+      <td style="padding:8px 14px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;font-weight:800;font-size:13px;color:var(--accent);background:${locBg}">KES ${locTotal.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:8px 14px;border-bottom:2px solid var(--border);text-align:right;font-size:12px;font-weight:700;color:var(--ok);background:${locBg}">${locKg.toFixed(1)} KG</td>`;
+    frag.appendChild(subTr);
   });
+
+  // Grand total row
+  const gtTr = document.createElement('tr');
+  gtTr.innerHTML = `
+    <td colspan="2" style="padding:13px 14px;background:var(--text);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase">Grand Total</td>
+    <td style="padding:13px 14px;background:var(--text);color:#fff;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800">${grandOrders}</td>
+    <td style="padding:13px 14px;background:var(--text);text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--accent)">KES ${grandTotal.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    <td style="padding:13px 14px;background:var(--text);text-align:right;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#6EE7A8">${grandKg.toFixed(1)} KG</td>`;
+  frag.appendChild(gtTr);
 
   tbody.innerHTML = '';
   tbody.appendChild(frag);
@@ -5439,10 +5476,11 @@ function renderSPSummaryTable(rows) {
 
 function exportOrdersSPTable() {
   if (!_spTableData.length) return;
-  const headers = ['Salesperson','Orders','Total Amount (KES)','Total Weight (KG)'];
+  const headers = ['Location','Salesperson','Orders','Total Amount (KES)','Total Weight (KG)'];
   const csvRows = [headers.join(',')];
   _spTableData.forEach(o => {
     csvRows.push([
+      '"' + (o.loc||'').replace(/"/g,'""') + '"',
       '"' + o.sp.replace(/"/g,'""') + '"',
       o.orderKeys.size,
       o.total.toFixed(2),
@@ -5452,7 +5490,7 @@ function exportOrdersSPTable() {
   const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'orders_by_salesperson_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'orders_by_location_salesperson_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }
 
