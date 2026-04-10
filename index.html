@@ -750,6 +750,35 @@ tr.tonnage-detail-row td{padding:0}
   .chart-tab{font-size:10px;padding:7px 4px}
   .ot-grid{grid-template-columns:1fr}
 }
+
+/* ── QUICK-EDIT MODAL (submit screen) ── */
+#qe-modal{position:fixed;inset:0;background:rgba(26,23,20,.6);z-index:600;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+#qe-modal.open{display:flex}
+#qe-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.qe-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:14px auto 0;flex-shrink:0}
+.qe-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.qe-cust-name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;line-height:1.1}
+.qe-cust-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.qe-body{overflow-y:auto;flex:1;padding:0}
+.qe-line{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border)}
+.qe-line:last-child{border-bottom:none}
+.qe-line-info{}
+.qe-line-name{font-weight:600;font-size:13px;line-height:1.3}
+.qe-line-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.qe-line-price{font-size:11px;color:var(--accent);font-weight:600;margin-top:3px}
+.qe-qty-ctl{display:flex;align-items:center;gap:7px}
+.qe-qty-btn{width:38px;height:38px;border:1.5px solid var(--border);border-radius:9px;background:#fff;cursor:pointer;font-size:20px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--text);transition:all .15s;flex-shrink:0}
+.qe-qty-btn:hover{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
+.qe-qty-btn.plus{border-color:var(--accent);color:var(--accent)}
+.qe-qty-btn.plus:hover{background:var(--accent);color:#fff}
+.qe-qty-btn.remove-item{border-color:#FECACA;color:#C62828;background:#FFF5F5}
+.qe-qty-inp{width:52px;text-align:center;border:1.5px solid var(--border);border-radius:9px;padding:6px 4px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+.qe-qty-inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,91,0,.1)}
+.qe-empty-notice{padding:12px 18px;background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;margin:12px 18px;font-size:12px;color:#7A4100;display:flex;align-items:center;gap:8px}
+.qe-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;background:#fff}
+.qe-total-strip{padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;flex-shrink:0}
+.qe-total-lbl{color:var(--muted);font-weight:500}
+.qe-total-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -1091,6 +1120,11 @@ tr.tonnage-detail-row td{padding:0}
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#7A4100">Edit Deadline Approaching</div>
           <div id="edit-deadline-msg" style="font-size:12px;color:#7A4100;margin-top:2px;line-height:1.5"></div>
         </div>
+      </div>
+      <!-- Edit-before-submit hint -->
+      <div style="display:flex;align-items:center;gap:10px;background:#F0FFF4;border:1.5px solid #86EFAC;border-radius:10px;padding:11px 16px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-size:13px;color:#15803D;font-weight:500">Review all orders below. Tap <strong>Edit</strong> on any customer card to adjust quantities before submitting.</span>
       </div>
       <div class="card">
         <div class="card-title"><div class="card-icon">📋</div>Order Summary</div>
@@ -3897,6 +3931,11 @@ function go3() {
   setStep(3);
 }
 
+// renderSubmitStep — called by saveQuickEdit to refresh submit page in place
+function renderSubmitStep() {
+  buildSubmitStep();
+}
+
 // Projection-specific go3
 function projGo3() {
   if (!S.projCart || !S.projCart.length) {
@@ -3938,6 +3977,7 @@ function buildSubmitStep() {
         <div class="co-line-right"><div class="co-line-qty">×${item.qty}</div><div class="co-line-amt">KES ${item.total.toLocaleString()}</div></div>
       </div>`;
     });
+    const coIdx = S.customerOrders.indexOf(co);
     const card = document.createElement('div');
     card.className = 'co-card';
     card.innerHTML = `
@@ -3946,7 +3986,14 @@ function buildSubmitStep() {
           <div class="co-cust-name">${co.customer}</div>
           ${co.custCode?`<div class="co-cust-code">${co.custCode} · ${co.cart.length} line${co.cart.length!==1?'s':''}</div>`:''}
         </div>
-        <div class="co-head-right"><div class="co-total">KES ${totAmt.toLocaleString()}</div></div>
+        <div class="co-head-right" style="gap:6px">
+          <div class="co-total">KES ${totAmt.toLocaleString()}</div>
+          <button class="co-edit-btn" onclick="openQuickEdit(${coIdx})" style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-color:var(--accent);color:var(--accent);background:var(--accent-lt);font-size:12px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="co-del-btn" onclick="deleteFromSubmit(${coIdx})" title="Remove this customer order">🗑</button>
+        </div>
       </div>
       <div class="co-lines">${linesHtml}</div>`;
     custEl.appendChild(card);
@@ -8595,6 +8642,152 @@ document.addEventListener('click', function(e) {
   }
 });
 
+
+// ══════════════════════════════════════════════════════════════════════════
+//  QUICK-EDIT MODAL — edit a customer order directly from the submit screen
+// ══════════════════════════════════════════════════════════════════════════
+let _qeIdx  = -1;    // which customerOrders entry we're editing
+let _qeCart = [];    // deep-copy of that customer's cart for live editing
+
+function openQuickEdit(idx) {
+  _qeIdx  = idx;
+  const co = S.customerOrders[idx];
+  if (!co) return;
+  // Deep-copy cart so we can cancel without side-effects
+  _qeCart = co.cart.map(i => ({ ...i }));
+
+  document.getElementById('qe-cust-name').textContent = co.customer;
+  document.getElementById('qe-cust-sub').textContent  =
+    (co.custCode ? co.custCode + ' · ' : '') + _qeCart.length + ' product' + (_qeCart.length !== 1 ? 's' : '');
+
+  _renderQEBody();
+  document.getElementById('qe-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeQuickEdit() {
+  document.getElementById('qe-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  _qeIdx = -1; _qeCart = [];
+}
+
+function _renderQEBody() {
+  const body = document.getElementById('qe-body');
+  if (!_qeCart.length) {
+    body.innerHTML = '<div class="qe-empty-notice">⚠️ All products removed — cancel or go back to keep the original order.</div>';
+    _updateQETotal();
+    return;
+  }
+  body.innerHTML = '';
+  _qeCart.forEach((item, i) => {
+    const safeId = 'qe-inp-' + i;
+    const div = document.createElement('div');
+    div.className = 'qe-line';
+    div.innerHTML = `
+      <div class="qe-line-info">
+        <div class="qe-line-name">${item.desc}${item.piecesMode ? '<span class="pcs-mode-badge" style="margin-left:5px">PCS</span>' : ''}</div>
+        <div class="qe-line-sub">${item.code} · ${item.pack}</div>
+        <div class="qe-line-price">KES ${(item.price || 0).toLocaleString()} per ${item.piecesMode ? 'piece' : 'unit'}</div>
+      </div>
+      <div class="qe-qty-ctl">
+        <button class="qe-qty-btn remove-item" title="Remove item" onclick="_qeRemove(${i})">🗑</button>
+        <button class="qe-qty-btn" onclick="_qeDelta(${i}, -1)">−</button>
+        <input  class="qe-qty-inp" id="${safeId}" type="number" min="0" value="${item.qty}" onchange="_qeSet(${i}, parseInt(this.value)||0)">
+        <button class="qe-qty-btn plus" onclick="_qeDelta(${i}, 1)">+</button>
+      </div>`;
+    body.appendChild(div);
+  });
+  _updateQETotal();
+}
+
+function _updateQETotal() {
+  const total = _qeCart.reduce((s, i) => s + (i.total || 0), 0);
+  document.getElementById('qe-total').textContent = 'KES ' + total.toLocaleString();
+  const sub = document.getElementById('qe-cust-sub');
+  if (sub) sub.textContent =
+    (S.customerOrders[_qeIdx]?.custCode ? S.customerOrders[_qeIdx].custCode + ' · ' : '') +
+    _qeCart.length + ' product' + (_qeCart.length !== 1 ? 's' : '');
+}
+
+function _qeDelta(i, delta) {
+  const item = _qeCart[i];
+  if (!item) return;
+  const newQty = Math.max(0, (item.qty || 0) + delta);
+  _qeSet(i, newQty);
+  const inp = document.getElementById('qe-inp-' + i);
+  if (inp) inp.value = newQty;
+}
+
+function _qeSet(i, qty) {
+  const item = _qeCart[i];
+  if (!item) return;
+  if (qty <= 0) { _qeRemove(i); return; }
+  item.qty   = qty;
+  item.total = Math.round(qty * (item.price || 0) * 100) / 100;
+  if (item.piecesMode && item.pcsPerPack) {
+    item.totalKg = (qty / item.pcsPerPack) * (item.kgPerPcs || 0) * item.pcsPerPack;
+  } else {
+    item.totalKg = qty * (item.kg || 0);
+  }
+  _updateQETotal();
+}
+
+function _qeRemove(i) {
+  _qeCart.splice(i, 1);
+  _renderQEBody();
+}
+
+function saveQuickEdit() {
+  if (_qeIdx < 0) return;
+  if (!_qeCart.length) {
+    // All items removed — confirm before deleting the whole customer order
+    if (!confirm('All products have been removed. This will delete ' + S.customerOrders[_qeIdx].customer + '\'s order entirely. Continue?')) return;
+    S.customerOrders.splice(_qeIdx, 1);
+  } else {
+    S.customerOrders[_qeIdx] = { ...S.customerOrders[_qeIdx], cart: _qeCart.map(i => ({ ...i })) };
+  }
+  scheduleSave();
+  closeQuickEdit();
+  renderSubmitStep(); // refresh the submit screen
+  toast('✅ Order updated');
+}
+
+function deleteFromSubmit(idx) {
+  const co = S.customerOrders[idx];
+  if (!co) return;
+  if (!confirm('Remove ' + co.customer + '\'s order?')) return;
+  S.customerOrders.splice(idx, 1);
+  scheduleSave();
+  renderSubmitStep();
+  toast('Order removed');
+}
+
 </script>
+
+  <!-- ── QUICK-EDIT MODAL (edit customer order from submit screen) ── -->
+  <div id="qe-modal" onclick="if(event.target===this)closeQuickEdit()">
+    <div id="qe-sheet">
+      <div class="qe-handle"></div>
+      <div class="qe-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="qe-cust-name" id="qe-cust-name">Customer</div>
+            <div class="qe-cust-sub" id="qe-cust-sub"></div>
+          </div>
+          <button onclick="closeQuickEdit()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">✕</button>
+        </div>
+      </div>
+      <div class="qe-total-strip">
+        <span class="qe-total-lbl">Order Total</span>
+        <span class="qe-total-val" id="qe-total">KES 0</span>
+      </div>
+      <div class="qe-body" id="qe-body"></div>
+      <div class="qe-footer">
+        <button class="btn-ghost" style="flex:0 0 auto;padding:12px 18px;font-size:15px" onclick="closeQuickEdit()">Cancel</button>
+        <button class="btn-accent" style="flex:1;font-size:17px" onclick="saveQuickEdit()">Save Changes ✓</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
