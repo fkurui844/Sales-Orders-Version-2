@@ -1585,27 +1585,37 @@ tr.tonnage-detail-row td{padding:0}
         <div id="pvo-kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid var(--border)"></div>
       </div>
 
-      <!-- Controls bar: date selector + view toggle -->
-      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Compare Date</span>
-          <input type="date" id="pvo-date-pick" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text)" oninput="_pvoRefresh()">
-          <button onclick="document.getElementById('pvo-date-pick').value='';_pvoRefresh()" style="font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit">All Dates</button>
-          <span id="pvo-date-hint" style="font-size:11px;color:var(--muted)">Leave blank to aggregate all dates</span>
-        </div>
-        <!-- View toggle -->
+      <!-- Controls bar: view toggle only -->
+      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:flex-end">
         <div style="display:flex;gap:0;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;flex-shrink:0">
           <button id="pvo-view-product" onclick="setPvoView('product')"
-            style="padding:7px 14px;background:var(--text);color:#fff;border:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s">
+            style="padding:7px 16px;background:var(--text);color:#fff;border:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             Product View
           </button>
           <button id="pvo-view-sp" onclick="setPvoView('sp')"
-            style="padding:7px 14px;background:#fff;color:var(--muted);border:none;border-left:1.5px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s">
+            style="padding:7px 16px;background:#fff;color:var(--muted);border:none;border-left:1.5px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
             Salesperson View
           </button>
+        </div>
+      </div>
+
+      <!-- SP search bar — shown only in Salesperson View -->
+      <div id="pvo-sp-search-bar" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px;position:relative">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="pvo-sp-search-inp" type="text"
+              placeholder="Search salesperson by name or payroll number…"
+              oninput="_pvospFilter()"
+              style="width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--text);background:#fff;transition:border-color .2s;box-sizing:border-box">
+          </div>
+          <button id="pvo-sp-search-clear" onclick="_pvospClear()"
+            style="display:none;padding:8px 14px;background:none;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s">
+            ✕ Clear
+          </button>
+          <div id="pvo-sp-search-count" style="font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap"></div>
         </div>
       </div>
 
@@ -5764,7 +5774,7 @@ function renderProjVsOrders() {
   const kpiStrip  = document.getElementById('pvo-kpi-strip');
   if (!container) return;
 
-  const dateFilter = (document.getElementById('pvo-date-pick') || {}).value || '';
+  const dateFilter = ''; // date picker removed
 
   const rows = filteredOrders;
   if (!rows || !rows.length) {
@@ -8787,10 +8797,11 @@ let _pvoView = 'product'; // 'product' | 'sp'
 
 function setPvoView(v) {
   _pvoView = v;
-  const prodBtn = document.getElementById('pvo-view-product');
-  const spBtn   = document.getElementById('pvo-view-sp');
-  const prodCon = document.getElementById('pvo-dates-container');
-  const spCon   = document.getElementById('pvo-sp-container');
+  const prodBtn    = document.getElementById('pvo-view-product');
+  const spBtn      = document.getElementById('pvo-view-sp');
+  const prodCon    = document.getElementById('pvo-dates-container');
+  const spCon      = document.getElementById('pvo-sp-container');
+  const spSearchBar= document.getElementById('pvo-sp-search-bar');
   if (prodBtn) {
     prodBtn.style.background = v === 'product' ? 'var(--text)' : '#fff';
     prodBtn.style.color      = v === 'product' ? '#fff' : 'var(--muted)';
@@ -8799,9 +8810,10 @@ function setPvoView(v) {
     spBtn.style.background = v === 'sp' ? 'var(--text)' : '#fff';
     spBtn.style.color      = v === 'sp' ? '#fff' : 'var(--muted)';
   }
-  if (prodCon) prodCon.style.display = v === 'product' ? '' : 'none';
-  if (spCon)   spCon.style.display   = v === 'sp' ? '' : 'none';
-  if (v === 'sp') renderProjVsOrdersBySP();
+  if (prodCon)     prodCon.style.display    = v === 'product' ? '' : 'none';
+  if (spCon)       spCon.style.display      = v === 'sp' ? '' : 'none';
+  if (spSearchBar) spSearchBar.style.display = v === 'sp' ? '' : 'none';
+  if (v === 'sp') { _pvospClear(); renderProjVsOrdersBySP(); }
   else renderProjVsOrders();
 }
 
@@ -8810,11 +8822,56 @@ function _pvoRefresh() {
   else renderProjVsOrders();
 }
 
+// ── SP search helpers ────────────────────────────────────────────────────────
+let _pvoAllSPCards = []; // { el, name, payroll } — populated after render
+
+function _pvospFilter() {
+  const q = (document.getElementById('pvo-sp-search-inp')?.value || '').toLowerCase().trim();
+  const clearBtn = document.getElementById('pvo-sp-search-clear');
+  const countEl  = document.getElementById('pvo-sp-search-count');
+  if (clearBtn) clearBtn.style.display = q ? 'inline-block' : 'none';
+
+  let visible = 0;
+  // Each "card" inside pvo-sp-container is a date section div.
+  // Inside each date section, the body holds SP cards.
+  // We tag each SP card with data-sp-name and data-sp-payroll at render time.
+  document.querySelectorAll('#pvo-sp-container [data-sp-card]').forEach(card => {
+    const name    = (card.dataset.spName    || '').toLowerCase();
+    const payroll = (card.dataset.spPayroll || '').toLowerCase();
+    const show    = !q || name.includes(q) || payroll.includes(q);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // Show/hide date section headers if ALL their cards are hidden
+  document.querySelectorAll('#pvo-sp-container [data-date-section]').forEach(section => {
+    const cards = section.querySelectorAll('[data-sp-card]');
+    const anyVisible = [...cards].some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+
+  if (countEl) {
+    countEl.textContent = q ? `${visible} salesperson${visible !== 1 ? 's' : ''} found` : '';
+  }
+}
+
+function _pvospClear() {
+  const inp = document.getElementById('pvo-sp-search-inp');
+  const clearBtn = document.getElementById('pvo-sp-search-clear');
+  const countEl  = document.getElementById('pvo-sp-search-count');
+  if (inp)      inp.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (countEl)  countEl.textContent = '';
+  // Re-show all
+  document.querySelectorAll('#pvo-sp-container [data-sp-card]').forEach(c => c.style.display = '');
+  document.querySelectorAll('#pvo-sp-container [data-date-section]').forEach(s => s.style.display = '');
+}
+
 function renderProjVsOrdersBySP() {
   const container = document.getElementById('pvo-sp-container');
   if (!container) return;
 
-  const dateFilter = (document.getElementById('pvo-date-pick') || {}).value || '';
+  const dateFilter = ''; // date picker removed
   const rows = filteredOrders;
 
   if (!rows || !rows.length) {
@@ -8877,6 +8934,7 @@ function renderProjVsOrdersBySP() {
     // ── Date section wrapper ─────────────────────────────────────────────
     const section = document.createElement('div');
     section.style.cssText = 'background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px';
+    section.dataset.dateSection = date;
 
     // Date header
     const hdr = document.createElement('div');
@@ -8907,8 +8965,19 @@ function renderProjVsOrdersBySP() {
       const varPct = totalProjKg > 0 ? ((varKg/totalProjKg)*100) : null;
       const varColor = varKg > 0 ? '#C45B00' : varKg < 0 ? '#C0392B' : '#1B6B3A';
 
+      // Resolve payroll number for this SP from source rows
+      const _spPayroll = (() => {
+        const match = rows.find(r => {
+          const rSP = (r['Salesman']||r['Salesperson']||'').trim();
+          return rSP === sp && (r['Payroll']||r['Payroll No']||r['Payroll Number']||'');
+        });
+        return match ? (match['Payroll']||match['Payroll No']||match['Payroll Number']||'') : '';
+      })();
       const spCard = document.createElement('div');
       spCard.style.cssText = 'border-bottom:2px solid var(--border)' + (spIdx === allSPs.length-1 ? ';border-bottom:none' : '');
+      spCard.dataset.spCard    = '1';
+      spCard.dataset.spName    = sp;
+      spCard.dataset.spPayroll = _spPayroll;
 
       // SP header row
       const spHdr = document.createElement('div');
@@ -8918,7 +8987,7 @@ function renderProjVsOrdersBySP() {
           <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-lt);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--accent);flex-shrink:0">${sp.charAt(0).toUpperCase()}</div>
           <div>
             <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800">${sp}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:1px">${allCodes.length} product${allCodes.length!==1?'s':''}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1px">${_spPayroll ? '<span style="font-family:monospace;font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-right:5px">'+_spPayroll+'</span>' : ''}${allCodes.length} product${allCodes.length!==1?'s':''}</div>
           </div>
         </div>
         <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
