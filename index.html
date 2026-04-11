@@ -982,7 +982,7 @@ tr.tonnage-detail-row td{padding:0}
             <div class="ot-card sel" id="ot-proj" onclick="pickOT('projection')">
               <div class="ot-ico">🌅</div>
               <div class="ot-name">Morning Projection</div>
-              <div class="ot-desc">Fresh Milk only · 8AM–2PM</div>
+              <div class="ot-desc">All products · Quantity forecast · 8AM–2PM</div>
               <div id="proj-time-badge" style="margin-top:7px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:99px;display:inline-block"></div>
             </div>
             <div class="ot-card" id="ot-full" onclick="pickOT('full')">
@@ -1008,10 +1008,10 @@ tr.tonnage-detail-row td{padding:0}
     <div id="step2-proj" style="display:none">
       <div class="content">
         <div class="banner" style="display:flex">
-          🌅 <span>Morning Projection — <strong>Fresh Milk</strong> products only · Factory production order</span>
+          🌅 <span>Morning Projection — <strong>All products</strong> · Quantity forecast for the day</span>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <div class="prod-header" style="font-size:11px;display:flex;align-items:center;gap:6px;padding:12px 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10H3M16 2v4M8 2v4M3 6h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg> SELECT PRODUCTS TO PRODUCE</div>
+          <div class="prod-header" style="font-size:11px;display:flex;align-items:center;gap:6px;padding:12px 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10H3M16 2v4M8 2v4M3 6h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg> SELECT PRODUCTS TO PROJECT &nbsp;<span style="font-weight:400;color:#bbb">— all products available</span></div>
           <div class="prod-search-bar" id="proj-search-bar" style="display:none">
             <div class="prod-search-inp-wrap"><input class="prod-search-inp" id="proj-prod-search" type="text" placeholder="Search product name or code…" oninput="filterProjProducts()"></div>
             <select class="prod-cat-sel" id="proj-cat-sel" onchange="filterProjProducts()"><option value="">All Categories</option></select>
@@ -1079,7 +1079,7 @@ tr.tonnage-detail-row td{padding:0}
           </div>
         </div>
         <div class="banner" id="filter-banner" style="display:none">
-          🌅 <span>Morning Projection — showing <strong>Fresh Milk</strong> products only</span>
+          🌅 <span>Morning Projection — showing projected quantities for today</span>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div class="prod-header" style="font-size:11px;display:flex;align-items:center;gap:6px;padding:12px 16px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> SELECT PRODUCTS &nbsp;<span style="font-weight:400;color:#bbb">— use search or category to find quickly</span></div>
@@ -1565,7 +1565,7 @@ tr.tonnage-detail-row td{padding:0}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg);flex-wrap:wrap;gap:10px">
           <div>
             <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em">🌅 Morning Projection vs Full Orders</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">Compares Fresh Milk projected quantities against actual Full Order quantities per product code</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Compares projected quantities across all products against actual Full Order quantities per salesperson</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <!-- Legend -->
@@ -3054,19 +3054,16 @@ function buildProjProductUI() {
   const ppk  = findKey(p0, ['Pieces Per Pack','Pieces Per Crate','Pieces Per Tray','Pieces Per Carton','Pcs Per Pack','Pcs Per Crate','Pcs Per Tray','Pcs Per Carton','Units Per Pack','Units Per Crate','Units Per Tray','Units Per Carton','Pcs/Pack','Pcs/Crate','Pcs/Tray','Pcs/Carton','PCS PER PACK']);
   const pppk = findKey(p0, ['Price Per Piece','Price Per Piece (KES)','Price/Piece','Price/Pc','Piece Price','PricePerPiece','Piece Rate','Unit Piece Price']);
 
-  // Fresh milk only
-  let list = prods.filter(p => {
-    const cat = (p[catk]||'').toLowerCase();
-    return cat.includes('fresh') || cat.includes('milk');
-  });
+  // All products — no category restriction
+  const list = prods.filter(p => (p[ck]||'').trim()); // must have a product code
 
   if (!list.length) {
-    container.innerHTML = '<div style="padding:22px;text-align:center;color:var(--muted)">No Fresh Milk products found in master data.</div>';
+    container.innerHTML = '<div style="padding:22px;text-align:center;color:var(--muted)">No products found in master data.</div>';
     return;
   }
 
   const groups = {};
-  list.forEach(p => { const cat = p[catk]||'Fresh Milk'; (groups[cat]=groups[cat]||[]).push(p); });
+  list.forEach(p => { const cat = p[catk]||'General'; (groups[cat]=groups[cat]||[]).push(p); });
 
   const catSel = document.getElementById('proj-cat-sel');
   if (catSel) {
@@ -3258,7 +3255,7 @@ function buildProjSubmitStep() {
 
   // Product totals table
   const catMap = {};
-  cart.forEach(item => { (catMap[item.cat||'Fresh Milk']=catMap[item.cat||'Fresh Milk']||[]).push(item); });
+  cart.forEach(item => { (catMap[item.cat||'General']=catMap[item.cat||'General']||[]).push(item); });
   let tbl = '<thead><tr><th>Product</th><th>Pack</th><th style="text-align:center">Qty</th><th>Total (KES)</th></tr></thead><tbody>';
   Object.entries(catMap).forEach(([cat, prods]) => {
     tbl += `<tr class="summary-cat-row"><td colspan="4">${cat}</td></tr>`;
