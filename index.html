@@ -1693,6 +1693,44 @@ tr.tonnage-detail-row td{padding:0}
         </div>
       </div>
 
+      <!-- ── Order Fulfilment filters ── -->
+      <div id="fulfil-filter-bar" style="display:none;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filter Orders for Matching
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">From Date</label>
+            <input type="date" id="ff-from" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;box-sizing:border-box" onchange="_ffApply()">
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">To Date</label>
+            <input type="date" id="ff-to" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;box-sizing:border-box" onchange="_ffApply()">
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Salesperson</label>
+            <select id="ff-sp" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath d=%22M6 8L1 3h10z%22 fill=%22%238E8880%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" onchange="_ffApply()">
+              <option value="">All Salespeople</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Route</label>
+            <select id="ff-route" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22%3E%3Cpath d=%22M6 8L1 3h10z%22 fill=%22%238E8880%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;padding-right:28px" onchange="_ffApply()">
+              <option value="">All Routes</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;padding-bottom:1px">
+            <button onclick="_ffApply()" style="padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;white-space:nowrap">Apply</button>
+            <button onclick="_ffClear()" style="padding:9px 14px;background:none;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap">Clear</button>
+          </div>
+        </div>
+        <div id="ff-active-badge" style="display:none;margin-top:10px;padding:7px 12px;background:var(--accent-lt);border:1px solid var(--accent);border-radius:8px;font-size:12px;color:var(--accent);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span id="ff-active-text"></span>
+          <span id="ff-order-count" style="font-size:11px;opacity:.75"></span>
+        </div>
+      </div>
+
       <div id="fulfil-results" style="display:none">
 
         <div class="fulfil-kpi-row">
@@ -5387,6 +5425,7 @@ function _doApplyDashFilters() {
   // Re-run fulfilment match if SAP data is already uploaded, so Ordered (KES)
   // always reflects the currently filtered salesperson / date / route orders
   if (typeof _fulfilSapData !== 'undefined' && _fulfilSapData.length) {
+    _ffPopulateDropdowns(); // keep SP/route dropdowns in sync with filter changes
     runFulfilMatch();
   }
 }
@@ -7656,7 +7695,8 @@ function handleFulfilFile(file) {
 
     document.getElementById('fulfil-empty-state').style.display = 'none';
 
-    runFulfilMatch();
+    _ffShowFilterBar();   // show filter bar and auto-detect SAP period dates
+    // _ffApply() inside _ffShowFilterBar triggers the match via _runFulfilMatchWith
   };
   reader.readAsText(file, 'utf-8');
 }
@@ -7664,12 +7704,20 @@ function handleFulfilFile(file) {
 function clearFulfilFile() {
   _fulfilSapData    = [];
   _fulfilMatched    = [];
+  _ffFilteredRows   = [];
   document.getElementById('fulfil-drop-zone').style.display   = '';
   document.getElementById('fulfil-file-tag').style.display    = 'none';
   document.getElementById('fulfil-period').style.display      = 'none';
   document.getElementById('fulfil-results').style.display     = 'none';
+  document.getElementById('fulfil-filter-bar').style.display  = 'none';
   document.getElementById('fulfil-empty-state').style.display = '';
   document.getElementById('fulfil-file-input').value          = '';
+  ['ff-from','ff-to','ff-sp','ff-route'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const badge = document.getElementById('ff-active-badge');
+  if (badge) badge.style.display = 'none';
 }
 
 // ── SAP text parser ──────────────────────────────────────────────────────
@@ -9108,6 +9156,155 @@ function renderProjVsOrdersBySP() {
       if (arrow) arrow.style.transform = isHidden ? '' : 'rotate(-90deg)';
     });
   });
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ORDER FULFILMENT — DATE / SP / ROUTE FILTERS
+// ══════════════════════════════════════════════════════════════════════════
+let _ffFilteredRows = []; // orders scoped to the filter selections
+
+function _ffShowFilterBar() {
+  const bar = document.getElementById('fulfil-filter-bar');
+  if (bar) bar.style.display = '';
+  _ffPopulateDropdowns();
+  // Auto-detect SAP period dates and pre-fill if blank
+  const fromEl = document.getElementById('ff-from');
+  const toEl   = document.getElementById('ff-to');
+  if (fromEl && toEl && !fromEl.value && !toEl.value) {
+    // Try to read from SAP period text e.g. "11.04.2026 to 00.00.0000"
+    const periodTxt = document.getElementById('fulfil-period-txt')?.textContent || '';
+    const dateMatch = periodTxt.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    if (dateMatch) {
+      const iso = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+      fromEl.value = iso;
+      toEl.value   = iso;
+    } else {
+      // Fall back to today
+      const today = new Date().toISOString().slice(0, 10);
+      fromEl.value = today;
+      toEl.value   = today;
+    }
+    _ffApply();
+  }
+}
+
+function _ffPopulateDropdowns() {
+  const rows = allOrders || [];
+  // SP dropdown
+  const spSel = document.getElementById('ff-sp');
+  if (spSel) {
+    const curSP = spSel.value;
+    const sps = [...new Set(rows.map(r => (r['Salesman']||r['Salesperson']||'').trim()).filter(Boolean))].sort();
+    spSel.innerHTML = '<option value="">All Salespeople</option>';
+    sps.forEach(s => { const o = document.createElement('option'); o.value = o.textContent = s; spSel.appendChild(o); });
+    spSel.value = curSP;
+  }
+  // Route dropdown
+  const rtSel = document.getElementById('ff-route');
+  if (rtSel) {
+    const curRt = rtSel.value;
+    const routes = [...new Set(rows.map(r => (r['Route']||'').trim()).filter(Boolean))].sort();
+    rtSel.innerHTML = '<option value="">All Routes</option>';
+    routes.forEach(r => { const o = document.createElement('option'); o.value = o.textContent = r; rtSel.appendChild(o); });
+    rtSel.value = curRt;
+  }
+}
+
+function _ffApply() {
+  const from  = (document.getElementById('ff-from')?.value  || '').trim();
+  const to    = (document.getElementById('ff-to')?.value    || '').trim();
+  const sp    = (document.getElementById('ff-sp')?.value    || '').trim().toLowerCase();
+  const route = (document.getElementById('ff-route')?.value || '').trim().toLowerCase();
+
+  const rows  = allOrders || [];
+  _ffFilteredRows = rows.filter(r => {
+    const rDate  = normaliseDate(r['Date']||r['Order Date']||'');
+    const rSP    = (r['Salesman']||r['Salesperson']||'').trim().toLowerCase();
+    const rRoute = (r['Route']||'').trim().toLowerCase();
+    return (!from  || rDate  >= from)
+        && (!to    || rDate  <= to)
+        && (!sp    || rSP    === sp)
+        && (!route || rRoute === route);
+  });
+
+  // Update active badge
+  const badge   = document.getElementById('ff-active-badge');
+  const badgeTxt = document.getElementById('ff-active-text');
+  const countEl  = document.getElementById('ff-order-count');
+  const parts = [];
+  if (from && to && from === to) parts.push(fmtDate(from));
+  else { if (from) parts.push('From ' + fmtDate(from)); if (to) parts.push('To ' + fmtDate(to)); }
+  if (sp)    parts.push(document.getElementById('ff-sp')?.options[document.getElementById('ff-sp').selectedIndex]?.text || sp);
+  if (route) parts.push(document.getElementById('ff-route')?.options[document.getElementById('ff-route').selectedIndex]?.text || route);
+
+  // Count unique orders
+  const orderKeys = new Set(_ffFilteredRows.map(r => normaliseDate(r['Date']||r['Order Date']||'') + '||' + (r['Salesman']||'') + '||' + (r['Customer Name']||r['Customer']||'')));
+
+  if (badge && badgeTxt && countEl) {
+    if (parts.length) {
+      badge.style.display = 'flex';
+      badgeTxt.textContent = parts.join(' · ');
+      countEl.textContent  = orderKeys.size + ' order' + (orderKeys.size !== 1 ? 's' : '') + ' · ' + _ffFilteredRows.length + ' line' + (_ffFilteredRows.length !== 1 ? 's' : '');
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Re-run match with filtered rows
+  _runFulfilMatchWith(_ffFilteredRows);
+}
+
+function _ffClear() {
+  ['ff-from','ff-to','ff-sp','ff-route'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const badge = document.getElementById('ff-active-badge');
+  if (badge) badge.style.display = 'none';
+  _ffFilteredRows = allOrders || [];
+  _runFulfilMatchWith(_ffFilteredRows);
+}
+
+// Variant of runFulfilMatch that accepts an explicit rows array
+async function _runFulfilMatchWith(sourceRows) {
+  showLoad('Matching orders…');
+  try {
+    const ordersByCust = {};
+    sourceRows.forEach(r => {
+      const custId   = (r['Customer Code'] || r['CustomerCode'] || '').trim().replace(/^0+/, '');
+      const custName = (r['Customer Name'] || r['Customer']     || '').trim();
+      const key      = custId || custName.toLowerCase();
+      if (!key) return;
+      const val  = parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+      const code = (r['Product Code'] || '').trim();
+      const qty  = parseFloat(r['Qty'] || 0) || 0;
+      if (!ordersByCust[key]) ordersByCust[key] = { custId, custName, ordered: 0, prodMap: {} };
+      ordersByCust[key].ordered += val;
+      if (code) ordersByCust[key].prodMap[code] = (ordersByCust[key].prodMap[code] || 0) + qty;
+    });
+
+    const matched = [];
+    _fulfilSapData.forEach(sap => {
+      const normId  = (sap.id || '').replace(/^0+/, '');
+      const order   = ordersByCust[normId] || ordersByCust[sap.name.toLowerCase()] || null;
+      const ordered = order ? order.ordered : 0;
+      const sales   = sap.totalSales;
+      const rate    = (ordered > 0 && sales >= 0) ? Math.min(sales / ordered, 1) : -1;
+      matched.push({ id: sap.id, name: sap.name, ordered, sales, rate, products: sap.products, hasOrder: !!order });
+    });
+
+    _fulfilMatched = matched;
+    _fulfilPage    = 1;
+    renderFulfilSummary();
+    renderFulfilTable();
+    document.getElementById('fulfil-results').style.display = '';
+  } catch (err) {
+    console.error('Fulfil match error', err);
+    toast('Error matching orders: ' + err.message);
+  } finally {
+    hideLoad();
+  }
 }
 
 </script>
