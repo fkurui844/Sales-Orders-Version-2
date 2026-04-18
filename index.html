@@ -8618,7 +8618,10 @@ async function loadMyOrdersToday() {
   const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
   const myPay  = (S.user[pk] || '').trim().toLowerCase();
-  const today  = S.orderDate || new Date().toISOString().slice(0, 10);
+  const _n2   = new Date();
+  const today  = S.orderDate || (_n2.getFullYear() + '-'
+    + String(_n2.getMonth() + 1).padStart(2, '0') + '-'
+    + String(_n2.getDate()).padStart(2, '0'));
 
   const panel = document.getElementById('my-orders-today');
   if (!panel) return;
@@ -8631,16 +8634,19 @@ async function loadMyOrdersToday() {
   const seenIds  = new Set();
 
   function _isMine(o) {
-    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
-    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
-    if (myName && oName === myName) return true;
-    if (myPay  && oPay  === myPay)  return true;
+    const oName = (o.salesman || o.Salesman || o.salesperson || o.Salesperson || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || o.payrollNo  || o.PayrollNo  || '').trim().toLowerCase();
+    if (myName && oName && oName === myName) return true;
+    if (myPay  && oPay  && oPay  === myPay)  return true;
+    if (myName && oName && oName.includes(myName)) return true;
+    if (myName && oName && myName.includes(oName) && oName.length > 3) return true;
     return false;
   }
 
   function _processRec(o) {
     if (!_isMine(o)) return;
-    if ((o.date || '').trim() !== today) return;
+    const d = (o.date || '').trim();
+    if (d !== today && !d.startsWith(today)) return;
     const isProjection = (o.orderType || '').toLowerCase().includes('projection');
     let items = o.items;
     if (!items && o.itemsJson) {
@@ -9853,8 +9859,12 @@ function openTodayOrderView() {
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
-  // Set date label
-  const today = S.orderDate || new Date().toISOString().slice(0, 10);
+  // Set date label — use local date (not UTC) to avoid off-by-one after 9 PM in Nairobi
+  const _n = new Date();
+  const localToday = _n.getFullYear() + '-'
+    + String(_n.getMonth() + 1).padStart(2, '0') + '-'
+    + String(_n.getDate()).padStart(2, '0');
+  const today = S.orderDate || localToday;
   const dateEl = document.getElementById('tov-date-lbl');
   if (dateEl) dateEl.textContent = fmtDate(today);
 
@@ -9900,76 +9910,67 @@ async function _loadTodayOrdersForView() {
     return d === today || d.startsWith(today);
   }
 
-  try {
-    const [queueSnap, ordersSnap] = await Promise.all([
-      db.ref('/queue').once('value'),
-      db.ref('/orders').orderByChild('date').equalTo(today).once('value')
-        .catch(() => db.ref('/orders').once('value'))
-    ]);
+  const projOrders = [];
+  const fullOrders = [];
+  const seenIds    = new Set();
 
-    const projOrders = [];
-    const fullOrders = [];
-    const seenIds    = new Set();
-
-    function _processRec(o) {
-      if (!_isMine(o)) return;
-      if (!_isToday(o)) return;
-      let items = o.items;
-      if (!items && o.itemsJson) {
-        try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
-      }
-      if (!Array.isArray(items) || !items.length) return;
-      if ((o.orderType || '').toLowerCase().includes('projection')) {
-        projOrders.push(...items);
-      } else {
-        fullOrders.push({
-          customer:  o.customer     || 'Unknown Customer',
-          custCode:  o.customerCode || '',
-          timestamp: o.timestamp    || '',
-          route:     o.route        || '',
-          orderId:   o.orderId      || '',
-          items
-        });
-      }
+  function _processRec(o) {
+    if (!_isMine(o)) return;
+    if (!_isToday(o)) return;
+    let items = o.items;
+    if (!items && o.itemsJson) {
+      try { items = JSON.parse(o.itemsJson); } catch(ex) { items = []; }
     }
-
-    if (queueSnap && queueSnap.exists()) {
-      queueSnap.forEach(child => {
-        const o = child.val();
-        if (!o) return;
-        if (o.orderId) seenIds.add(o.orderId);
-        _processRec(o);
+    if (!Array.isArray(items) || !items.length) return;
+    if ((o.orderType || '').toLowerCase().includes('projection')) {
+      projOrders.push(...items);
+    } else {
+      fullOrders.push({
+        customer:  o.customer     || 'Unknown Customer',
+        custCode:  o.customerCode || '',
+        timestamp: o.timestamp    || '',
+        route:     o.route        || '',
+        orderId:   o.orderId      || '',
+        items
       });
     }
-
-    if (ordersSnap && ordersSnap.exists()) {
-      ordersSnap.forEach(child => {
-        const o = child.val();
-        if (!o) return;
-        if (o.orderId && seenIds.has(o.orderId)) return;
-        _processRec(o);
-      });
-    }
-
-    document.getElementById('tov-loading').style.display = 'none';
-
-    if (!projOrders.length && !fullOrders.length) {
-      document.getElementById('tov-empty').style.display = 'block';
-      return;
-    }
-
-    _renderTodayOrderView(projOrders, fullOrders, today);
-
-  } catch(e) {
-    document.getElementById('tov-loading').style.display = 'none';
-    document.getElementById('tov-body').innerHTML =
-      '<div style="padding:40px 20px;text-align:center">' +
-      '<div style="font-size:36px;margin-bottom:12px">📡</div>' +
-      '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">Connection Error</div>' +
-      '<div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px">Unable to load your orders.<br>Please check your connection and try again.</div>' +
-      '<button onclick="_loadTodayOrdersForView()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;letter-spacing:.05em;cursor:pointer;text-transform:uppercase">&#8635; Retry</button>' +
-      '</div>';
   }
+
+  // Read queue and orders independently so one failure doesn't block the other
+  let queueSnap = null, ordersSnap = null;
+  try { queueSnap = await db.ref('/queue').once('value'); } catch(e) {}
+  try {
+    ordersSnap = await db.ref('/orders').orderByChild('date').equalTo(today).once('value');
+  } catch(e) {
+    try { ordersSnap = await db.ref('/orders').once('value'); } catch(ex) {}
+  }
+
+  if (queueSnap && queueSnap.exists()) {
+    queueSnap.forEach(child => {
+      const o = child.val();
+      if (!o) return;
+      if (o.orderId) seenIds.add(o.orderId);
+      _processRec(o);
+    });
+  }
+
+  if (ordersSnap && ordersSnap.exists()) {
+    ordersSnap.forEach(child => {
+      const o = child.val();
+      if (!o) return;
+      if (o.orderId && seenIds.has(o.orderId)) return;
+      _processRec(o);
+    });
+  }
+
+  document.getElementById('tov-loading').style.display = 'none';
+
+  if (!projOrders.length && !fullOrders.length) {
+    document.getElementById('tov-empty').style.display = 'block';
+    return;
+  }
+
+  _renderTodayOrderView(projOrders, fullOrders, today);
 }
 
 function _renderTodayOrderView(projItems, fullOrders, today) {
