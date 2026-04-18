@@ -9647,7 +9647,9 @@ function _renderTodayOrderView(projItems, fullOrders, today) {
 async function loadTodayStatus() {
   if (!S.user) return;
   const nk     = findKey(S.user, NAME_KEYS);
+  const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
+  const myPay  = (S.user[pk] || '').trim().toLowerCase();
   const today  = new Date().toISOString().slice(0, 10);
 
   const card    = document.getElementById('ts-card');
@@ -9664,40 +9666,85 @@ async function loadTodayStatus() {
   let projSummary   = { items: 0, amt: 0, kg: 0, time: '' };
   let fullSummary   = { customers: 0, items: 0, amt: 0, kg: 0, time: '' };
 
+  // Helper: check if an order record belongs to this salesperson
+  // Matches by name OR payroll number so records from both /queue and /orders are found
+  function _isMyOrder(o) {
+    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
+    if (myName && oName === myName) return true;
+    if (myPay  && oPay  === myPay)  return true;
+    return false;
+  }
+
+  // Helper: process a single order object into the running summaries
+  function _processOrder(o) {
+    let items = o.items;
+    if (!items && o.itemsJson) {
+      try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+
+    const isProj = (o.orderType || '').toLowerCase().includes('projection');
+    if (isProj) {
+      hasProjOrders = true;
+      projSummary.items += items.length;
+      items.forEach(i => { projSummary.amt += (i.total || 0); projSummary.kg += (i.totalKg || 0); });
+      if (!projSummary.time && o.timestamp) {
+        projSummary.time = _tsTime(o.timestamp);
+      }
+    } else {
+      hasFullOrders = true;
+      fullSummary.customers++;
+      fullSummary.items += items.length;
+      items.forEach(i => { fullSummary.amt += (i.total || 0); fullSummary.kg += (i.totalKg || 0); });
+      if (!fullSummary.time && o.timestamp) {
+        fullSummary.time = _tsTime(o.timestamp);
+      }
+    }
+  }
+
   try {
-    const snap = await db.ref('/queue').once('value');
-    if (snap && snap.exists()) {
-      snap.forEach(child => {
+    // Query /queue (pending/unprocessed orders) AND /orders (Sales Orders Data) in parallel
+    const [queueSnap, ordersSnap] = await Promise.all([
+      db.ref('/queue').once('value'),
+      db.ref('/orders').orderByChild('date').equalTo(today).once('value')
+        .catch(() => db.ref('/orders').once('value'))  // fallback if index not set
+    ]);
+
+    // ── Process /queue ──────────────────────────────────────────────────────────
+    if (queueSnap && queueSnap.exists()) {
+      queueSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
-        if ((o.salesman || '').trim().toLowerCase() !== myName) return;
-        if ((o.date     || '').trim() !== today) return;
-
-        let items = o.items;
-        if (!items && o.itemsJson) {
-          try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
-        }
-        if (!Array.isArray(items)) items = [];
-
-        const isProj = (o.orderType || '').toLowerCase().includes('projection');
-        if (isProj) {
-          hasProjOrders = true;
-          projSummary.items += items.length;
-          items.forEach(i => { projSummary.amt += (i.total || 0); projSummary.kg += (i.totalKg || 0); });
-          if (!projSummary.time && o.timestamp) {
-            projSummary.time = _tsTime(o.timestamp);
-          }
-        } else {
-          hasFullOrders = true;
-          fullSummary.customers++;
-          fullSummary.items += items.length;
-          items.forEach(i => { fullSummary.amt += (i.total || 0); fullSummary.kg += (i.totalKg || 0); });
-          if (!fullSummary.time && o.timestamp) {
-            fullSummary.time = _tsTime(o.timestamp);
-          }
-        }
+        if (!_isMyOrder(o)) return;
+        if ((o.date || '').trim() !== today) return;
+        _processOrder(o);
       });
     }
+
+    // ── Process /orders (Sales Orders Data) ────────────────────────────────────
+    // Only count orders from /orders that aren't already reflected via /queue
+    // (use orderId as dedup key; /queue entries become /orders after processing)
+    const seenOrderIds = new Set();
+    if (queueSnap && queueSnap.exists()) {
+      queueSnap.forEach(child => {
+        const o = child.val();
+        if (o && o.orderId) seenOrderIds.add(o.orderId);
+      });
+    }
+
+    if (ordersSnap && ordersSnap.exists()) {
+      ordersSnap.forEach(child => {
+        const o = child.val();
+        if (!o) return;
+        if (!_isMyOrder(o)) return;
+        if ((o.date || '').trim() !== today) return;
+        // Skip if this order was already counted from /queue (same orderId)
+        if (o.orderId && seenOrderIds.has(o.orderId)) return;
+        _processOrder(o);
+      });
+    }
+
   } catch(e) {
     loading.style.display = 'none';
     rows.style.display    = 'block';
