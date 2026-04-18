@@ -991,9 +991,83 @@ tr.tonnage-detail-row td{padding:0}
           </div>
 
         </div>
-      </div>
+      </div><!-- /#ts-card -->
 
-      <div class="card">
+      <!-- ── MY DAY SUMMARY ── Detailed order breakdown (Step 1 / WHO screen) -->
+      <div id="my-orders-today" style="display:none;margin-bottom:14px">
+
+        <!-- Section header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📋</span> My Day Summary</div>
+          <button onclick="loadMyOrdersToday()" title="Refresh" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">↻ Refresh</button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="mot-loading" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;background:#fff;border-radius:12px;border:1px solid var(--border);color:var(--muted);font-size:13px">
+          <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;flex-shrink:0"></div>
+          Loading today's orders…
+        </div>
+
+        <!-- Both-submitted completion banner -->
+        <div id="mot-complete-banner" style="display:none;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
+          <span style="font-size:22px">🎉</span>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--ok)">Both Orders Submitted!</div>
+            <div style="font-size:12px;color:#2d7a4f;margin-top:1px">Morning Projection &amp; Full Order are both done for today.</div>
+          </div>
+        </div>
+
+        <!-- Morning Projection card -->
+        <div id="mot-proj-card" style="display:none;background:#EEF7FF;border:1.5px solid #2563EB;border-radius:12px;overflow:hidden;margin-bottom:10px">
+          <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #BFDBFE">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8">🌅 Morning Projection</div>
+            <span style="background:#1d4ed8;color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-proj-status">✓ Submitted</span>
+          </div>
+          <div style="padding:10px 16px">
+            <div id="mot-proj-meta" style="font-size:11px;color:#3b6fd4;margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap"></div>
+            <div id="mot-proj-lines"></div>
+            <div id="mot-proj-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8;text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid #BFDBFE"></div>
+          </div>
+        </div>
+
+        <!-- Projection missing nudge -->
+        <div id="mot-proj-missing" style="display:none;background:var(--bg);border:1.5px dashed #BFDBFE;border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
+          <span style="font-size:20px;opacity:.5">🌅</span>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Morning Projection</div>
+            <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
+          </div>
+        </div>
+
+        <!-- Full Order card -->
+        <div id="mot-full-card" style="display:none;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:12px;overflow:hidden;margin-bottom:10px">
+          <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(196,91,0,.2)">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent)">📦 Full Order</div>
+            <span style="background:var(--accent);color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-full-status">✓ Submitted</span>
+          </div>
+          <div style="padding:10px 16px">
+            <div id="mot-full-meta" style="font-size:11px;color:var(--accent);margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap;opacity:.85"></div>
+            <div id="mot-full-lines"></div>
+            <div id="mot-full-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent);text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid rgba(196,91,0,.2)"></div>
+          </div>
+        </div>
+
+        <!-- Full Order missing nudge -->
+        <div id="mot-full-missing" style="display:none;background:var(--bg);border:1.5px dashed rgba(196,91,0,.35);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
+          <span style="font-size:20px;opacity:.5">📦</span>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Full Order</div>
+            <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
+          </div>
+        </div>
+
+        <!-- View Today's Full Order button -->
+        <button onclick="openTodayOrderView()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.04em;color:var(--accent);text-transform:uppercase;transition:all .2s;box-shadow:0 2px 10px rgba(196,91,0,.08);margin-top:4px" onmouseover="this.style.background='var(--accent-lt)'" onmouseout="this.style.background='#fff'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          View Today's Full Order
+        </button>
+
+      </div><!-- /#my-orders-today -->
         <div class="card-title"><div class="card-icon">👤</div>Who are you?</div>
 
         <div class="fg">
@@ -1203,76 +1277,6 @@ tr.tonnage-detail-row td{padding:0}
         <div class="s-sub">All customer orders have been recorded successfully.</div>
         <div class="s-id" id="ok-id"></div>
 
-        <!-- ── MY ORDERS TODAY ── Live summary of both order types -->
-        <div id="my-orders-today" style="width:100%;max-width:420px;margin:0 auto 16px;text-align:left;display:none">
-
-          <!-- Section header -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:.02em">📋 My Day Summary</div>
-            <button onclick="loadMyOrdersToday()" title="Refresh" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;color:var(--muted);font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">↻ Refresh</button>
-          </div>
-
-          <!-- Loading state -->
-          <div id="mot-loading" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;background:#fff;border-radius:12px;border:1px solid var(--border);color:var(--muted);font-size:13px">
-            <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;flex-shrink:0"></div>
-            Loading today's orders…
-          </div>
-
-          <!-- Both-submitted completion banner -->
-          <div id="mot-complete-banner" style="display:none;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-            <span style="font-size:22px">🎉</span>
-            <div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--ok)">Both Orders Submitted!</div>
-              <div style="font-size:12px;color:#2d7a4f;margin-top:1px">Morning Projection &amp; Full Order are both done for today.</div>
-            </div>
-          </div>
-
-          <!-- Morning Projection card -->
-          <div id="mot-proj-card" style="display:none;background:#EEF7FF;border:1.5px solid #2563EB;border-radius:12px;overflow:hidden;margin-bottom:10px">
-            <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #BFDBFE">
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8">🌅 Morning Projection</div>
-              <span style="background:#1d4ed8;color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-proj-status">✓ Submitted</span>
-            </div>
-            <div style="padding:10px 16px">
-              <div id="mot-proj-meta" style="font-size:11px;color:#3b6fd4;margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap"></div>
-              <div id="mot-proj-lines"></div>
-              <div id="mot-proj-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8;text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid #BFDBFE"></div>
-            </div>
-          </div>
-
-          <!-- Projection missing nudge -->
-          <div id="mot-proj-missing" style="display:none;background:var(--bg);border:1.5px dashed #BFDBFE;border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-            <span style="font-size:20px;opacity:.5">🌅</span>
-            <div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Morning Projection</div>
-              <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
-            </div>
-          </div>
-
-          <!-- Full Order card -->
-          <div id="mot-full-card" style="display:none;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:12px;overflow:hidden;margin-bottom:10px">
-            <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(196,91,0,.2)">
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent)">📦 Full Order</div>
-              <span style="background:var(--accent);color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-full-status">✓ Submitted</span>
-            </div>
-            <div style="padding:10px 16px">
-              <div id="mot-full-meta" style="font-size:11px;color:var(--accent);margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap;opacity:.85"></div>
-              <div id="mot-full-lines"></div>
-              <div id="mot-full-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent);text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid rgba(196,91,0,.2)"></div>
-            </div>
-          </div>
-
-          <!-- Full Order missing nudge -->
-          <div id="mot-full-missing" style="display:none;background:var(--bg);border:1.5px dashed rgba(196,91,0,.35);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-            <span style="font-size:20px;opacity:.5">📦</span>
-            <div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Full Order</div>
-              <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
-            </div>
-          </div>
-
-        </div><!-- /#my-orders-today -->
-
         <!-- Detailed preview of just-submitted order (collapsed by default, togglable) -->
         <div id="ok-preview-wrap" style="width:100%;max-width:420px;margin:0 auto 16px;text-align:left;display:none">
           <button onclick="toggleOrderPreview()" id="ok-preview-toggle" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.03em;color:var(--text);margin-bottom:6px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -1280,14 +1284,6 @@ tr.tonnage-detail-row td{padding:0}
             <span id="ok-preview-arrow" style="font-size:12px;color:var(--muted)">▼</span>
           </button>
           <div id="ok-preview" class="order-preview" style="text-align:left;display:none;margin:0"></div>
-        </div>
-
-        <!-- ── VIEW TODAY'S ORDER BUTTON ── -->
-        <div style="width:100%;max-width:420px;margin:0 auto 14px">
-          <button onclick="openTodayOrderView()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:15px;background:#fff;border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.04em;color:var(--accent);text-transform:uppercase;transition:all .2s;box-shadow:0 2px 10px rgba(196,91,0,.1)" onmouseover="this.style.background='var(--accent-lt)'" onmouseout="this.style.background='#fff'">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            View Today's Full Order
-          </button>
         </div>
 
         <div class="share-btns">
@@ -2934,9 +2930,10 @@ function setStep(n) {
   if (n !== 4) {
     clearInterval(window._editWindowTimer);
   }
-  // Refresh today's status when returning to step 1
+  // Refresh today's status and day summary when returning to step 1
   if (n === 1) {
     loadTodayStatus();
+    loadMyOrdersToday();
   }
 
   // Load salesperson's today orders when reaching success screen
@@ -2948,7 +2945,6 @@ function setStep(n) {
     if (wrap)  wrap.style.display  = 'none';
     if (prev)  prev.style.display  = 'none';
     if (arrow) arrow.textContent   = '▼';
-    loadMyOrdersToday();
   }
   [1,2,3].forEach(i => {
     const el = document.getElementById(`s${i}t`);
