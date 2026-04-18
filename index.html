@@ -5142,7 +5142,9 @@ function _fbOrdersToRows(obj, from, to) {
         'Total (KES)'     : item.total      || 0,
         'Total (KG)'      : item.totalKg    || 0,
         'Notes'           : order.notes     || '',
-        'Order ID'        : order.orderId   || ''
+        'Order ID'        : order.orderId   || '',
+        'Pieces Mode'     : item.piecesMode ? true : false,
+        'Pcs Per Pack'    : item.pcsPerPack || 0
       });
     });
   });
@@ -5189,7 +5191,9 @@ async function _fetchOrdersFromFirebase(from, to) {
           'Total (KES)'     : item.total      || 0,
           'Total (KG)'      : item.totalKg    || 0,
           'Notes'           : order.notes     || '',
-          'Order ID'        : order.orderId   || ''
+          'Order ID'        : order.orderId   || '',
+          'Pieces Mode'     : item.piecesMode ? true : false,
+          'Pcs Per Pack'    : item.pcsPerPack || 0
         });
       });
     });
@@ -6216,17 +6220,25 @@ function openModal(order) {
   html += '<div style="padding:10px 20px 4px"><div class="lbl">Line Items</div></div>';
   html += '<div style="border-top:1px solid var(--border)">';
   order.items.forEach(item => {
-    const desc  = item['Description']||item['Product']||'';
-    const code  = item['Product Code']||'';
-    const pack  = item['Packaging']||'';
-    const qty   = item['Qty']||0;
-    const price = parseFloat(item['Unit Price (KES)']||item['Unit Price']||0)||0;
-    const total = parseFloat(item['Total (KES)']||item['Line Total']||0)||0;
+    const desc    = item['Description']||item['Product']||'';
+    const code    = item['Product Code']||'';
+    const pack    = item['Packaging']||'';
+    const qty     = item['Qty']||0;
+    const isPcs   = !!(item['Pieces Mode'] || item['piecesMode']);
+    const price   = parseFloat(item['Unit Price (KES)']||item['Unit Price']||0)||0;
+    const total   = parseFloat(item['Total (KES)']||item['Line Total']||0)||0;
+    const qtyTxt  = isPcs
+      ? `<span style="color:#7C3AED;font-weight:700">${qty} pcs</span>`
+      : `${qty}`;
+    const pcsBadge = isPcs
+      ? `<span style="background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px">PCS</span>`
+      : '';
+    const unitLbl  = isPcs ? 'KES/pc' : 'KES/unit';
     html += `
       <div class="cart-line">
         <div class="cl-info">
-          <div class="cl-prod">${desc} ${code ? `<span class="badge">${code}</span>` : ''}</div>
-          <div class="cl-det">${pack} · Qty: ${qty} · KES ${price.toLocaleString()}/unit</div>
+          <div class="cl-prod">${desc} ${code ? `<span class="badge">${code}</span>` : ''}${pcsBadge}</div>
+          <div class="cl-det">${pack} · Qty: ${qtyTxt} · KES ${price.toLocaleString()}/${unitLbl}</div>
         </div>
         <div class="cl-total">KES ${total.toLocaleString()}</div>
       </div>`;
@@ -7027,10 +7039,12 @@ function styleSheet(ws, headers) {
 }
 
 function buildDetailSheet(wb) {
-  const headers = ['Date','Salesperson','Customer','Customer Code','Route','Location','Order Type','Product Code','Description','Packaging','Qty','Unit Price (KES)','Line Total (KES)','Weight (KG)','Notes'];
+  const headers = ['Date','Salesperson','Customer','Customer Code','Route','Location','Order Type','Product Code','Description','Packaging','Qty','Qty Unit','Unit Price (KES)','Line Total (KES)','Weight (KG)','Notes'];
   const rows = [headers];
 
   filteredOrders.forEach(r => {
+    const isPcs   = !!(r['Pieces Mode'] || r['piecesMode']);
+    const qtyUnit = isPcs ? 'pcs' : 'units';
     rows.push([
       normaliseDate(r['Date']||r['Order Date']||''),
       r['Salesman']||r['Salesperson']||'',
@@ -7043,6 +7057,7 @@ function buildDetailSheet(wb) {
       r['Description']||r['Product']||'',
       r['Packaging']||r['Pack']||'',
       parseFloat(r['Qty']||0)||0,
+      qtyUnit,
       parseFloat(r['Unit Price (KES)']||r['Unit Price']||0)||0,
       parseFloat(r['Total (KES)']||r['Line Total']||0)||0,
       parseFloat(r['Total (KG)']||r['Weight (KG)']||r['KG']||0)||0,
@@ -8245,12 +8260,13 @@ function _motRenderProjection(proj) {
   // Aggregate items (de-duplicate same product+pack across multiple partial submissions)
   const itemMap = {};
   proj.items.forEach(i => {
-    const code = i.productCode || i.product_code || '';
-    const pack = i.packaging   || '';
-    const key  = code + '||' + pack;
+    const code  = i.productCode || i.product_code || '';
+    const pack  = i.packaging   || '';
+    const isPcs = !!i.piecesMode;
+    const key   = code + '||' + pack + (isPcs ? '||pcs' : '');
     if (!itemMap[key]) itemMap[key] = {
       desc: i.description || i.product || '',
-      code, pack, qty: 0, total: 0
+      code, pack, qty: 0, total: 0, piecesMode: isPcs
     };
     itemMap[key].qty   += (i.qty   || 0);
     itemMap[key].total += (i.total || 0);
@@ -8262,14 +8278,23 @@ function _motRenderProjection(proj) {
     if (!entries.length) {
       linesEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px 0">No items recorded.</div>';
     } else {
-      linesEl.innerHTML = entries.map(p => `
+      linesEl.innerHTML = entries.map(p => {
+        const isPcs   = !!p.piecesMode;
+        const qtyDisp = isPcs
+          ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#7C3AED;white-space:nowrap;margin-left:10px">${p.qty.toLocaleString()} <span style="font-size:11px;font-weight:700">pcs</span></span>`
+          : `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#1d4ed8;white-space:nowrap;margin-left:10px">×${p.qty.toLocaleString()}</span>`;
+        const packDisp = isPcs
+          ? `<span style="font-size:10px;color:#7C3AED;background:#F5F3FF;border-radius:4px;padding:1px 5px;font-weight:700">PCS · ${p.pack || p.code}</span>`
+          : `<span style="font-size:10px;color:#93c5fd">${p.code}${p.pack ? ' · ' + p.pack : ''}</span>`;
+        return `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(191,219,254,.6)">
           <div>
             <div style="font-size:12px;font-weight:500;color:#1e40af">${p.desc}</div>
-            <div style="font-size:10px;color:#93c5fd">${p.code}${p.pack ? ' · ' + p.pack : ''}</div>
+            ${packDisp}
           </div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#1d4ed8;white-space:nowrap;margin-left:10px">×${p.qty.toLocaleString()}</span>
-        </div>`).join('');
+          ${qtyDisp}
+        </div>`;
+      }).join('');
     }
   }
 
@@ -8327,13 +8352,20 @@ function _motRenderFullOrders(fullOrders) {
           ${co.customer}${co.custCode ? ` <span style="font-weight:400;font-size:11px;opacity:.65">(${co.custCode})</span>` : ''}
         </div>`;
     co.items.forEach(i => {
+      const isPcs    = !!i.piecesMode;
+      const qtyLabel = isPcs
+        ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#7C3AED;white-space:nowrap;margin-left:10px">${(i.qty||0).toLocaleString()} <span style="font-size:11px;font-weight:700">pcs</span></span>`
+        : `<span style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:10px">×${(i.qty||0).toLocaleString()}</span>`;
+      const packLabel = isPcs
+        ? `<span style="font-size:10px;color:#7C3AED;margin-left:4px;background:#F5F3FF;border-radius:4px;padding:1px 5px;font-weight:700">PCS</span>`
+        : (i.packaging ? `<span style="font-size:10px;color:var(--muted);margin-left:4px">${i.packaging}</span>` : '');
       linesHtml += `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(196,91,0,.08)">
           <div>
             <span style="font-size:12px;color:var(--text)">${i.description || i.product || ''}</span>
-            ${i.packaging ? `<span style="font-size:10px;color:var(--muted);margin-left:4px">${i.packaging}</span>` : ''}
+            ${packLabel}
           </div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:10px">×${(i.qty||0).toLocaleString()}</span>
+          ${qtyLabel}
         </div>`;
     });
     linesHtml += `<div style="text-align:right;font-size:11px;color:var(--accent);margin-top:3px;opacity:.8">KES ${coAmt.toLocaleString()}</div>
@@ -8345,11 +8377,12 @@ function _motRenderFullOrders(fullOrders) {
     const itemMap = {};
     fullOrders.forEach(co => {
       co.items.forEach(i => {
-        const key = (i.productCode || '') + '||' + (i.packaging || '');
+        const isPcs = !!i.piecesMode;
+        const key = (i.productCode || '') + '||' + (i.packaging || '') + (isPcs ? '||pcs' : '');
         if (!itemMap[key]) itemMap[key] = {
           desc: i.description || i.product || '',
           pack: i.packaging || '',
-          qty: 0, total: 0
+          qty: 0, total: 0, piecesMode: isPcs
         };
         itemMap[key].qty   += (i.qty   || 0);
         itemMap[key].total += (i.total || 0);
@@ -8360,14 +8393,23 @@ function _motRenderFullOrders(fullOrders) {
       linesHtml += `
         <div style="margin-top:10px;border-top:2px solid rgba(196,91,0,.2);padding-top:8px">
           <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">📦 Combined Product Totals</div>
-          ${prodEntries.map(p => `
+          ${prodEntries.map(p => {
+            const isPcs    = !!p.piecesMode;
+            const qtyDisp  = isPcs
+              ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#7C3AED;white-space:nowrap;margin-left:10px">${p.qty.toLocaleString()} <span style="font-size:11px;font-weight:700">pcs</span></span>`
+              : `<span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:10px">×${p.qty.toLocaleString()}</span>`;
+            const packDisp = isPcs
+              ? `<div style="font-size:10px;color:#7C3AED;background:#F5F3FF;border-radius:4px;padding:1px 5px;font-weight:700;display:inline-block">PCS · ${p.pack}</div>`
+              : (p.pack ? `<div style="font-size:10px;color:var(--muted)">${p.pack}</div>` : '');
+            return `
             <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(196,91,0,.1)">
               <div>
                 <div style="font-size:12px;font-weight:500;color:var(--text)">${p.desc}</div>
-                ${p.pack ? `<div style="font-size:10px;color:var(--muted)">${p.pack}</div>` : ''}
+                ${packDisp}
               </div>
-              <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:10px">×${p.qty.toLocaleString()}</span>
-            </div>`).join('')}
+              ${qtyDisp}
+            </div>`;
+          }).join('')}
         </div>`;
     }
   }
