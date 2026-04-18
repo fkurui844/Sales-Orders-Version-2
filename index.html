@@ -919,9 +919,379 @@ tr.tonnage-detail-row td{padding:0}
     <div class="step" id="s3t"><div class="sn">3</div><span>SUBMIT</span></div>
   </div>
 
+  <!-- ══════════════ WHO STEP PREMIUM STYLES ══════════════ -->
+  <style>
+  /* ── WHO page scoped overrides ─────────────────────────── */
+  #step-who .content { padding: 0; max-width: 640px; }
+
+  /* Greeting banner at top */
+  .who-greeting {
+    background: linear-gradient(135deg, #1A1714 0%, #2d2318 60%, #3a2510 100%);
+    padding: 28px 24px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .who-greeting::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(196,91,0,.18);
+  }
+  .who-greeting::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 30px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(196,91,0,.1);
+  }
+  .who-greeting-date {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.45);
+    margin-bottom: 6px;
+  }
+  .who-greeting-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: .01em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .who-greeting-name span { color: var(--accent); }
+  .who-greeting-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,.5);
+  }
+
+  /* Status twin-pill strip */
+  .who-status-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .wss-pill {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  .wss-pill:first-child { border-right: 1px solid var(--border); }
+  .wss-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .wss-icon.proj { background: #EEF7FF; }
+  .wss-icon.full { background: var(--accent-lt); }
+  .wss-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .wss-status { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800; color: var(--text); margin-top: 1px; }
+  .wss-refresh {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 13px; padding: 2px 4px; line-height: 1;
+    transition: color .15s;
+  }
+  .wss-refresh:hover { color: var(--text); }
+
+  /* Loading shimmer */
+  .wss-shimmer {
+    height: 14px; border-radius: 4px;
+    background: linear-gradient(90deg, var(--border) 25%, #f0ece7 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    margin-top: 4px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* Section label */
+  .who-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 16px 24px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .who-section-label button {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+    font-family: inherit; padding: 0; transition: color .15s;
+  }
+  .who-section-label button:hover { color: var(--text); }
+
+  /* My Day Summary redesigned cards */
+  .who-mot-wrap {
+    display: none;
+    padding: 0 16px 4px;
+  }
+  .who-mot-loader {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px; background: #fff;
+    border-radius: 12px; border: 1px solid var(--border);
+    color: var(--muted); font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .who-mot-complete {
+    display: none;
+    background: var(--ok-lt);
+    border: 1.5px solid var(--ok);
+    border-radius: 12px;
+    padding: 11px 15px;
+    margin-bottom: 10px;
+    align-items: center;
+    gap: 10px;
+  }
+  .who-mot-complete-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 800; color: var(--ok);
+  }
+  .who-mot-complete-sub { font-size: 11px; color: #2d7a4f; margin-top: 1px; }
+
+  /* Order type card (proj / full) redesigned */
+  .who-order-row {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .who-order-row:hover { border-color: #ccc; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .who-order-row-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 15px 10px;
+  }
+  .who-order-row-left { display: flex; align-items: center; gap: 10px; }
+  .who-order-row-ico {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .who-order-row-ico.proj { background: #EEF7FF; }
+  .who-order-row-ico.full { background: var(--accent-lt); }
+  .who-order-row-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; }
+  .who-order-row-title.proj { color: #1d4ed8; }
+  .who-order-row-title.full { color: var(--accent); }
+  .who-order-row-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; border-radius: 5px; padding: 2px 8px;
+  }
+  .who-order-row-badge.submitted { background: var(--ok); color: #fff; }
+  .who-order-row-badge.pending { background: #FFF8E1; color: #92400E; border: 1px solid #FFD54F; }
+  .who-order-row-body {
+    padding: 0 15px 12px;
+  }
+  .who-order-row-meta {
+    font-size: 11px; color: var(--muted);
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;
+  }
+  .who-order-row-lines { font-size: 12px; }
+  .who-order-row-total {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 800;
+    text-align: right; padding-top: 7px; margin-top: 7px;
+    border-top: 1px solid var(--border);
+  }
+  .who-order-row-total.proj { color: #1d4ed8; }
+  .who-order-row-total.full { color: var(--accent); }
+
+  /* Missing nudge */
+  .who-mot-missing {
+    display: none;
+    background: var(--bg);
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 11px 15px;
+    margin-bottom: 8px;
+    align-items: center; gap: 10px;
+  }
+  .who-mot-missing-title { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .who-mot-missing-sub { font-size: 11px; color: #bbb; margin-top: 1px; }
+
+  /* View orders button */
+  .who-view-btn {
+    width: 100%;
+    padding: 13px;
+    background: #fff;
+    border: 2px solid var(--accent);
+    border-radius: 11px;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 800;
+    letter-spacing: .05em;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s;
+    margin-top: 4px; margin-bottom: 4px;
+  }
+  .who-view-btn:hover { background: var(--accent-lt); box-shadow: 0 2px 10px rgba(196,91,0,.15); }
+
+  /* Divider between sections */
+  .who-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  /* Who are you form card */
+  .who-form-card {
+    background: #fff;
+    margin: 0 16px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  }
+  .who-form-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .who-form-header-ico {
+    width: 34px; height: 34px;
+    background: var(--accent-lt);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .who-form-header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 19px; font-weight: 800; letter-spacing: .02em;
+  }
+  .who-form-body { padding: 18px 20px; }
+  .who-field { margin-bottom: 14px; }
+  .who-field:last-child { margin-bottom: 0; }
+  .who-lbl {
+    display: block;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 5px;
+  }
+  .who-inp {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-family: inherit; font-size: 14px;
+    color: var(--text); background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .who-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,91,0,.1); }
+  .who-inp[readonly] { background: var(--bg); color: var(--text); cursor: default; font-weight: 600; }
+  .who-inp::placeholder { color: #bbb; }
+  select.who-inp {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%238E8880'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+    padding-right: 34px; cursor: pointer;
+  }
+
+  /* Order type selector — full-width horizontal cards */
+  .who-ot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .who-ot-card {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+  }
+  .who-ot-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0; transition: opacity .2s;
+  }
+  .who-ot-card.proj-card::before { background: linear-gradient(135deg, #EEF7FF 0%, #DBEAFE 100%); }
+  .who-ot-card.full-card::before { background: linear-gradient(135deg, #FFF3E8 0%, #FFE8D1 100%); }
+  .who-ot-card.sel::before { opacity: 1; }
+  .who-ot-card.proj-card.sel { border-color: #2563EB; }
+  .who-ot-card.full-card.sel { border-color: var(--accent); }
+  .who-ot-card:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+  .who-ot-inner { position: relative; z-index: 1; }
+  .who-ot-ico { font-size: 26px; margin-bottom: 7px; }
+  .who-ot-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 800; margin-bottom: 3px;
+    transition: color .2s;
+  }
+  .who-ot-card.proj-card.sel .who-ot-name { color: #1d4ed8; }
+  .who-ot-card.full-card.sel .who-ot-name { color: var(--accent); }
+  .who-ot-desc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+  /* Selected check pip */
+  .who-ot-check {
+    position: absolute; top: 8px; right: 8px;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; opacity: 0;
+    transition: opacity .2s, transform .2s;
+    transform: scale(.6);
+    z-index: 2;
+  }
+  .who-ot-card.proj-card .who-ot-check { background: #2563EB; color: #fff; }
+  .who-ot-card.full-card .who-ot-check { background: var(--accent); color: #fff; }
+  .who-ot-card.sel .who-ot-check { opacity: 1; transform: scale(1); }
+
+  /* Continue button strip */
+  .who-continue-strip {
+    padding: 14px 16px 20px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+  .who-continue-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 11px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: background .2s, transform .1s, box-shadow .2s;
+    box-shadow: 0 4px 16px rgba(196,91,0,.3);
+  }
+  .who-continue-btn:hover { background: var(--accent-hov); box-shadow: 0 6px 20px rgba(196,91,0,.4); }
+  .who-continue-btn:active { transform: scale(.98); }
+
+  @media (max-width: 400px) {
+    .who-ot-grid { grid-template-columns: 1fr; }
+    .who-greeting-name { font-size: 26px; }
+  }
+  </style>
+
   <!-- ── STEP 1: WHO ── -->
   <div id="step-who">
     <div class="content">
+
+      <!-- ── GREETING BANNER ── -->
+      <div class="who-greeting">
+        <div class="who-greeting-date" id="who-greeting-date">Today</div>
+        <div class="who-greeting-name">Good morning, <span id="who-greeting-name-val">—</span></div>
+        <div class="who-greeting-sub">Select your details below to start your order</div>
+      </div>
 
       <!-- Draft restore banner -->
       <div id="draft-banner">
@@ -948,172 +1318,185 @@ tr.tonnage-detail-row td{padding:0}
         </div>
       </div>
 
-      <!-- ── TODAY'S STATUS ── -->
-      <div id="ts-card" style="display:none;background:#fff;border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border)">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:8px">
-            <span style="font-size:18px">📅</span> Today's Status
+      <!-- ── TODAY'S STATUS twin-pill strip ── -->
+      <div id="ts-card" style="display:none;margin-bottom:0;border-radius:0;box-shadow:none">
+        <div class="who-section-label" style="padding-top:18px">
+          <span>Today's Status</span>
+          <button onclick="loadTodayStatus()" id="ts-refresh-btn" title="Refresh">↻ Refresh</button>
+        </div>
+        <div class="who-status-strip">
+          <!-- Morning Projection pill -->
+          <div class="wss-pill">
+            <div class="wss-icon proj">🌅</div>
+            <div>
+              <div class="wss-label">Projection</div>
+              <div id="ts-proj-sub" class="wss-status">—</div>
+            </div>
           </div>
-          <button onclick="loadTodayStatus()" id="ts-refresh-btn" title="Refresh" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">↻</button>
+          <!-- Full Order pill -->
+          <div class="wss-pill">
+            <div class="wss-icon full">📦</div>
+            <div>
+              <div class="wss-label">Full Order</div>
+              <div id="ts-full-sub" class="wss-status">—</div>
+            </div>
+          </div>
         </div>
-
-        <!-- Loading -->
-        <div id="ts-loading" style="display:flex;align-items:center;gap:10px;padding:16px 18px;color:var(--muted);font-size:12px">
-          <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;flex-shrink:0"></div>
-          Checking today's orders…
+        <!-- Loading bar -->
+        <div id="ts-loading" style="display:none;padding:10px 18px 6px">
+          <div class="wss-shimmer"></div>
         </div>
-
-        <!-- Status rows -->
+        <!-- Hidden action containers (kept for JS compatibility) -->
         <div id="ts-rows" style="display:none">
+          <div id="ts-proj-action"></div>
+          <div id="ts-full-action"></div>
+        </div>
+      </div>
 
-          <!-- Morning Projection row -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">🌅</span>
-              <div>
-                <div style="font-weight:700;font-size:13px">Morning Projection</div>
-                <div id="ts-proj-sub" style="font-size:11px;color:var(--muted);margin-top:1px">8AM–2PM window</div>
+      <!-- ── MY DAY SUMMARY ── -->
+      <div id="my-orders-today" style="display:none">
+        <div class="who-section-label">
+          <span>My Day Summary</span>
+          <button onclick="loadMyOrdersToday()" title="Refresh">↻ Refresh</button>
+        </div>
+        <div class="who-mot-wrap" id="who-mot-inner" style="display:block">
+
+          <!-- Loading -->
+          <div id="mot-loading" class="who-mot-loader">
+            <div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;flex-shrink:0"></div>
+            Loading today's orders…
+          </div>
+
+          <!-- Both done banner -->
+          <div id="mot-complete-banner" class="who-mot-complete">
+            <span style="font-size:20px">🎉</span>
+            <div>
+              <div class="who-mot-complete-title">Both Orders Submitted!</div>
+              <div class="who-mot-complete-sub">Morning Projection &amp; Full Order are done for today.</div>
+            </div>
+          </div>
+
+          <!-- Morning Projection card -->
+          <div id="mot-proj-card" class="who-order-row" style="display:none">
+            <div class="who-order-row-head">
+              <div class="who-order-row-left">
+                <div class="who-order-row-ico proj">🌅</div>
+                <div class="who-order-row-title proj">Morning Projection</div>
+              </div>
+              <span class="who-order-row-badge submitted" id="mot-proj-status">✓ Submitted</span>
+            </div>
+            <div class="who-order-row-body">
+              <div id="mot-proj-meta" class="who-order-row-meta"></div>
+              <div id="mot-proj-lines" class="who-order-row-lines"></div>
+              <div id="mot-proj-total" class="who-order-row-total proj"></div>
+            </div>
+          </div>
+
+          <!-- Projection missing -->
+          <div id="mot-proj-missing" class="who-mot-missing">
+            <span style="font-size:20px;opacity:.4">🌅</span>
+            <div>
+              <div class="who-mot-missing-title">Morning Projection</div>
+              <div class="who-mot-missing-sub">Not yet submitted for today</div>
+            </div>
+          </div>
+
+          <!-- Full Order card -->
+          <div id="mot-full-card" class="who-order-row" style="display:none">
+            <div class="who-order-row-head">
+              <div class="who-order-row-left">
+                <div class="who-order-row-ico full">📦</div>
+                <div class="who-order-row-title full">Full Order</div>
+              </div>
+              <span class="who-order-row-badge submitted" id="mot-full-status">✓ Submitted</span>
+            </div>
+            <div class="who-order-row-body">
+              <div id="mot-full-meta" class="who-order-row-meta"></div>
+              <div id="mot-full-lines" class="who-order-row-lines"></div>
+              <div id="mot-full-total" class="who-order-row-total full"></div>
+            </div>
+          </div>
+
+          <!-- Full Order missing -->
+          <div id="mot-full-missing" class="who-mot-missing">
+            <span style="font-size:20px;opacity:.4">📦</span>
+            <div>
+              <div class="who-mot-missing-title">Full Order</div>
+              <div class="who-mot-missing-sub">Not yet submitted for today</div>
+            </div>
+          </div>
+
+          <!-- View button -->
+          <button class="who-view-btn" onclick="openTodayOrderView()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            View Today's Full Order
+          </button>
+        </div>
+      </div>
+
+      <!-- ── WHO ARE YOU FORM ── -->
+      <div class="who-section-label" style="padding-top:18px"><span>Your Details</span></div>
+      <div class="who-form-card">
+        <div class="who-form-header">
+          <div class="who-form-header-ico">👤</div>
+          <div class="who-form-header-title">Who are you?</div>
+        </div>
+        <div class="who-form-body">
+
+          <div class="who-field">
+            <label class="who-lbl">Your Name / Payroll Number</label>
+            <input class="who-inp inp" id="who-name" readonly>
+          </div>
+
+          <div class="who-field">
+            <label class="who-lbl">Your Location</label>
+            <select class="who-inp inp" id="who-loc" onchange="onLocChange()">
+              <option value="">— Select Location —</option>
+            </select>
+          </div>
+
+          <div class="who-field">
+            <label class="who-lbl">Your Route</label>
+            <div class="dd-wrap" id="route-wrap">
+              <input class="who-inp inp" id="route-inp" placeholder="Select location first…" autocomplete="off" readonly>
+              <div class="dd-list" id="route-list"></div>
+            </div>
+          </div>
+
+          <div class="who-field">
+            <label class="who-lbl">Order Date</label>
+            <input class="who-inp inp" type="date" id="order-date">
+          </div>
+
+          <div class="who-field" style="margin-bottom:0">
+            <label class="who-lbl" style="margin-bottom:10px">Order Type</label>
+            <div class="who-ot-grid">
+              <div class="who-ot-card proj-card sel" id="ot-proj" onclick="pickOT('projection')">
+                <div class="who-ot-check">✓</div>
+                <div class="who-ot-inner">
+                  <div class="who-ot-ico">🌅</div>
+                  <div class="who-ot-name">Morning<br>Projection</div>
+                  <div class="who-ot-desc">All products · Quantity forecast · 8AM–2PM</div>
+                  <div id="proj-time-badge" style="margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;display:inline-block"></div>
+                </div>
+              </div>
+              <div class="who-ot-card full-card" id="ot-full" onclick="pickOT('full')">
+                <div class="who-ot-check">✓</div>
+                <div class="who-ot-inner">
+                  <div class="who-ot-ico">📦</div>
+                  <div class="who-ot-name">Full<br>Order</div>
+                  <div class="who-ot-desc">All products · Actual customer orders</div>
+                </div>
               </div>
             </div>
-            <div id="ts-proj-action" style="flex-shrink:0;margin-left:10px"></div>
           </div>
 
-          <!-- Full Order row -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">📦</span>
-              <div>
-                <div style="font-weight:700;font-size:13px">Full Order</div>
-                <div id="ts-full-sub" style="font-size:11px;color:var(--muted);margin-top:1px">Actual customer orders</div>
-              </div>
-            </div>
-            <div id="ts-full-action" style="flex-shrink:0;margin-left:10px"></div>
-          </div>
-
-        </div>
-      </div><!-- /#ts-card -->
-
-      <!-- ── MY DAY SUMMARY ── Detailed order breakdown (Step 1 / WHO screen) -->
-      <div id="my-orders-today" style="display:none;margin-bottom:14px">
-
-        <!-- Section header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:8px"><span style="font-size:18px">📋</span> My Day Summary</div>
-          <button onclick="loadMyOrdersToday()" title="Refresh" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">↻ Refresh</button>
-        </div>
-
-        <!-- Loading state -->
-        <div id="mot-loading" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px;background:#fff;border-radius:12px;border:1px solid var(--border);color:var(--muted);font-size:13px">
-          <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;flex-shrink:0"></div>
-          Loading today's orders…
-        </div>
-
-        <!-- Both-submitted completion banner -->
-        <div id="mot-complete-banner" style="display:none;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-          <span style="font-size:22px">🎉</span>
-          <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--ok)">Both Orders Submitted!</div>
-            <div style="font-size:12px;color:#2d7a4f;margin-top:1px">Morning Projection &amp; Full Order are both done for today.</div>
-          </div>
-        </div>
-
-        <!-- Morning Projection card -->
-        <div id="mot-proj-card" style="display:none;background:#EEF7FF;border:1.5px solid #2563EB;border-radius:12px;overflow:hidden;margin-bottom:10px">
-          <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #BFDBFE">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8">🌅 Morning Projection</div>
-            <span style="background:#1d4ed8;color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-proj-status">✓ Submitted</span>
-          </div>
-          <div style="padding:10px 16px">
-            <div id="mot-proj-meta" style="font-size:11px;color:#3b6fd4;margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap"></div>
-            <div id="mot-proj-lines"></div>
-            <div id="mot-proj-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:#1d4ed8;text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid #BFDBFE"></div>
-          </div>
-        </div>
-
-        <!-- Projection missing nudge -->
-        <div id="mot-proj-missing" style="display:none;background:var(--bg);border:1.5px dashed #BFDBFE;border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-          <span style="font-size:20px;opacity:.5">🌅</span>
-          <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Morning Projection</div>
-            <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
-          </div>
-        </div>
-
-        <!-- Full Order card -->
-        <div id="mot-full-card" style="display:none;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:12px;overflow:hidden;margin-bottom:10px">
-          <div style="padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(196,91,0,.2)">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent)">📦 Full Order</div>
-            <span style="background:var(--accent);color:#fff;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase" id="mot-full-status">✓ Submitted</span>
-          </div>
-          <div style="padding:10px 16px">
-            <div id="mot-full-meta" style="font-size:11px;color:var(--accent);margin-bottom:8px;display:flex;gap:14px;flex-wrap:wrap;opacity:.85"></div>
-            <div id="mot-full-lines"></div>
-            <div id="mot-full-total" style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--accent);text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid rgba(196,91,0,.2)"></div>
-          </div>
-        </div>
-
-        <!-- Full Order missing nudge -->
-        <div id="mot-full-missing" style="display:none;background:var(--bg);border:1.5px dashed rgba(196,91,0,.35);border-radius:12px;padding:12px 16px;margin-bottom:10px;align-items:center;gap:10px">
-          <span style="font-size:20px;opacity:.5">📦</span>
-          <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted)">Full Order</div>
-            <div style="font-size:11px;color:var(--muted)">Not yet submitted for today</div>
-          </div>
-        </div>
-
-        <!-- View Today's Full Order button -->
-        <button onclick="openTodayOrderView()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.04em;color:var(--accent);text-transform:uppercase;transition:all .2s;box-shadow:0 2px 10px rgba(196,91,0,.08);margin-top:4px" onmouseover="this.style.background='var(--accent-lt)'" onmouseout="this.style.background='#fff'">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          View Today's Full Order
-        </button>
-
-      </div><!-- /#my-orders-today -->
-        <div class="card-title"><div class="card-icon">👤</div>Who are you?</div>
-
-        <div class="fg">
-          <label class="lbl">Your Name / Payroll Number</label>
-          <input class="inp" id="who-name" readonly>
-        </div>
-
-        <div class="fg">
-          <label class="lbl">Your Location</label>
-          <select class="inp" id="who-loc" onchange="onLocChange()">
-            <option value="">— Select Location —</option>
-          </select>
-        </div>
-
-        <div class="fg">
-          <label class="lbl">Your Route</label>
-          <div class="dd-wrap" id="route-wrap">
-            <input class="inp" id="route-inp" placeholder="Select location first…" autocomplete="off" readonly>
-            <div class="dd-list" id="route-list"></div>
-          </div>
-        </div>
-
-        <div class="fg">
-          <label class="lbl">Order Date</label>
-          <input class="inp" type="date" id="order-date">
-        </div>
-
-        <div class="fg">
-          <label class="lbl" style="margin-bottom:12px">Order Type</label>
-          <div class="ot-grid">
-            <div class="ot-card sel" id="ot-proj" onclick="pickOT('projection')">
-              <div class="ot-ico">🌅</div>
-              <div class="ot-name">Morning Projection</div>
-              <div class="ot-desc">All products · Quantity forecast · 8AM–2PM</div>
-              <div id="proj-time-badge" style="margin-top:7px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:99px;display:inline-block"></div>
-            </div>
-            <div class="ot-card" id="ot-full" onclick="pickOT('full')">
-              <div class="ot-ico">📦</div>
-              <div class="ot-name">Full Order</div>
-              <div class="ot-desc">All products · Actual orders</div>
-            </div>
-          </div>
         </div>
       </div>
 
     </div>
+
+    <!-- Continue strip (replaces old sticky-ft) -->
     <div class="sticky-ft">
       <div id="autosave-indicator" style="position:absolute;top:-18px;right:16px"></div>
       <button class="btn-accent" onclick="go2()">Continue — Add Products →</button>
@@ -2856,6 +3239,25 @@ function startApp(sp) {
 
   document.getElementById('who-name').value = name + (pay ? ` (${pay})` : '');
   document.getElementById('hdr-name').textContent = name;
+
+  // ── Greeting banner ──
+  const greetEl = document.getElementById('who-greeting-name-val');
+  const dateEl  = document.getElementById('who-greeting-date');
+  if (greetEl) {
+    // Show first name only
+    greetEl.textContent = name.split(' ')[0] || name;
+  }
+  if (dateEl) {
+    const now  = new Date();
+    const h    = now.getHours();
+    const tod  = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const mons = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} ${mons[now.getMonth()]} ${now.getFullYear()}`;
+    // Also update greeting word
+    const greetWordEl = document.querySelector('.who-greeting-name');
+    if (greetWordEl) greetWordEl.innerHTML = `Good ${tod}, <span id="who-greeting-name-val">${name.split(' ')[0] || name}</span>`;
+  }
 
   populateLocations();
 
@@ -9664,6 +10066,9 @@ async function loadTodayStatus() {
   card.style.display    = 'block';
   loading.style.display = 'flex';
   rows.style.display    = 'none';
+  // Reset pill backgrounds while loading
+  document.querySelectorAll('.wss-pill').forEach(p => p.style.background = '');
+  document.querySelectorAll('.wss-status').forEach(el => el.innerHTML = '<div class="wss-shimmer" style="width:60px"></div>');
 
   let hasProjOrders = false;
   let hasFullOrders = false;
@@ -9765,29 +10170,22 @@ function _tsTime(ts) {
 function _tsSetRow(type, placed, summary) {
   const subEl    = document.getElementById('ts-' + type + '-sub');
   const actionEl = document.getElementById('ts-' + type + '-action');
-  if (!subEl || !actionEl) return;
+  if (!subEl) return;
 
   const isProj = type === 'proj';
 
   if (placed && summary) {
-    // Placed — show green badge + summary text + View button
-    const lineA = isProj
-      ? `${summary.items} product${summary.items !== 1 ? 's' : ''}`
-      : `${summary.customers} customer${summary.customers !== 1 ? 's' : ''} · ${summary.items} item${summary.items !== 1 ? 's' : ''}`;
-    const lineB = `KES ${summary.amt.toLocaleString('en-KE', {maximumFractionDigits:0})}${summary.kg ? ' · ' + summary.kg.toFixed(1) + ' KG' : ''}`;
     const timeStr = summary.time ? ` · ${summary.time}` : '';
-
-    subEl.innerHTML = `<span style="color:var(--ok);font-weight:600">✓ Submitted${timeStr}</span><br><span style="color:var(--muted)">${lineA} · ${lineB}</span>`;
-    actionEl.innerHTML = `<button onclick="openTodayOrderView()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--ok);white-space:nowrap;transition:all .15s" onmouseover="this.style.background='#c8edd8'" onmouseout="this.style.background='var(--ok-lt)'">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      View
-    </button>`;
+    subEl.innerHTML = `<span style="color:var(--ok);font-weight:800;font-family:'Barlow Condensed',sans-serif;font-size:15px">✓ Done${timeStr}</span>`;
+    // pill icon glow
+    const pill = subEl.closest('.wss-pill');
+    if (pill) pill.style.background = 'var(--ok-lt)';
   } else {
-    // Not yet placed — show grey "Not yet" badge
-    const hint = isProj ? 'Not yet submitted' : 'Not yet submitted';
-    subEl.innerHTML = `<span style="color:#b45309;font-weight:600">○ Pending</span><br><span style="color:var(--muted)">${hint}</span>`;
-    actionEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;font-size:11px;font-weight:700;color:#92400E;white-space:nowrap;letter-spacing:.03em">○ Not Yet</span>`;
+    subEl.innerHTML = `<span style="color:#b45309;font-weight:700;font-size:14px">○ Pending</span>`;
+    const pill = subEl.closest('.wss-pill');
+    if (pill) pill.style.background = '';
   }
+  if (actionEl) actionEl.innerHTML = '';
 }
 
 
