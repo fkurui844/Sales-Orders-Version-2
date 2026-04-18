@@ -8615,54 +8615,80 @@ function showOrderPreviewWrap() {
 async function loadMyOrdersToday() {
   if (!S.user) return;
   const nk     = findKey(S.user, NAME_KEYS);
+  const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
+  const myPay  = (S.user[pk] || '').trim().toLowerCase();
   const today  = S.orderDate || new Date().toISOString().slice(0, 10);
 
   const panel = document.getElementById('my-orders-today');
   if (!panel) return;
 
-  // Show panel & loading state
   panel.style.display = 'block';
   _motSetLoading(true);
 
-  let proj       = null;   // aggregated projection
-  let fullOrders = [];     // per-customer full-order records
+  let proj       = null;
+  let fullOrders = [];
+  const seenIds  = new Set();
+
+  function _isMine(o) {
+    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
+    if (myName && oName === myName) return true;
+    if (myPay  && oPay  === myPay)  return true;
+    return false;
+  }
+
+  function _processRec(o) {
+    if (!_isMine(o)) return;
+    if ((o.date || '').trim() !== today) return;
+    const isProjection = (o.orderType || '').toLowerCase().includes('projection');
+    let items = o.items;
+    if (!items && o.itemsJson) {
+      try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    if (isProjection) {
+      if (!proj) proj = { route: o.route, location: o.location, timestamp: o.timestamp, items: [] };
+      proj.items = proj.items.concat(items);
+      if (o.timestamp && o.timestamp > (proj.timestamp || '')) proj.timestamp = o.timestamp;
+    } else {
+      fullOrders.push({
+        customer:  o.customer      || '',
+        custCode:  o.customerCode  || '',
+        timestamp: o.timestamp     || '',
+        route:     o.route         || '',
+        items
+      });
+    }
+  }
 
   try {
-    const snap = await db.ref('/queue').once('value');
-    if (snap && snap.exists()) {
-      snap.forEach(child => {
+    const [queueSnap, ordersSnap] = await Promise.all([
+      db.ref('/queue').once('value'),
+      db.ref('/orders').orderByChild('date').equalTo(today).once('value')
+        .catch(() => db.ref('/orders').once('value'))
+    ]);
+
+    if (queueSnap && queueSnap.exists()) {
+      queueSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
-        const oName = (o.salesman || '').trim().toLowerCase();
-        const oDate = (o.date     || '').trim();
-        if (oName !== myName || oDate !== today) return;
+        if (o.orderId) seenIds.add(o.orderId);
+        _processRec(o);
+      });
+    }
 
-        const isProjection = (o.orderType || '').toLowerCase().includes('projection');
-        let items = o.items;
-        if (!items && o.itemsJson) {
-          try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
-        }
-        if (!Array.isArray(items)) items = [];
-
-        if (isProjection) {
-          if (!proj) proj = { route: o.route, location: o.location, timestamp: o.timestamp, items: [] };
-          proj.items = proj.items.concat(items);
-          if (o.timestamp && o.timestamp > (proj.timestamp || '')) proj.timestamp = o.timestamp;
-        } else {
-          fullOrders.push({
-            customer:  o.customer      || '',
-            custCode:  o.customerCode  || '',
-            timestamp: o.timestamp     || '',
-            route:     o.route         || '',
-            items
-          });
-        }
+    if (ordersSnap && ordersSnap.exists()) {
+      ordersSnap.forEach(child => {
+        const o = child.val();
+        if (!o) return;
+        if (o.orderId && seenIds.has(o.orderId)) return;
+        _processRec(o);
       });
     }
   } catch(e) {
     _motSetLoading(false);
-    return; // Firebase unavailable — hide gracefully
+    return;
   }
 
   _motSetLoading(false);
@@ -9849,39 +9875,67 @@ function closeTodayOrderView() {
 async function _loadTodayOrdersForView() {
   if (!S.user) return;
   const nk     = findKey(S.user, NAME_KEYS);
+  const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
+  const myPay  = (S.user[pk] || '').trim().toLowerCase();
   const today  = S.orderDate || new Date().toISOString().slice(0, 10);
 
-  try {
-    const snap = await db.ref('/queue').once('value');
-    const projOrders = [];   // items[] for projection
-    const fullOrders = [];   // { customer, custCode, timestamp, route, items[] }
+  function _isMine(o) {
+    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
+    if (myName && oName === myName) return true;
+    if (myPay  && oPay  === myPay)  return true;
+    return false;
+  }
 
-    if (snap && snap.exists()) {
-      snap.forEach(child => {
+  try {
+    const [queueSnap, ordersSnap] = await Promise.all([
+      db.ref('/queue').once('value'),
+      db.ref('/orders').orderByChild('date').equalTo(today).once('value')
+        .catch(() => db.ref('/orders').once('value'))
+    ]);
+
+    const projOrders = [];
+    const fullOrders = [];
+    const seenIds    = new Set();
+
+    function _processRec(o) {
+      if (!_isMine(o)) return;
+      if ((o.date || '').trim() !== today) return;
+      let items = o.items;
+      if (!items && o.itemsJson) {
+        try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+      }
+      if (!Array.isArray(items) || !items.length) return;
+      if ((o.orderType || '').toLowerCase().includes('projection')) {
+        projOrders.push(...items);
+      } else {
+        fullOrders.push({
+          customer:  o.customer     || 'Unknown Customer',
+          custCode:  o.customerCode || '',
+          timestamp: o.timestamp    || '',
+          route:     o.route        || '',
+          orderId:   o.orderId      || '',
+          items
+        });
+      }
+    }
+
+    if (queueSnap && queueSnap.exists()) {
+      queueSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
-        if ((o.salesman || '').trim().toLowerCase() !== myName) return;
-        if ((o.date || '').trim() !== today) return;
+        if (o.orderId) seenIds.add(o.orderId);
+        _processRec(o);
+      });
+    }
 
-        let items = o.items;
-        if (!items && o.itemsJson) {
-          try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
-        }
-        if (!Array.isArray(items)) items = [];
-
-        if ((o.orderType || '').toLowerCase().includes('projection')) {
-          projOrders.push(...items);
-        } else {
-          fullOrders.push({
-            customer:  o.customer     || 'Unknown Customer',
-            custCode:  o.customerCode || '',
-            timestamp: o.timestamp    || '',
-            route:     o.route        || '',
-            orderId:   o.orderId      || '',
-            items
-          });
-        }
+    if (ordersSnap && ordersSnap.exists()) {
+      ordersSnap.forEach(child => {
+        const o = child.val();
+        if (!o) return;
+        if (o.orderId && seenIds.has(o.orderId)) return;
+        _processRec(o);
       });
     }
 
@@ -9897,7 +9951,12 @@ async function _loadTodayOrdersForView() {
   } catch(e) {
     document.getElementById('tov-loading').style.display = 'none';
     document.getElementById('tov-body').innerHTML =
-      '<div style="padding:32px 20px;text-align:center;color:var(--muted);font-size:13px">Unable to load orders. Please check your connection and try again.</div>';
+      '<div style="padding:40px 20px;text-align:center">' +
+      '<div style="font-size:36px;margin-bottom:12px">📡</div>' +
+      '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:800;margin-bottom:6px">Connection Error</div>' +
+      '<div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:18px">Unable to load your orders.<br>Please check your connection and try again.</div>' +
+      '<button onclick="_loadTodayOrdersForView()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;letter-spacing:.05em;cursor:pointer;text-transform:uppercase">&#8635; Retry</button>' +
+      '</div>';
   }
 }
 
