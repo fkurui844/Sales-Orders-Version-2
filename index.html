@@ -1314,6 +1314,14 @@ tr.tonnage-detail-row td{padding:0}
             Add More to This Order
           </button>
           <button class="btn-dark" onclick="newOrder()">Start a Brand New Order →</button>
+
+          <!-- ── BACK TO HOME ── -->
+          <div style="width:100%;margin-top:6px">
+            <button onclick="setStep(1)" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;background:transparent;border:2px solid var(--border);border-radius:12px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;transition:all .2s" onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Back to Home
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -9667,7 +9675,6 @@ async function loadTodayStatus() {
   let fullSummary   = { customers: 0, items: 0, amt: 0, kg: 0, time: '' };
 
   // Helper: check if an order record belongs to this salesperson
-  // Matches by name OR payroll number so records from both /queue and /orders are found
   function _isMyOrder(o) {
     const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
     const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
@@ -9704,42 +9711,34 @@ async function loadTodayStatus() {
   }
 
   try {
-    // Query /queue (pending/unprocessed orders) AND /orders (Sales Orders Data) in parallel
+    // Query /queue (pending orders) AND /orders (Sales Orders Data) in parallel
     const [queueSnap, ordersSnap] = await Promise.all([
       db.ref('/queue').once('value'),
       db.ref('/orders').orderByChild('date').equalTo(today).once('value')
-        .catch(() => db.ref('/orders').once('value'))  // fallback if index not set
+        .catch(() => db.ref('/orders').once('value'))
     ]);
 
     // ── Process /queue ──────────────────────────────────────────────────────────
+    const seenOrderIds = new Set();
     if (queueSnap && queueSnap.exists()) {
       queueSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
         if (!_isMyOrder(o)) return;
         if ((o.date || '').trim() !== today) return;
+        if (o.orderId) seenOrderIds.add(o.orderId);
         _processOrder(o);
       });
     }
 
     // ── Process /orders (Sales Orders Data) ────────────────────────────────────
-    // Only count orders from /orders that aren't already reflected via /queue
-    // (use orderId as dedup key; /queue entries become /orders after processing)
-    const seenOrderIds = new Set();
-    if (queueSnap && queueSnap.exists()) {
-      queueSnap.forEach(child => {
-        const o = child.val();
-        if (o && o.orderId) seenOrderIds.add(o.orderId);
-      });
-    }
-
+    // Deduplicate against /queue entries already processed (same orderId)
     if (ordersSnap && ordersSnap.exists()) {
       ordersSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
         if (!_isMyOrder(o)) return;
         if ((o.date || '').trim() !== today) return;
-        // Skip if this order was already counted from /queue (same orderId)
         if (o.orderId && seenOrderIds.has(o.orderId)) return;
         _processOrder(o);
       });
