@@ -9878,14 +9878,26 @@ async function _loadTodayOrdersForView() {
   const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
   const myPay  = (S.user[pk] || '').trim().toLowerCase();
-  const today  = S.orderDate || new Date().toISOString().slice(0, 10);
+  // Use local date to avoid UTC/timezone mismatch for Nairobi (UTC+3)
+  const _now   = new Date();
+  const localToday = _now.getFullYear() + '-'
+    + String(_now.getMonth() + 1).padStart(2, '0') + '-'
+    + String(_now.getDate()).padStart(2, '0');
+  const today  = S.orderDate || localToday;
 
   function _isMine(o) {
-    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
-    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
-    if (myName && oName === myName) return true;
-    if (myPay  && oPay  === myPay)  return true;
+    const oName = (o.salesman || o.Salesman || o.salesperson || o.Salesperson || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || o.payrollNo  || o.PayrollNo  || '').trim().toLowerCase();
+    if (myName && oName && oName === myName) return true;
+    if (myPay  && oPay  && oPay  === myPay)  return true;
+    if (myName && oName && oName.includes(myName)) return true;
+    if (myName && oName && myName.includes(oName) && oName.length > 3) return true;
     return false;
+  }
+
+  function _isToday(o) {
+    const d = (o.date || '').trim();
+    return d === today || d.startsWith(today);
   }
 
   try {
@@ -9901,7 +9913,7 @@ async function _loadTodayOrdersForView() {
 
     function _processRec(o) {
       if (!_isMine(o)) return;
-      if ((o.date || '').trim() !== today) return;
+      if (!_isToday(o)) return;
       let items = o.items;
       if (!items && o.itemsJson) {
         try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
@@ -10115,7 +10127,11 @@ async function loadTodayStatus() {
   const pk     = findKey(S.user, PAYROLL_KEYS);
   const myName = (S.user[nk] || '').trim().toLowerCase();
   const myPay  = (S.user[pk] || '').trim().toLowerCase();
-  const today  = new Date().toISOString().slice(0, 10);
+  // Use local date (not UTC) so Nairobi users (UTC+3) get the correct date after 9 PM
+  const _now  = new Date();
+  const today = _now.getFullYear() + '-'
+    + String(_now.getMonth() + 1).padStart(2, '0') + '-'
+    + String(_now.getDate()).padStart(2, '0');
 
   const card    = document.getElementById('ts-card');
   const loading = document.getElementById('ts-loading');
@@ -10136,10 +10152,13 @@ async function loadTodayStatus() {
 
   // Helper: check if an order record belongs to this salesperson
   function _isMyOrder(o) {
-    const oName = (o.salesman || o.Salesman || '').trim().toLowerCase();
-    const oPay  = (o.payroll  || o.Payroll  || '').trim().toLowerCase();
-    if (myName && oName === myName) return true;
-    if (myPay  && oPay  === myPay)  return true;
+    const oName = (o.salesman || o.Salesman || o.salesperson || o.Salesperson || '').trim().toLowerCase();
+    const oPay  = (o.payroll  || o.Payroll  || o.payrollNo || o.PayrollNo || '').trim().toLowerCase();
+    if (myName && oName && oName === myName) return true;
+    if (myPay  && oPay  && oPay  === myPay)  return true;
+    // Partial match: order name contains the user's name (handles middle-name variations)
+    if (myName && oName && oName.includes(myName)) return true;
+    if (myName && oName && myName.includes(oName) && oName.length > 3) return true;
     return false;
   }
 
@@ -10172,11 +10191,22 @@ async function loadTodayStatus() {
 
   try {
     // Query /queue (pending orders) AND /orders (Sales Orders Data) in parallel
+    // Use a 2-day window to catch any UTC/local date boundary edge cases
     const [queueSnap, ordersSnap] = await Promise.all([
       db.ref('/queue').once('value'),
       db.ref('/orders').orderByChild('date').equalTo(today).once('value')
         .catch(() => db.ref('/orders').once('value'))
     ]);
+
+    // Helper: does order's date match today? Accept both local and ISO formats
+    function _isToday(o) {
+      const d = (o.date || '').trim();
+      if (!d) return false;
+      if (d === today) return true;
+      // Also accept ISO timestamp prefix match e.g. "2026-04-19T..."
+      if (d.startsWith(today)) return true;
+      return false;
+    }
 
     // ── Process /queue ──────────────────────────────────────────────────────────
     const seenOrderIds = new Set();
@@ -10185,7 +10215,7 @@ async function loadTodayStatus() {
         const o = child.val();
         if (!o) return;
         if (!_isMyOrder(o)) return;
-        if ((o.date || '').trim() !== today) return;
+        if (!_isToday(o)) return;
         if (o.orderId) seenOrderIds.add(o.orderId);
         _processOrder(o);
       });
@@ -10198,7 +10228,7 @@ async function loadTodayStatus() {
         const o = child.val();
         if (!o) return;
         if (!_isMyOrder(o)) return;
-        if ((o.date || '').trim() !== today) return;
+        if (!_isToday(o)) return;
         if (o.orderId && seenOrderIds.has(o.orderId)) return;
         _processOrder(o);
       });
