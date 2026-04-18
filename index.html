@@ -948,6 +948,51 @@ tr.tonnage-detail-row td{padding:0}
         </div>
       </div>
 
+      <!-- ── TODAY'S STATUS ── -->
+      <div id="ts-card" style="display:none;background:#fff;border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border)">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">📅</span> Today's Status
+          </div>
+          <button onclick="loadTodayStatus()" id="ts-refresh-btn" title="Refresh" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">↻</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="ts-loading" style="display:flex;align-items:center;gap:10px;padding:16px 18px;color:var(--muted);font-size:12px">
+          <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;flex-shrink:0"></div>
+          Checking today's orders…
+        </div>
+
+        <!-- Status rows -->
+        <div id="ts-rows" style="display:none">
+
+          <!-- Morning Projection row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:20px">🌅</span>
+              <div>
+                <div style="font-weight:700;font-size:13px">Morning Projection</div>
+                <div id="ts-proj-sub" style="font-size:11px;color:var(--muted);margin-top:1px">8AM–2PM window</div>
+              </div>
+            </div>
+            <div id="ts-proj-action" style="flex-shrink:0;margin-left:10px"></div>
+          </div>
+
+          <!-- Full Order row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:20px">📦</span>
+              <div>
+                <div style="font-weight:700;font-size:13px">Full Order</div>
+                <div id="ts-full-sub" style="font-size:11px;color:var(--muted);margin-top:1px">Actual customer orders</div>
+              </div>
+            </div>
+            <div id="ts-full-action" style="flex-shrink:0;margin-left:10px"></div>
+          </div>
+
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title"><div class="card-icon">👤</div>Who are you?</div>
 
@@ -2820,6 +2865,9 @@ function startApp(sp) {
   // Check for a partial order in progress
   checkForPartialOrder(name);
 
+  // Load today's order status panel on Step 1
+  loadTodayStatus();
+
   // Start live order notification listener
   startOrderNotifListener();
 }
@@ -2878,6 +2926,11 @@ function setStep(n) {
   if (n !== 4) {
     clearInterval(window._editWindowTimer);
   }
+  // Refresh today's status when returning to step 1
+  if (n === 1) {
+    loadTodayStatus();
+  }
+
   // Load salesperson's today orders when reaching success screen
   if (n === 4) {
     // Reset preview wrap — hide until loadMyOrdersToday reveals it
@@ -9584,6 +9637,115 @@ function _renderTodayOrderView(projItems, fullOrders, today) {
   }
 
   body.innerHTML = html;
+}
+
+
+// ══════════════════════════════════════════
+//  TODAY'S STATUS (Step 1 screen)
+// ══════════════════════════════════════════
+
+async function loadTodayStatus() {
+  if (!S.user) return;
+  const nk     = findKey(S.user, NAME_KEYS);
+  const myName = (S.user[nk] || '').trim().toLowerCase();
+  const today  = new Date().toISOString().slice(0, 10);
+
+  const card    = document.getElementById('ts-card');
+  const loading = document.getElementById('ts-loading');
+  const rows    = document.getElementById('ts-rows');
+  if (!card) return;
+
+  card.style.display    = 'block';
+  loading.style.display = 'flex';
+  rows.style.display    = 'none';
+
+  let hasProjOrders = false;
+  let hasFullOrders = false;
+  let projSummary   = { items: 0, amt: 0, kg: 0, time: '' };
+  let fullSummary   = { customers: 0, items: 0, amt: 0, kg: 0, time: '' };
+
+  try {
+    const snap = await db.ref('/queue').once('value');
+    if (snap && snap.exists()) {
+      snap.forEach(child => {
+        const o = child.val();
+        if (!o) return;
+        if ((o.salesman || '').trim().toLowerCase() !== myName) return;
+        if ((o.date     || '').trim() !== today) return;
+
+        let items = o.items;
+        if (!items && o.itemsJson) {
+          try { items = JSON.parse(o.itemsJson); } catch(e) { items = []; }
+        }
+        if (!Array.isArray(items)) items = [];
+
+        const isProj = (o.orderType || '').toLowerCase().includes('projection');
+        if (isProj) {
+          hasProjOrders = true;
+          projSummary.items += items.length;
+          items.forEach(i => { projSummary.amt += (i.total || 0); projSummary.kg += (i.totalKg || 0); });
+          if (!projSummary.time && o.timestamp) {
+            projSummary.time = _tsTime(o.timestamp);
+          }
+        } else {
+          hasFullOrders = true;
+          fullSummary.customers++;
+          fullSummary.items += items.length;
+          items.forEach(i => { fullSummary.amt += (i.total || 0); fullSummary.kg += (i.totalKg || 0); });
+          if (!fullSummary.time && o.timestamp) {
+            fullSummary.time = _tsTime(o.timestamp);
+          }
+        }
+      });
+    }
+  } catch(e) {
+    loading.style.display = 'none';
+    rows.style.display    = 'block';
+    _tsSetRow('proj', false, null);
+    _tsSetRow('full', false, null);
+    return;
+  }
+
+  loading.style.display = 'none';
+  rows.style.display    = 'block';
+
+  _tsSetRow('proj', hasProjOrders, hasProjOrders ? projSummary : null);
+  _tsSetRow('full', hasFullOrders, hasFullOrders ? fullSummary : null);
+}
+
+function _tsTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function _tsSetRow(type, placed, summary) {
+  const subEl    = document.getElementById('ts-' + type + '-sub');
+  const actionEl = document.getElementById('ts-' + type + '-action');
+  if (!subEl || !actionEl) return;
+
+  const isProj = type === 'proj';
+
+  if (placed && summary) {
+    // Placed — show green badge + summary text + View button
+    const lineA = isProj
+      ? `${summary.items} product${summary.items !== 1 ? 's' : ''}`
+      : `${summary.customers} customer${summary.customers !== 1 ? 's' : ''} · ${summary.items} item${summary.items !== 1 ? 's' : ''}`;
+    const lineB = `KES ${summary.amt.toLocaleString('en-KE', {maximumFractionDigits:0})}${summary.kg ? ' · ' + summary.kg.toFixed(1) + ' KG' : ''}`;
+    const timeStr = summary.time ? ` · ${summary.time}` : '';
+
+    subEl.innerHTML = `<span style="color:var(--ok);font-weight:600">✓ Submitted${timeStr}</span><br><span style="color:var(--muted)">${lineA} · ${lineB}</span>`;
+    actionEl.innerHTML = `<button onclick="openTodayOrderView()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--ok);white-space:nowrap;transition:all .15s" onmouseover="this.style.background='#c8edd8'" onmouseout="this.style.background='var(--ok-lt)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      View
+    </button>`;
+  } else {
+    // Not yet placed — show grey "Not yet" badge
+    const hint = isProj ? 'Not yet submitted' : 'Not yet submitted';
+    subEl.innerHTML = `<span style="color:#b45309;font-weight:600">○ Pending</span><br><span style="color:var(--muted)">${hint}</span>`;
+    actionEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:#FFF8E1;border:1.5px solid #FFD54F;border-radius:8px;font-size:11px;font-weight:700;color:#92400E;white-space:nowrap;letter-spacing:.03em">○ Not Yet</span>`;
+  }
 }
 
 
