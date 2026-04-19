@@ -2466,7 +2466,7 @@ tr.tonnage-detail-row td{padding:0}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxerrU20BwdTiiQ-dTcCtbsvscTVnM1_BiDotnc_UlEhtm1Rq8pqtNl0N32pRDS3m9ctA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzreRVyfdtiGFAz0KKM8MlsRZc5lk4vuoQ7ATonOmutjOmMPvr9OKpbYAs4L51B2t9fiw/exec';
 
 // ══════════════════════════════════════════
 //  PARTIAL ORDER (place in pieces)
@@ -10138,8 +10138,6 @@ async function loadTodayStatus() {
   const today = _now.getFullYear() + '-'
     + String(_now.getMonth() + 1).padStart(2, '0') + '-'
     + String(_now.getDate()).padStart(2, '0');
-  // ── DEBUG: log identity + today so we can diagnose matching issues ──────────
-  console.log('[TodayStatus] myName:', myName, '| myPay:', myPay, '| today:', today);
 
   const card    = document.getElementById('ts-card');
   const loading = document.getElementById('ts-loading');
@@ -10197,65 +10195,59 @@ async function loadTodayStatus() {
     }
   }
 
-  try {
-    // Query /queue (pending orders) AND /orders (Sales Orders Data) in parallel
-    // Use a 2-day window to catch any UTC/local date boundary edge cases
-    const [queueSnap, ordersSnap] = await Promise.all([
-      db.ref('/queue').once('value'),
-      db.ref('/orders').orderByChild('date').equalTo(today).once('value')
-        .catch(() => db.ref('/orders').once('value'))
-    ]);
 
-    // Helper: does order's date match today? Accept both local and ISO formats
-    function _isToday(o) {
-      const d = (o.date || '').trim();
-      if (!d) return false;
-      if (d === today) return true;
-      // Also accept ISO timestamp prefix match e.g. "2026-04-19T..."
-      if (d.startsWith(today)) return true;
-      return false;
-    }
-
-    // ── Process /queue ──────────────────────────────────────────────────────────
-    const seenOrderIds = new Set();
-    if (queueSnap && queueSnap.exists()) {
-      queueSnap.forEach(child => {
-        const o = child.val();
-        if (!o) return;
-        console.log('[Queue] record:', o.salesman||o.salesperson, '| date:', o.date, '| orderType:', o.orderType, '| mine:', _isMyOrder(o), '| today:', _isToday(o));
-        if (!_isMyOrder(o)) return;
-        if (!_isToday(o)) return;
-        if (o.orderId) seenOrderIds.add(o.orderId);
-        _processOrder(o);
-      });
-    }
-
-    // ── Process /orders (Sales Orders Data) ────────────────────────────────────
-    // Deduplicate against /queue entries already processed (same orderId)
-    if (ordersSnap && ordersSnap.exists()) {
-      ordersSnap.forEach(child => {
-        const o = child.val();
-        if (!o) return;
-        console.log('[Orders] record:', o.salesman||o.salesperson, '| date:', o.date, '| orderType:', o.orderType, '| mine:', _isMyOrder(o), '| today:', _isToday(o));
-        if (!_isMyOrder(o)) return;
-        if (!_isToday(o)) return;
-        if (o.orderId && seenOrderIds.has(o.orderId)) return;
-        _processOrder(o);
-      });
-    }
-
-  } catch(e) {
-    loading.style.display = 'none';
-    rows.style.display    = 'block';
-    _tsSetRow('proj', false, null);
-    _tsSetRow('full', false, null);
-    return;
+  // Helper: does order's date match today? Accept both local and ISO formats
+  function _isToday(o) {
+    const d = (o.date || '').trim();
+    if (!d) return false;
+    if (d === today) return true;
+    if (d.startsWith(today)) return true;
+    return false;
   }
+
+  // ── Read /queue and /orders independently so one failure never blocks the other ──
+  let queueSnap = null, ordersSnap = null;
+  try { queueSnap = await db.ref('/queue').once('value'); } catch(e) {
+    console.warn('[TodayStatus] /queue read failed:', e.message);
+  }
+  try {
+    ordersSnap = await db.ref('/orders').orderByChild('date').equalTo(today).once('value');
+  } catch(e) {
+    console.warn('[TodayStatus] /orders indexed query failed, trying full read:', e.message);
+    try { ordersSnap = await db.ref('/orders').once('value'); } catch(e2) {
+      console.warn('[TodayStatus] /orders full read also failed:', e2.message);
+    }
+  }
+
+  // ── Process /queue ────────────────────────────────────────────────────────────
+  const seenOrderIds = new Set();
+  if (queueSnap && queueSnap.exists()) {
+    queueSnap.forEach(child => {
+      const o = child.val();
+      if (!o) return;
+      if (!_isMyOrder(o)) return;
+      if (!_isToday(o)) return;
+      if (o.orderId) seenOrderIds.add(o.orderId);
+      _processOrder(o);
+    });
+  }
+
+  // ── Process /orders ───────────────────────────────────────────────────────────
+  if (ordersSnap && ordersSnap.exists()) {
+    ordersSnap.forEach(child => {
+      const o = child.val();
+      if (!o) return;
+      if (!_isMyOrder(o)) return;
+      if (!_isToday(o)) return;
+      if (o.orderId && seenOrderIds.has(o.orderId)) return;
+      _processOrder(o);
+    });
+  }
+
 
   loading.style.display = 'none';
   rows.style.display    = 'block';
 
-  console.log('[TodayStatus] RESULT => hasProjOrders:', hasProjOrders, '| hasFullOrders:', hasFullOrders);
   _tsSetRow('proj', hasProjOrders, hasProjOrders ? projSummary : null);
   _tsSetRow('full', hasFullOrders, hasFullOrders ? fullSummary : null);
 }
