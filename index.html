@@ -10225,11 +10225,16 @@ async function loadTodayStatus() {
   // ── Process /queue ────────────────────────────────────────────────────────────
   const seenOrderIds = new Set();
   let queueTotal = 0, queueMine = 0;
+  // Collect sample queue names for debug
+  const _queueSampleNames = new Set();
   if (queueSnap && queueSnap.exists()) {
     queueSnap.forEach(child => {
       const o = child.val();
       if (!o) return;
       queueTotal++;
+      // Collect up to 5 unique salesman values for debug
+      const _n = (o.salesman || o.salesperson || '').trim();
+      if (_n && _queueSampleNames.size < 5) _queueSampleNames.add(_n);
       if (!_isMyOrder(o)) return;
       if (!_isToday(o)) return;
       queueMine++;
@@ -10256,20 +10261,27 @@ async function loadTodayStatus() {
   // ── Show debug panel ─────────────────────────────────────────────────────────
   const dbgEl = document.getElementById('ts-debug');
   if (dbgEl) {
-    const sampleOrder = (() => {
-      if (ordersSnap && ordersSnap.exists()) {
-        const first = Object.values(ordersSnap.val() || {})[0];
-        if (first) return `salesman="${first.salesman}" date="${first.date}"`;
+    // Sample a queue record to see what fields it has
+    let qSample = 'none';
+    if (queueSnap && queueSnap.exists()) {
+      const allVals = [];
+      queueSnap.forEach(c => { if (c.val()) allVals.push(c.val()); });
+      // Find first record matching today
+      const todayRec = allVals.find(o => _isToday(o));
+      const anyRec   = allVals[0];
+      const rec = todayRec || anyRec;
+      if (rec) {
+        qSample = `salesman="${rec.salesman||''}" salesperson="${rec.salesperson||''}" date="${rec.date||''}" status="${rec.status||''}"`;
       }
-      return 'none';
-    })();
+    }
     dbgEl.style.display = 'block';
     dbgEl.innerHTML =
       `<b>Debug — remove after fix</b><br>` +
       `myName: <b>${myName}</b> | myPay: <b>${myPay}</b> | today: <b>${today}</b><br>` +
       `Queue: ${queueTotal} total, ${queueMine} mine${queueErr ? ' ⚠️ '+queueErr : ''}<br>` +
-      `Orders: ${ordersTotal} total, ${ordersMine} mine${ordersErr ? ' ⚠️ '+ordersErr : ''}<br>` +
-      `Sample /orders record: ${sampleOrder}`;
+      `Queue sample names: <b>${[..._queueSampleNames].join(', ')||'none'}</b><br>` +
+      `Queue sample record: ${qSample}<br>` +
+      `Orders: ${ordersTotal} total, ${ordersMine} mine${ordersErr ? ' ⚠️ '+ordersErr : ''}`;
   }
 
 
