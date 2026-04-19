@@ -2466,7 +2466,7 @@ tr.tonnage-detail-row td{padding:0}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwu7i0hrFI4lvZfW-ZgRyUqn8Bfwmp-_sOtgX9-aYoGFw34zhSIUIsg_kYiA2O9sgjksA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzreRVyfdtiGFAz0KKM8MlsRZc5lk4vuoQ7ATonOmutjOmMPvr9OKpbYAs4L51B2t9fiw/exec';
 
 // ══════════════════════════════════════════
 //  PARTIAL ORDER (place in pieces)
@@ -5127,7 +5127,12 @@ function editSubmittedOrder() {
 
   // Restore form fields
   const locSel = document.getElementById('who-loc');
-  if (locSel && S.location) { locSel.value = S.location; onLocChange(); }
+  if (locSel && S.location) {
+    locSel.value = S.location;
+    const _savedRoute = S.route; // onLocChange() clears S.route — save it first
+    onLocChange();
+    S.route = _savedRoute;       // restore immediately after
+  }
   const rInp = document.getElementById('route-inp');
   if (rInp) { rInp.value = S.route; rInp.readOnly = false; }
   const dateInp = document.getElementById('order-date');
@@ -10133,6 +10138,8 @@ async function loadTodayStatus() {
   const today = _now.getFullYear() + '-'
     + String(_now.getMonth() + 1).padStart(2, '0') + '-'
     + String(_now.getDate()).padStart(2, '0');
+  // ── DEBUG: log identity + today so we can diagnose matching issues ──────────
+  console.log('[TodayStatus] myName:', myName, '| myPay:', myPay, '| today:', today);
 
   const card    = document.getElementById('ts-card');
   const loading = document.getElementById('ts-loading');
@@ -10215,6 +10222,7 @@ async function loadTodayStatus() {
       queueSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
+        console.log('[Queue] record:', o.salesman||o.salesperson, '| date:', o.date, '| orderType:', o.orderType, '| mine:', _isMyOrder(o), '| today:', _isToday(o));
         if (!_isMyOrder(o)) return;
         if (!_isToday(o)) return;
         if (o.orderId) seenOrderIds.add(o.orderId);
@@ -10228,6 +10236,7 @@ async function loadTodayStatus() {
       ordersSnap.forEach(child => {
         const o = child.val();
         if (!o) return;
+        console.log('[Orders] record:', o.salesman||o.salesperson, '| date:', o.date, '| orderType:', o.orderType, '| mine:', _isMyOrder(o), '| today:', _isToday(o));
         if (!_isMyOrder(o)) return;
         if (!_isToday(o)) return;
         if (o.orderId && seenOrderIds.has(o.orderId)) return;
@@ -10246,6 +10255,7 @@ async function loadTodayStatus() {
   loading.style.display = 'none';
   rows.style.display    = 'block';
 
+  console.log('[TodayStatus] RESULT => hasProjOrders:', hasProjOrders, '| hasFullOrders:', hasFullOrders);
   _tsSetRow('proj', hasProjOrders, hasProjOrders ? projSummary : null);
   _tsSetRow('full', hasFullOrders, hasFullOrders ? fullSummary : null);
 }
