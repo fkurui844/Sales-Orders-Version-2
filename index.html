@@ -971,17 +971,45 @@ tr.tonnage-detail-row td{padding:0}
   }
 
   /* Status twin-pill strip */
-  /* ── TWO-SECTION SHELL ── */
-  .step1-section {
-    background: #fff;
-    border-bottom: 2px solid var(--border);
+  /* ── SIDE-BY-SIDE LAYOUT ── */
+  #step-who .content { padding: 0; max-width: 1100px; }
+
+  .step1-split {
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 52px - 40px - 64px); /* viewport minus header, steps bar, sticky footer */
   }
+
+  /* LEFT column — Status Update */
+  .step1-left {
+    flex: 0 0 400px;
+    background: #fff;
+    border-right: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* RIGHT column — Place Orders */
+  .step1-right {
+    flex: 1;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* ── SECTION HEADERS ── */
   .step1-section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px 10px;
+    padding: 16px 20px 12px;
     border-bottom: 1px solid var(--border);
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   .step1-section-title {
     display: flex;
@@ -990,7 +1018,7 @@ tr.tonnage-detail-row td{padding:0}
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 15px;
     font-weight: 800;
-    letter-spacing: .04em;
+    letter-spacing: .05em;
     text-transform: uppercase;
     color: var(--text);
   }
@@ -1004,11 +1032,12 @@ tr.tonnage-detail-row td{padding:0}
   .step1-section-title .s1-icon.status { background: var(--ok-lt); }
   .step1-section-title .s1-icon.orders { background: var(--accent-lt); }
 
-  /* ── STATUS UPDATE SECTION ── */
+  /* ── STATUS TWIN PILLS ── */
   .who-status-strip {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
+    border-bottom: 1px solid var(--border);
   }
   .wss-pill {
     padding: 14px 18px;
@@ -1038,12 +1067,16 @@ tr.tonnage-detail-row td{padding:0}
   }
   .wss-refresh:hover { color: var(--text); }
 
-  /* ── PLACE ORDERS SECTION ── */
-  .place-orders-section {
-    background: var(--bg);
-  }
+  /* ── PLACE ORDERS RIGHT PANEL ── */
   .place-orders-body {
-    padding: 14px 16px 18px;
+    padding: 16px 20px 20px;
+  }
+
+  /* Responsive: stack vertically on small screens */
+  @media (max-width: 720px) {
+    .step1-split { flex-direction: column; min-height: auto; }
+    .step1-left { flex: none; border-right: none; border-bottom: 2px solid var(--border); }
+    .step1-right { flex: none; }
   }
 
   /* Loading shimmer */
@@ -1079,7 +1112,7 @@ tr.tonnage-detail-row td{padding:0}
   /* My Day Summary redesigned cards */
   .who-mot-wrap {
     display: none;
-    padding: 0 0 4px;
+    padding: 0 16px 14px;
   }
   .who-mot-loader {
     display: flex; align-items: center; gap: 10px;
@@ -1318,7 +1351,6 @@ tr.tonnage-detail-row td{padding:0}
   .who-continue-btn:active { transform: scale(.98); }
 
   @media (max-width: 400px) {
-    .who-ot-grid { grid-template-columns: 1fr; }
     .who-greeting-name { font-size: 26px; }
   }
   </style>
@@ -1360,11 +1392,14 @@ tr.tonnage-detail-row td{padding:0}
       </div>
 
       <!-- ══════════════════════════════════════
-           SECTION 1 — STATUS UPDATE
+           SPLIT LAYOUT: LEFT = STATUS · RIGHT = PLACE ORDERS
       ═══════════════════════════════════════ -->
-      <div id="ts-card" style="display:none;margin-bottom:0;border-radius:0;box-shadow:none">
-        <div class="step1-section">
-          <!-- Section header -->
+      <div class="step1-split">
+
+        <!-- ─── LEFT: STATUS UPDATE ─── -->
+        <div class="step1-left" id="ts-card" style="display:flex;flex-direction:column">
+
+          <!-- Sticky header -->
           <div class="step1-section-header">
             <div class="step1-section-title">
               <span class="s1-icon status">✅</span>
@@ -1375,7 +1410,6 @@ tr.tonnage-detail-row td{padding:0}
 
           <!-- Twin-pill strip -->
           <div class="who-status-strip">
-            <!-- Morning Projection pill -->
             <div class="wss-pill">
               <div class="wss-icon proj">🌅</div>
               <div>
@@ -1383,7 +1417,6 @@ tr.tonnage-detail-row td{padding:0}
                 <div id="ts-proj-sub" class="wss-status">—</div>
               </div>
             </div>
-            <!-- Full Order pill -->
             <div class="wss-pill">
               <div class="wss-icon full">📦</div>
               <div>
@@ -1393,31 +1426,29 @@ tr.tonnage-detail-row td{padding:0}
             </div>
           </div>
 
-          <!-- Loading bar -->
+          <!-- Loading shimmer -->
           <div id="ts-loading" style="display:none;padding:10px 18px 6px">
             <div class="wss-shimmer"></div>
           </div>
-          <!-- Hidden action containers (kept for JS compatibility) -->
+          <!-- JS compatibility stubs -->
           <div id="ts-rows" style="display:none">
             <div id="ts-proj-action"></div>
             <div id="ts-full-action"></div>
           </div>
 
-          <!-- My Day Summary (lives inside Status section) -->
+          <!-- Day Summary sub-section -->
           <div id="my-orders-today" style="display:none">
-            <div style="padding:10px 20px 4px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
+            <div style="padding:12px 20px 6px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
               <span style="font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)">Day Summary</span>
               <button onclick="loadMyOrdersToday()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;font-family:inherit;padding:0;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">↻ Refresh</button>
             </div>
-            <div class="who-mot-wrap" id="who-mot-inner" style="display:block;padding:0 16px 14px">
+            <div class="who-mot-wrap" id="who-mot-inner" style="display:block">
 
-              <!-- Loading -->
               <div id="mot-loading" class="who-mot-loader">
                 <div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;flex-shrink:0"></div>
                 Loading today's orders…
               </div>
 
-              <!-- Both done banner -->
               <div id="mot-complete-banner" class="who-mot-complete">
                 <span style="font-size:20px">🎉</span>
                 <div>
@@ -1426,7 +1457,6 @@ tr.tonnage-detail-row td{padding:0}
                 </div>
               </div>
 
-              <!-- Morning Projection card -->
               <div id="mot-proj-card" class="who-order-row" style="display:none">
                 <div class="who-order-row-head">
                   <div class="who-order-row-left">
@@ -1442,7 +1472,6 @@ tr.tonnage-detail-row td{padding:0}
                 </div>
               </div>
 
-              <!-- Projection missing -->
               <div id="mot-proj-missing" class="who-mot-missing">
                 <span style="font-size:20px;opacity:.4">🌅</span>
                 <div>
@@ -1451,7 +1480,6 @@ tr.tonnage-detail-row td{padding:0}
                 </div>
               </div>
 
-              <!-- Full Order card -->
               <div id="mot-full-card" class="who-order-row" style="display:none">
                 <div class="who-order-row-head">
                   <div class="who-order-row-left">
@@ -1467,7 +1495,6 @@ tr.tonnage-detail-row td{padding:0}
                 </div>
               </div>
 
-              <!-- Full Order missing -->
               <div id="mot-full-missing" class="who-mot-missing">
                 <span style="font-size:20px;opacity:.4">📦</span>
                 <div>
@@ -1476,18 +1503,14 @@ tr.tonnage-detail-row td{padding:0}
                 </div>
               </div>
 
-              <!-- View button -->
               <button class="who-view-btn" onclick="openTodayOrderView()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 View Today's Full Order
               </button>
 
-              <!-- Projection vs Actual analysis -->
               <div id="pva-card" style="display:none;margin:10px 0 2px">
                 <button onclick="togglePVA()" id="pva-toggle-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.03em;color:var(--text);transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">
-                  <span style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:16px">📊</span> Projection vs Actual
-                  </span>
+                  <span style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">📊</span> Projection vs Actual</span>
                   <span id="pva-chevron" style="font-size:13px;transition:transform .2s">▼</span>
                 </button>
                 <div id="pva-body" style="display:none;padding:0 2px 4px"></div>
@@ -1495,87 +1518,88 @@ tr.tonnage-detail-row td{padding:0}
 
             </div>
           </div>
-        </div>
-      </div>
+        </div><!-- /step1-left -->
 
-      <!-- ══════════════════════════════════════
-           SECTION 2 — PROCEED TO PLACE ORDERS
-      ═══════════════════════════════════════ -->
-      <div class="place-orders-section">
-        <div class="step1-section-header" style="border-bottom:1px solid var(--border)">
-          <div class="step1-section-title">
-            <span class="s1-icon orders">🛒</span>
-            Place Orders
-          </div>
-        </div>
-        <div class="place-orders-body">
+        <!-- ─── RIGHT: PLACE ORDERS ─── -->
+        <div class="step1-right">
 
-      <!-- ── WHO ARE YOU FORM ── -->
-      <div class="who-section-label" style="padding-top:4px"><span>Your Details</span></div>
-      <div class="who-form-card">
-        <div class="who-form-header">
-          <div class="who-form-header-ico">👤</div>
-          <div class="who-form-header-title">Who are you?</div>
-        </div>
-        <div class="who-form-body">
-
-          <div class="who-field">
-            <label class="who-lbl">Your Name / Payroll Number</label>
-            <input class="who-inp inp" id="who-name" readonly>
-          </div>
-
-          <div class="who-field">
-            <label class="who-lbl">Your Location</label>
-            <select class="who-inp inp" id="who-loc" onchange="onLocChange()">
-              <option value="">— Select Location —</option>
-            </select>
-          </div>
-
-          <div class="who-field">
-            <label class="who-lbl">Your Route</label>
-            <div class="dd-wrap" id="route-wrap">
-              <input class="who-inp inp" id="route-inp" placeholder="Select location first…" autocomplete="off" readonly>
-              <div class="dd-list" id="route-list"></div>
+          <!-- Sticky header -->
+          <div class="step1-section-header">
+            <div class="step1-section-title">
+              <span class="s1-icon orders">🛒</span>
+              Place Orders
             </div>
           </div>
+          <div class="place-orders-body">
 
-          <div class="who-field">
-            <label class="who-lbl">Order Date</label>
-            <input class="who-inp inp" type="date" id="order-date">
-          </div>
-
-          <div class="who-field" style="margin-bottom:0">
-            <label class="who-lbl" style="margin-bottom:10px">Order Type</label>
-            <div class="who-ot-grid">
-              <div class="who-ot-card proj-card sel" id="ot-proj" onclick="pickOT('projection')">
-                <div class="who-ot-check">✓</div>
-                <div class="who-ot-inner">
-                  <div class="who-ot-ico">🌅</div>
-                  <div class="who-ot-name">Morning<br>Projection</div>
-                  <div class="who-ot-desc">All products · Quantity forecast · 8AM–2PM</div>
-                  <div id="proj-time-badge" style="margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;display:inline-block"></div>
-                </div>
+            <!-- ── WHO ARE YOU FORM ── -->
+            <div class="who-section-label" style="padding-top:4px"><span>Your Details</span></div>
+            <div class="who-form-card">
+              <div class="who-form-header">
+                <div class="who-form-header-ico">👤</div>
+                <div class="who-form-header-title">Who are you?</div>
               </div>
-              <div class="who-ot-card full-card" id="ot-full" onclick="pickOT('full')">
-                <div class="who-ot-check">✓</div>
-                <div class="who-ot-inner">
-                  <div class="who-ot-ico">📦</div>
-                  <div class="who-ot-name">Full<br>Order</div>
-                  <div class="who-ot-desc">All products · Actual customer orders</div>
+              <div class="who-form-body">
+
+                <div class="who-field">
+                  <label class="who-lbl">Your Name / Payroll Number</label>
+                  <input class="who-inp inp" id="who-name" readonly>
                 </div>
+
+                <div class="who-field">
+                  <label class="who-lbl">Your Location</label>
+                  <select class="who-inp inp" id="who-loc" onchange="onLocChange()">
+                    <option value="">— Select Location —</option>
+                  </select>
+                </div>
+
+                <div class="who-field">
+                  <label class="who-lbl">Your Route</label>
+                  <div class="dd-wrap" id="route-wrap">
+                    <input class="who-inp inp" id="route-inp" placeholder="Select location first…" autocomplete="off" readonly>
+                    <div class="dd-list" id="route-list"></div>
+                  </div>
+                </div>
+
+                <div class="who-field">
+                  <label class="who-lbl">Order Date</label>
+                  <input class="who-inp inp" type="date" id="order-date">
+                </div>
+
+                <div class="who-field" style="margin-bottom:0">
+                  <label class="who-lbl" style="margin-bottom:10px">Order Type</label>
+                  <div class="who-ot-grid">
+                    <div class="who-ot-card proj-card sel" id="ot-proj" onclick="pickOT('projection')">
+                      <div class="who-ot-check">✓</div>
+                      <div class="who-ot-inner">
+                        <div class="who-ot-ico">🌅</div>
+                        <div class="who-ot-name">Morning<br>Projection</div>
+                        <div class="who-ot-desc">All products · Quantity forecast · 8AM–2PM</div>
+                        <div id="proj-time-badge" style="margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;display:inline-block"></div>
+                      </div>
+                    </div>
+                    <div class="who-ot-card full-card" id="ot-full" onclick="pickOT('full')">
+                      <div class="who-ot-check">✓</div>
+                      <div class="who-ot-inner">
+                        <div class="who-ot-ico">📦</div>
+                        <div class="who-ot-name">Full<br>Order</div>
+                        <div class="who-ot-desc">All products · Actual customer orders</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
-          </div>
 
-        </div>
-      </div>
+          </div><!-- /place-orders-body -->
+        </div><!-- /step1-right -->
 
-        </div><!-- /place-orders-body -->
-      </div><!-- /place-orders-section -->
+      </div><!-- /step1-split -->
 
     </div>
 
-    <!-- Continue strip (replaces old sticky-ft) -->
+    <!-- Continue strip -->
     <div class="sticky-ft">
       <div id="autosave-indicator" style="position:absolute;top:-18px;right:16px"></div>
       <button class="btn-accent" onclick="go2()">Continue — Add Products →</button>
@@ -10389,7 +10413,8 @@ async function loadTodayStatus() {
   const rows    = document.getElementById('ts-rows');
   if (!card) return;
 
-  card.style.display    = 'block';
+  card.style.display    = 'flex';
+  card.style.flexDirection = 'column';
   loading.style.display = 'flex';
   rows.style.display    = 'none';
   // Reset pill backgrounds while loading
