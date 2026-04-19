@@ -1565,7 +1565,7 @@ tr.tonnage-detail-row td{padding:0}
                 <div class="who-field" style="margin-bottom:0">
                   <label class="who-lbl" style="margin-bottom:10px">Order Type</label>
                   <div class="who-ot-grid">
-                    <div class="who-ot-card proj-card sel" id="ot-proj" onclick="pickOT('projection')">
+                    <div class="who-ot-card proj-card" id="ot-proj" onclick="pickOT('projection')">
                       <div class="who-ot-check">✓</div>
                       <div class="who-ot-inner">
                         <div class="who-ot-ico">🌅</div>
@@ -2770,7 +2770,7 @@ function restoreDraft() {
   S.location      = draft.location || '';
   S.route         = draft.route || '';
   S.orderDate     = draft.orderDate || '';
-  S.orderType     = draft.orderType || 'projection';
+  S.orderType     = draft.orderType || '';
   S.customerOrders = draft.customerOrders || [];
 
   // Restore UI fields
@@ -2850,7 +2850,7 @@ const S = {
   location: '',
   route: '',
   orderDate: '',
-  orderType: 'projection',
+  orderType: '',
   customer: null,
   cart: [],
   customerOrders: [],   // [{customer, custCode, raw, cart:[...]}]
@@ -3606,6 +3606,12 @@ function go2() {
     toast('⚠️ Please select an order date');
     shakeEl('order-date');
     document.getElementById('order-date').focus();
+    return;
+  }
+  if (!S.orderType) {
+    toast('⚠️ Please select an order type');
+    shakeEl('ot-proj');
+    shakeEl('ot-full');
     return;
   }
   // Warn if date is far in the past (> 7 days)
