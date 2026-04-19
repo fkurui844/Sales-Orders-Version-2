@@ -1351,6 +1351,8 @@ tr.tonnage-detail-row td{padding:0}
           <div id="ts-proj-action"></div>
           <div id="ts-full-action"></div>
         </div>
+        <!-- Temp debug panel — remove after fix confirmed -->
+        <div id="ts-debug" style="display:none;margin:6px 18px 10px;padding:8px 12px;background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;font-size:11px;color:#555;line-height:1.7;font-family:monospace"></div>
       </div>
 
       <!-- ── MY DAY SUMMARY ── -->
@@ -10207,41 +10209,67 @@ async function loadTodayStatus() {
 
   // ── Read /queue and /orders independently so one failure never blocks the other ──
   let queueSnap = null, ordersSnap = null;
+  let queueErr = '', ordersErr = '';
   try { queueSnap = await db.ref('/queue').once('value'); } catch(e) {
-    console.warn('[TodayStatus] /queue read failed:', e.message);
+    queueErr = e.message;
   }
   try {
     ordersSnap = await db.ref('/orders').orderByChild('date').equalTo(today).once('value');
   } catch(e) {
-    console.warn('[TodayStatus] /orders indexed query failed, trying full read:', e.message);
-    try { ordersSnap = await db.ref('/orders').once('value'); } catch(e2) {
-      console.warn('[TodayStatus] /orders full read also failed:', e2.message);
+    ordersErr = 'indexed: ' + e.message;
+    try { ordersSnap = await db.ref('/orders').once('value'); ordersErr += ' → full read OK'; } catch(e2) {
+      ordersErr += ' → full read also failed: ' + e2.message;
     }
   }
 
   // ── Process /queue ────────────────────────────────────────────────────────────
   const seenOrderIds = new Set();
+  let queueTotal = 0, queueMine = 0;
   if (queueSnap && queueSnap.exists()) {
     queueSnap.forEach(child => {
       const o = child.val();
       if (!o) return;
+      queueTotal++;
       if (!_isMyOrder(o)) return;
       if (!_isToday(o)) return;
+      queueMine++;
       if (o.orderId) seenOrderIds.add(o.orderId);
       _processOrder(o);
     });
   }
 
   // ── Process /orders ───────────────────────────────────────────────────────────
+  let ordersTotal = 0, ordersMine = 0;
   if (ordersSnap && ordersSnap.exists()) {
     ordersSnap.forEach(child => {
       const o = child.val();
       if (!o) return;
+      ordersTotal++;
       if (!_isMyOrder(o)) return;
       if (!_isToday(o)) return;
       if (o.orderId && seenOrderIds.has(o.orderId)) return;
+      ordersMine++;
       _processOrder(o);
     });
+  }
+
+  // ── Show debug panel ─────────────────────────────────────────────────────────
+  const dbgEl = document.getElementById('ts-debug');
+  if (dbgEl) {
+    const sampleOrder = (() => {
+      if (ordersSnap && ordersSnap.exists()) {
+        const first = Object.values(ordersSnap.val() || {})[0];
+        if (first) return `salesman="${first.salesman}" date="${first.date}"`;
+      }
+      return 'none';
+    })();
+    dbgEl.style.display = 'block';
+    dbgEl.innerHTML =
+      `<b>Debug — remove after fix</b><br>` +
+      `myName: <b>${myName}</b> | myPay: <b>${myPay}</b> | today: <b>${today}</b><br>` +
+      `Queue: ${queueTotal} total, ${queueMine} mine${queueErr ? ' ⚠️ '+queueErr : ''}<br>` +
+      `Orders: ${ordersTotal} total, ${ordersMine} mine${ordersErr ? ' ⚠️ '+ordersErr : ''}<br>` +
+      `Sample /orders record: ${sampleOrder}`;
   }
 
 
