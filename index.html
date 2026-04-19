@@ -1432,6 +1432,17 @@ tr.tonnage-detail-row td{padding:0}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             View Today's Full Order
           </button>
+
+          <!-- Projection vs Actual analysis -->
+          <div id="pva-card" style="display:none;margin:10px 0 2px">
+            <button onclick="togglePVA()" id="pva-toggle-btn" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.03em;color:var(--text);transition:border-color .15s" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">
+              <span style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:16px">📊</span> Projection vs Actual
+              </span>
+              <span id="pva-chevron" style="font-size:13px;transition:transform .2s">▼</span>
+            </button>
+            <div id="pva-body" style="display:none;padding:0 2px 4px"></div>
+          </div>
         </div>
       </div>
 
@@ -2467,7 +2478,7 @@ tr.tonnage-detail-row td{padding:0}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVm48_rU3QlMXBtRMNRa8cBTOycDpPF29cqwbzZTIBJBeOdMnQJmzZjXoGU28-D7I5Sg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzreRVyfdtiGFAz0KKM8MlsRZc5lk4vuoQ7ATonOmutjOmMPvr9OKpbYAs4L51B2t9fiw/exec';
 
 // ══════════════════════════════════════════
 //  PARTIAL ORDER (place in pieces)
@@ -8618,6 +8629,169 @@ function showOrderPreviewWrap() {
   }
 }
 
+
+// ══════════════════════════════════════════════════════════════
+//  PROJECTION vs ACTUAL ANALYSIS
+// ══════════════════════════════════════════════════════════════
+
+function togglePVA() {
+  const body    = document.getElementById('pva-body');
+  const chevron = document.getElementById('pva-chevron');
+  const btn     = document.getElementById('pva-toggle-btn');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+  btn.style.borderColor = open ? 'var(--border)' : 'var(--accent)';
+  btn.style.color       = open ? 'var(--text)'   : 'var(--accent)';
+}
+
+function _renderPVA(proj, fullOrders) {
+  const card = document.getElementById('pva-card');
+  const body = document.getElementById('pva-body');
+  if (!card || !body) return;
+
+  // Only show if both projection and full orders exist
+  if (!proj || !proj.items || !proj.items.length || !fullOrders || !fullOrders.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  // ── Build product-code maps ──────────────────────────────────────────────
+  // Projection: map productCode → { desc, qty, total, kg }
+  const projMap = {};
+  proj.items.forEach(i => {
+    const key = (i.productCode || i.description || i.product || '').trim();
+    if (!key) return;
+    if (!projMap[key]) projMap[key] = { desc: i.description || i.product || key, qty: 0, total: 0, kg: 0 };
+    projMap[key].qty   += Number(i.qty)     || 0;
+    projMap[key].total += Number(i.total)   || 0;
+    projMap[key].kg    += Number(i.totalKg) || 0;
+  });
+
+  // Actual: flatten all customer orders into same map
+  const actualMap = {};
+  fullOrders.forEach(co => {
+    (co.items || []).forEach(i => {
+      const key = (i.productCode || i.description || i.product || '').trim();
+      if (!key) return;
+      if (!actualMap[key]) actualMap[key] = { desc: i.description || i.product || key, qty: 0, total: 0, kg: 0 };
+      actualMap[key].qty   += Number(i.qty)     || 0;
+      actualMap[key].total += Number(i.total)   || 0;
+      actualMap[key].kg    += Number(i.totalKg) || 0;
+    });
+  });
+
+  // ── Totals ───────────────────────────────────────────────────────────────
+  const projTotalAmt = proj.items.reduce((s, i) => s + (Number(i.total)   || 0), 0);
+  const projTotalKg  = proj.items.reduce((s, i) => s + (Number(i.totalKg) || 0), 0);
+  const actualTotalAmt = fullOrders.reduce((s, co) => s + (co.items || []).reduce((a, i) => a + (Number(i.total) || 0), 0), 0);
+  const actualTotalKg  = fullOrders.reduce((s, co) => s + (co.items || []).reduce((a, i) => a + (Number(i.totalKg) || 0), 0), 0);
+
+  const amtDiff  = actualTotalAmt - projTotalAmt;
+  const kgDiff   = actualTotalKg  - projTotalKg;
+  const amtPct   = projTotalAmt > 0 ? Math.round((actualTotalAmt / projTotalAmt) * 100) : 0;
+
+  // ── Overall verdict ──────────────────────────────────────────────────────
+  let verdictColor, verdictBg, verdictIcon, verdictText;
+  if (amtPct >= 100) {
+    verdictColor = '#1B6B3A'; verdictBg = '#E8F5ED';
+    verdictIcon  = '✓';
+    verdictText  = amtPct === 100
+      ? 'Exactly as projected — perfect execution!'
+      : `Exceeded projection by ${amtPct - 100}% — great work!`;
+  } else if (amtPct >= 97) {
+    verdictColor = '#b45309'; verdictBg = '#FFF3E8';
+    verdictIcon  = '~';
+    verdictText  = `Very close — ${100 - amtPct}% short of projection`;
+  } else {
+    verdictColor = '#C62828'; verdictBg = '#FFF0F0';
+    verdictIcon  = '↓';
+    verdictText  = `Below projection — ${100 - amtPct}% unordered, check for perishables!`;
+  }
+
+  // ── Per-product comparison rows ──────────────────────────────────────────
+  const allKeys = [...new Set([...Object.keys(projMap), ...Object.keys(actualMap)])];
+
+  const rowsHtml = allKeys.map(key => {
+    const p = projMap[key]   || { qty: 0, total: 0, desc: key };
+    const a = actualMap[key] || { qty: 0, total: 0, desc: key };
+    const diff = a.qty - p.qty;
+    const desc = p.desc || a.desc || key;
+
+    let badge = '', badgeColor = '';
+    if (p.qty === 0) {
+      badge = 'New'; badgeColor = '#2563EB';
+    } else if (a.qty === 0) {
+      badge = 'Not ordered'; badgeColor = '#C62828';
+    } else if (diff > 0) {
+      badge = `+${diff}`; badgeColor = '#1B6B3A';
+    } else if (diff < 0) {
+      badge = `${diff}`; badgeColor = '#C62828';
+    } else {
+      badge = '='; badgeColor = '#888';
+    }
+
+    const barProj   = projTotalAmt > 0 ? Math.round((p.total / projTotalAmt) * 100) : 0;
+    const barActual = actualTotalAmt > 0 ? Math.round((a.total / actualTotalAmt) * 100) : 0;
+
+    return `
+      <div style="padding:9px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${desc}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:${badgeColor}15;color:${badgeColor};flex-shrink:0;margin-left:8px">${badge}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)">
+          <span style="width:52px">Proj: <strong style="color:var(--text)">${p.qty}</strong></span>
+          <div style="flex:1;height:5px;border-radius:3px;background:var(--border);overflow:hidden">
+            <div style="height:100%;width:${barProj}%;background:#C8C2BC;border-radius:3px"></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-top:3px">
+          <span style="width:52px">Actual: <strong style="color:var(--text)">${a.qty}</strong></span>
+          <div style="flex:1;height:5px;border-radius:3px;background:var(--border);overflow:hidden">
+            <div style="height:100%;width:${barActual}%;background:${a.qty >= p.qty && p.qty > 0 ? '#1B6B3A' : a.qty > 0 ? '#C45B00' : '#ddd'};border-radius:3px"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const fmtKes = v => 'KES ' + Math.round(v).toLocaleString('en-KE');
+  const fmtKg  = v => v.toFixed(1) + ' KG';
+  const sign   = v => (v >= 0 ? '+' : '') + Math.round(v).toLocaleString('en-KE');
+
+  body.innerHTML = `
+    <div style="margin-top:8px;padding:12px 14px;background:${verdictBg};border-radius:10px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px;font-weight:800;color:${verdictColor};flex-shrink:0">${verdictIcon}</span>
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:${verdictColor}">${verdictText}</div>
+        <div style="font-size:11px;color:${verdictColor};opacity:.75;margin-top:1px">${amtPct}% of projection achieved</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <div style="background:var(--bg);border-radius:9px;padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Projected value</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--text)">${fmtKes(projTotalAmt)}</div>
+        <div style="font-size:11px;color:var(--muted)">${fmtKg(projTotalKg)}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:9px;padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Actual value</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:${amtDiff >= 0 ? '#1B6B3A' : '#C62828'}">${fmtKes(actualTotalAmt)}</div>
+        <div style="font-size:11px;color:var(--muted)">${fmtKg(actualTotalKg)}
+          <span style="margin-left:6px;font-weight:700;color:${amtDiff >= 0 ? '#1B6B3A' : '#C62828'}">${sign(amtDiff)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;padding:0 2px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px">Product breakdown</div>
+      ${rowsHtml}
+    </div>`;
+
+  card.style.display = 'block';
+}
+
 async function loadMyOrdersToday() {
   if (!S.user) return;
   const nk     = findKey(S.user, NAME_KEYS);
@@ -8716,6 +8890,9 @@ async function loadMyOrdersToday() {
 
   // ── Full Orders ───────────────────────────────────────────────────────────
   _motRenderFullOrders(fullOrders);
+
+  // ── Projection vs Actual analysis ─────────────────────────────────────────
+  _renderPVA(proj, fullOrders);
 
   // Reveal order-detail collapsible now that the summary is loaded
   showOrderPreviewWrap();
