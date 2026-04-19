@@ -1351,8 +1351,7 @@ tr.tonnage-detail-row td{padding:0}
           <div id="ts-proj-action"></div>
           <div id="ts-full-action"></div>
         </div>
-        <!-- Temp debug panel — remove after fix confirmed -->
-        <div id="ts-debug" style="display:none;margin:6px 18px 10px;padding:8px 12px;background:#FFF8E1;border:1px solid #FFD54F;border-radius:8px;font-size:11px;color:#555;line-height:1.7;font-family:monospace"></div>
+
       </div>
 
       <!-- ── MY DAY SUMMARY ── -->
@@ -2468,7 +2467,7 @@ tr.tonnage-detail-row td{padding:0}
 // ══════════════════════════════════════════
 //  CONFIG — paste your deployed GAS URL here
 // ══════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzreRVyfdtiGFAz0KKM8MlsRZc5lk4vuoQ7ATonOmutjOmMPvr9OKpbYAs4L51B2t9fiw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVm48_rU3QlMXBtRMNRa8cBTOycDpPF29cqwbzZTIBJBeOdMnQJmzZjXoGU28-D7I5Sg/exec';
 
 // ══════════════════════════════════════════
 //  PARTIAL ORDER (place in pieces)
@@ -10209,80 +10208,39 @@ async function loadTodayStatus() {
 
   // ── Read /queue and /orders independently so one failure never blocks the other ──
   let queueSnap = null, ordersSnap = null;
-  let queueErr = '', ordersErr = '';
-  try { queueSnap = await db.ref('/queue').once('value'); } catch(e) {
-    queueErr = e.message;
-  }
+  try { queueSnap = await db.ref('/queue').once('value'); } catch(e) {}
   try {
     ordersSnap = await db.ref('/orders').orderByChild('date').equalTo(today).once('value');
   } catch(e) {
-    ordersErr = 'indexed: ' + e.message;
-    try { ordersSnap = await db.ref('/orders').once('value'); ordersErr += ' → full read OK'; } catch(e2) {
-      ordersErr += ' → full read also failed: ' + e2.message;
-    }
+    try { ordersSnap = await db.ref('/orders').once('value'); } catch(e2) {}
   }
 
   // ── Process /queue ────────────────────────────────────────────────────────────
   const seenOrderIds = new Set();
-  let queueTotal = 0, queueMine = 0;
-  // Collect sample queue names for debug
-  const _queueSampleNames = new Set();
   if (queueSnap && queueSnap.exists()) {
     queueSnap.forEach(child => {
       const o = child.val();
       if (!o) return;
-      queueTotal++;
-      // Collect up to 5 unique salesman values for debug
-      const _n = (o.salesman || o.salesperson || '').trim();
-      if (_n && _queueSampleNames.size < 5) _queueSampleNames.add(_n);
       if (!_isMyOrder(o)) return;
       if (!_isToday(o)) return;
-      queueMine++;
       if (o.orderId) seenOrderIds.add(o.orderId);
       _processOrder(o);
     });
   }
 
   // ── Process /orders ───────────────────────────────────────────────────────────
-  let ordersTotal = 0, ordersMine = 0;
   if (ordersSnap && ordersSnap.exists()) {
     ordersSnap.forEach(child => {
       const o = child.val();
       if (!o) return;
-      ordersTotal++;
       if (!_isMyOrder(o)) return;
       if (!_isToday(o)) return;
       if (o.orderId && seenOrderIds.has(o.orderId)) return;
-      ordersMine++;
       _processOrder(o);
     });
   }
 
-  // ── Show debug panel ─────────────────────────────────────────────────────────
-  const dbgEl = document.getElementById('ts-debug');
-  if (dbgEl) {
-    // Sample a queue record to see what fields it has
-    let qSample = 'none';
-    if (queueSnap && queueSnap.exists()) {
-      const allVals = [];
-      queueSnap.forEach(c => { if (c.val()) allVals.push(c.val()); });
-      // Find first record matching today
-      const todayRec = allVals.find(o => _isToday(o));
-      const anyRec   = allVals[0];
-      const rec = todayRec || anyRec;
-      if (rec) {
-        qSample = `salesman="${rec.salesman||''}" salesperson="${rec.salesperson||''}" date="${rec.date||''}" status="${rec.status||''}"`;
-      }
-    }
-    dbgEl.style.display = 'block';
-    dbgEl.innerHTML =
-      `<b>Debug — remove after fix</b><br>` +
-      `myName: <b>${myName}</b> | myPay: <b>${myPay}</b> | today: <b>${today}</b><br>` +
-      `Queue: ${queueTotal} total, ${queueMine} mine${queueErr ? ' ⚠️ '+queueErr : ''}<br>` +
-      `Queue sample names: <b>${[..._queueSampleNames].join(', ')||'none'}</b><br>` +
-      `Queue sample record: ${qSample}<br>` +
-      `Orders: ${ordersTotal} total, ${ordersMine} mine${ordersErr ? ' ⚠️ '+ordersErr : ''}`;
-  }
+
 
 
   loading.style.display = 'none';
