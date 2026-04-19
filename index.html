@@ -1825,6 +1825,7 @@ tr.tonnage-detail-row td{padding:0}
   <!-- PAGE NAV TABS -->
   <div class="dash-page-nav">
     <button class="dash-page-tab active" id="tab-orders" onclick="switchDashPage('orders')">&#128203; Orders</button>
+    <button class="dash-page-tab" id="tab-status" onclick="switchDashPage('status')">&#128308; Order Status</button>
     <button class="dash-page-tab" id="tab-filters" onclick="switchDashPage('filters')">&#128269; Filters</button>
     <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">&#128202; Order Fulfilment</button>
     <button class="dash-page-tab" id="tab-tracker" onclick="switchDashPage('tracker')">&#128681; Route Tracker</button>
@@ -1884,6 +1885,61 @@ tr.tonnage-detail-row td{padding:0}
 
   </div>
   </div><!-- #orders-page -->
+
+  <!-- PAGE: ORDER STATUS — Projection vs Full Order per Salesperson -->
+  <div id="status-page" style="display:none">
+  <div class="content" style="max-width:960px">
+
+    <!-- Header + refresh -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:.02em">Order Status</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Today's projection vs full order per salesperson — flags variances &gt;10%</div>
+      </div>
+      <button onclick="renderOrderStatus()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--text);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">↻ Refresh</button>
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#1B6B3A;display:inline-block"></span>Within range (≤10% variance)</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#E67E22;display:inline-block"></span>Moderate variance (11–30%)</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#C62828;display:inline-block"></span>High variance (&gt;30%)</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#9E9E9E;display:inline-block"></span>Missing projection or full order</div>
+    </div>
+
+    <!-- Summary pills -->
+    <div id="os-summary-pills" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div class="stat-card"><div class="stat-val" id="os-total-sp" style="color:var(--text)">—</div><div class="stat-lbl">Salespeople</div></div>
+      <div class="stat-card"><div class="stat-val" id="os-ok-count" style="color:var(--ok)">—</div><div class="stat-lbl">On Track</div></div>
+      <div class="stat-card"><div class="stat-val" id="os-warn-count" style="color:#E67E22">—</div><div class="stat-lbl">Variance</div></div>
+      <div class="stat-card"><div class="stat-val" id="os-missing-count" style="color:#9E9E9E">—</div><div class="stat-lbl">Missing Order</div></div>
+    </div>
+
+    <!-- Main table -->
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="padding:11px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Salesperson</th>
+              <th style="padding:11px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Location</th>
+              <th style="padding:11px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Projection<br><span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">Status</span></th>
+              <th style="padding:11px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Proj. Amount</th>
+              <th style="padding:11px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Full Order<br><span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">Status</span></th>
+              <th style="padding:11px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Full Order Amount</th>
+              <th style="padding:11px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Variance</th>
+              <th style="padding:11px 14px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap">Flag</th>
+            </tr>
+          </thead>
+          <tbody id="os-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  </div><!-- #status-page -->
 
   <!-- PAGE: FILTERS — Charts, Filters & Export -->
   <div id="filters-page" style="display:none">
@@ -6103,6 +6159,10 @@ function renderDashTable(rows) {
 
   // Also refresh the Orders tab SP summary table
   renderSPSummaryTable(rows);
+  // Refresh Order Status tab if it is visible
+  if (document.getElementById('status-page') && document.getElementById('status-page').style.display !== 'none') {
+    renderOrderStatus();
+  }
   // Refresh route table if that tab is active
   if (currentChartType === 'route-bar' || currentChartType === 'route-line') {
     renderRouteSummaryTable(rows);
@@ -6193,6 +6253,152 @@ function renderSPSummaryTable(rows) {
 
   tbody.innerHTML = '';
   tbody.appendChild(frag);
+}
+
+// ── Order Status Table (Projection vs Full Order per salesperson) ─────────
+function renderOrderStatus() {
+  const tbody = document.getElementById('os-tbody');
+  if (!tbody) return;
+
+  const rows = (typeof allOrders !== 'undefined') ? allOrders : [];
+
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No orders found for today.</td></tr>';
+    ['os-total-sp','os-ok-count','os-warn-count','os-missing-count'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '0'; });
+    return;
+  }
+
+  // ── Aggregate projection & full-order totals per salesperson ─────────────
+  const spMap = {}; // key = salesman
+
+  rows.forEach(r => {
+    const sp   = ((r['Salesman'] || r['Salesperson'] || '').trim()) || 'Unknown';
+    const loc  = ((r['Location'] || '').trim()) || '—';
+    const type = (r['Order Type'] || '').trim();
+    const amt  = parseFloat(r['Total (KES)'] || r['Line Total'] || 0) || 0;
+    const kg   = parseFloat(r['Total (KG)'] || 0) || 0;
+    const date = normaliseDate(r['Date'] || r['Order Date'] || '');
+    const cust = r['Customer Name'] || r['Customer'] || '';
+    const key  = date + '||' + sp + '||' + cust;
+
+    if (!spMap[sp]) spMap[sp] = { sp, loc, projAmt: 0, projKg: 0, projKeys: new Set(), fullAmt: 0, fullKg: 0, fullKeys: new Set() };
+
+    const isProj = type === 'Morning Projection' || type === 'PROJECTION';
+    if (isProj) {
+      spMap[sp].projAmt += amt;
+      spMap[sp].projKg  += kg;
+      spMap[sp].projKeys.add(key);
+    } else {
+      spMap[sp].fullAmt += amt;
+      spMap[sp].fullKg  += kg;
+      spMap[sp].fullKeys.add(key);
+    }
+    // Update location in case first row had blank
+    if (loc !== '—') spMap[sp].loc = loc;
+  });
+
+  // ── Sort: high-variance first, then missing, then ok ────────────────────
+  const spList = Object.values(spMap).sort((a, b) => {
+    const va = _osVariancePct(a);
+    const vb = _osVariancePct(b);
+    return vb - va;
+  });
+
+  // ── Summary counts ───────────────────────────────────────────────────────
+  let okCount = 0, warnCount = 0, missingCount = 0;
+  spList.forEach(s => {
+    const v = _osVariancePct(s);
+    const hasProj = s.projKeys.size > 0;
+    const hasFull = s.fullKeys.size > 0;
+    if (!hasProj || !hasFull) { missingCount++; }
+    else if (Math.abs(v) <= 10) { okCount++; }
+    else { warnCount++; }
+  });
+
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('os-total-sp',     spList.length);
+  setEl('os-ok-count',     okCount);
+  setEl('os-warn-count',   warnCount);
+  setEl('os-missing-count',missingCount);
+
+  // ── Render rows ──────────────────────────────────────────────────────────
+  const frag = document.createDocumentFragment();
+
+  spList.forEach(s => {
+    const hasProj = s.projKeys.size > 0;
+    const hasFull = s.fullKeys.size > 0;
+    const variancePct = _osVariancePct(s);
+    const absV = Math.abs(variancePct);
+
+    // Row background & flag
+    let rowBg, flagHtml, varCell, varColor;
+    if (!hasProj || !hasFull) {
+      rowBg    = '#FAFAFA';
+      flagHtml = '<span style="background:#F5F5F5;color:#9E9E9E;border:1px solid #E0E0E0;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">⚠ MISSING</span>';
+      varCell  = '—';
+      varColor = '#9E9E9E';
+    } else if (absV <= 10) {
+      rowBg    = '#F0FFF4';
+      flagHtml = '<span style="background:var(--ok-lt);color:var(--ok);border:1px solid #A7D7BB;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">✓ ON TRACK</span>';
+      varCell  = (variancePct >= 0 ? '+' : '') + variancePct.toFixed(1) + '%';
+      varColor = 'var(--ok)';
+    } else if (absV <= 30) {
+      rowBg    = '#FFF8F0';
+      flagHtml = '<span style="background:#FFF3E0;color:#E67E22;border:1px solid #F5C99A;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">⚡ VARIANCE</span>';
+      varCell  = (variancePct >= 0 ? '+' : '') + variancePct.toFixed(1) + '%';
+      varColor = '#E67E22';
+    } else {
+      rowBg    = '#FFF5F5';
+      flagHtml = '<span style="background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em">🚨 HIGH VAR</span>';
+      varCell  = (variancePct >= 0 ? '+' : '') + variancePct.toFixed(1) + '%';
+      varColor = '#C62828';
+    }
+
+    const projStatus = hasProj
+      ? `<span style="color:var(--ok);font-weight:700;font-size:12px">✓ Submitted</span><br><span style="font-size:10px;color:var(--muted)">${s.projKg.toFixed(1)} KG · ${s.projKeys.size} line${s.projKeys.size!==1?'s':''}</span>`
+      : `<span style="color:#9E9E9E;font-size:12px;font-weight:600">○ Not placed</span>`;
+    const fullStatus = hasFull
+      ? `<span style="color:var(--ok);font-weight:700;font-size:12px">✓ Submitted</span><br><span style="font-size:10px;color:var(--muted)">${s.fullKg.toFixed(1)} KG · ${s.fullKeys.size} customer${s.fullKeys.size!==1?'s':''}</span>`
+      : `<span style="color:#9E9E9E;font-size:12px;font-weight:600">○ Not placed</span>`;
+
+    const projAmtHtml = hasProj
+      ? `<span style="font-variant-numeric:tabular-nums;color:#2563EB;font-weight:700">KES ${s.projAmt.toLocaleString('en-KE',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>`
+      : `<span style="color:#ccc">—</span>`;
+    const fullAmtHtml = hasFull
+      ? `<span style="font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700">KES ${s.fullAmt.toLocaleString('en-KE',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>`
+      : `<span style="color:#ccc">—</span>`;
+
+    const tr = document.createElement('tr');
+    tr.style.background = rowBg;
+    tr.innerHTML = `
+      <td style="padding:13px 14px 13px 18px;border-bottom:1px solid var(--border)">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px">${s.sp}</div>
+      </td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap">${s.loc}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;line-height:1.5">${projStatus}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right">${projAmtHtml}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;line-height:1.5">${fullStatus}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:right">${fullAmtHtml}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:${varColor}">${varCell}</td>
+      <td style="padding:13px 14px;border-bottom:1px solid var(--border);text-align:center">${flagHtml}</td>`;
+    frag.appendChild(tr);
+  });
+
+  // Empty state
+  if (!spList.length) {
+    const empty = document.createElement('tr');
+    empty.innerHTML = '<td colspan="8" style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">📭</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700">No orders today yet</div></td>';
+    frag.appendChild(empty);
+  }
+
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+function _osVariancePct(s) {
+  if (!s.projKeys.size || !s.fullKeys.size) return 0;
+  if (s.projAmt === 0) return s.fullAmt > 0 ? 100 : 0;
+  return ((s.fullAmt - s.projAmt) / s.projAmt) * 100;
 }
 
 function exportOrdersSPTable() {
@@ -8207,10 +8413,12 @@ function tagOrderRowsForSearch() {
 // ── Page switching ──────────────────────────────────────────────────────
 function switchDashPage(page) {
   document.getElementById('orders-page').style.display  = page === 'orders'  ? 'block' : 'none';
+  document.getElementById('status-page').style.display  = page === 'status'  ? 'block' : 'none';
   document.getElementById('filters-page').style.display = page === 'filters' ? 'block' : 'none';
   document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? 'block' : 'none';
   document.getElementById('tracker-page').style.display = page === 'tracker' ? 'block' : 'none';
   document.getElementById('tab-orders').classList.toggle('active',  page === 'orders');
+  document.getElementById('tab-status').classList.toggle('active',  page === 'status');
   document.getElementById('tab-filters').classList.toggle('active', page === 'filters');
   document.getElementById('tab-fulfil').classList.toggle('active',  page === 'fulfil');
   document.getElementById('tab-tracker').classList.toggle('active', page === 'tracker');
@@ -8220,6 +8428,19 @@ function switchDashPage(page) {
     document.getElementById('df-from').value = todayStr;
     document.getElementById('df-to').value   = todayStr;
     applyDashFilters();
+  }
+  // Order Status tab: today only, then render the status table
+  if (page === 'status') {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    document.getElementById('df-from').value = todayStr;
+    document.getElementById('df-to').value   = todayStr;
+    // Load fresh data then render
+    const cached = typeof allOrders !== 'undefined' && allOrders.length;
+    if (cached) {
+      renderOrderStatus();
+    } else {
+      loadDashOrders().then ? loadDashOrders().then(() => renderOrderStatus()) : (loadDashOrders(), setTimeout(renderOrderStatus, 2000));
+    }
   }
   // Filters tab: clear date locks so user can explore all historical data
   if (page === 'filters') {
