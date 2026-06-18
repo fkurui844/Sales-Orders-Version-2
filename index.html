@@ -317,6 +317,13 @@ textarea.inp{resize:vertical;min-height:80px}
   color: var(--muted);
   margin-bottom: 10px;
 }
+#role-title-display {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: normal;
+  color: var(--muted);
+  opacity: 0.85;
+}
 .role-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -869,7 +876,7 @@ tr.tonnage-detail-row td{padding:0}
     <!-- ── PANEL A: SIGN IN ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
-      <div class="logo-sub">Sign in to place orders</div>
+      <div class="logo-sub">Clerk sign in — enter customer LPOs</div>
 
       <div class="fg">
         <label class="lbl">Your Name / Payroll Number</label>
@@ -877,12 +884,6 @@ tr.tonnage-detail-row td{padding:0}
           <input class="inp" id="ln-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
           <div class="dd-list" id="ln-list"></div>
         </div>
-      </div>
-
-      <div class="fg" id="title-field" style="display:none">
-        <label class="lbl">Title</label>
-        <input class="inp" id="ln-title" readonly placeholder="—"
-          style="font-weight:600;border-color:var(--accent)">
       </div>
 
       <div class="fg">
@@ -893,23 +894,6 @@ tr.tonnage-detail-row td{padding:0}
         </div>
       </div>
 
-      <!-- ROLE SELECTOR -->
-      <div class="role-selector">
-        <label class="role-selector-label">Select Your Role</label>
-        <div class="role-grid">
-          <div class="role-option selected" onclick="window.loginRole='salesman'; document.querySelectorAll('.role-option').forEach(el=>el.classList.remove('selected')); this.classList.add('selected');">
-            <div class="role-icon">📱</div>
-            <div class="role-name">Salesman</div>
-            <div class="role-desc">Direct orders</div>
-          </div>
-          <div class="role-option" onclick="window.loginRole='clerk'; document.querySelectorAll('.role-option').forEach(el=>el.classList.remove('selected')); this.classList.add('selected');">
-            <div class="role-icon">📋</div>
-            <div class="role-name">Clerk</div>
-            <div class="role-desc">LPO orders</div>
-          </div>
-        </div>
-      </div>
-
       <div class="err-msg" id="login-err"></div>
       <button class="btn-dark" style="margin-top:6px" onclick="doLogin()">Sign In →</button>
 
@@ -917,6 +901,10 @@ tr.tonnage-detail-row td{padding:0}
 
       <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
         🔑 Set / Change My Password
+      </button>
+
+      <button class="back-link" style="width:100%;text-align:center;margin-top:10px" onclick="showPanel('dash')">
+        📊 Manager / Reports Login
       </button>
     </div>
 
@@ -964,6 +952,38 @@ tr.tonnage-detail-row td{padding:0}
       <button class="btn-accent" style="width:100%;margin-top:6px" id="sp-btn" onclick="doSetPassword()">
         Save Password →
       </button>
+    </div>
+
+    <!-- ── PANEL C: DASHBOARD / REPORTS LOGIN ── -->
+    <div id="panel-dash" class="login-panel hidden">
+      <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
+
+      <div class="logo" style="font-size:26px">Manager Login</div>
+      <div class="logo-sub">View consolidated orders &amp; reports</div>
+
+      <div class="fg">
+        <label class="lbl">Payroll Number</label>
+        <div class="dd-wrap" id="dp-wrap">
+          <input class="inp" id="dp-inp" placeholder="Type payroll number to search…" autocomplete="off">
+          <div class="dd-list" id="dp-list"></div>
+        </div>
+      </div>
+
+      <div id="dp-name-row" class="fg" style="display:none">
+        <label class="lbl">Name</label>
+        <input class="inp" id="dp-name-disp" readonly style="background:var(--bg)">
+      </div>
+
+      <div class="fg">
+        <label class="lbl">Dashboard Password</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="dp-pw" placeholder="Enter dashboard password">
+          <button class="pw-eye" tabindex="-1" onclick="toggleEye('dp-pw',this)">👁</button>
+        </div>
+      </div>
+
+      <div class="err-msg" id="dp-err"></div>
+      <button class="btn-dark" style="margin-top:6px" onclick="doDashLogin()">View Reports →</button>
     </div>
 
   </div>
@@ -1436,7 +1456,7 @@ tr.tonnage-detail-row td{padding:0}
       <div class="who-greeting">
         <div class="who-greeting-date" id="who-greeting-date">Today</div>
         <div class="who-greeting-name">Good morning, <span id="who-greeting-name-val">—</span></div>
-        <div class="who-greeting-sub">Select your details below to start your order</div>
+        <div class="who-greeting-sub">Select the route and customer to enter their LPO</div>
       </div>
 
       <!-- Draft restore banner -->
@@ -1611,7 +1631,7 @@ tr.tonnage-detail-row td{padding:0}
               <div class="who-form-body">
 
                 <div class="who-field">
-                  <label class="who-lbl">Your Name / Payroll Number</label>
+                  <label class="who-lbl">Entered By (Clerk)</label>
                   <input class="who-inp inp" id="who-name" readonly>
                 </div>
 
@@ -1635,7 +1655,7 @@ tr.tonnage-detail-row td{padding:0}
                   <input class="who-inp inp" type="date" id="order-date">
                 </div>
 
-                <div class="who-field" style="margin-bottom:0">
+                <div class="who-field" style="margin-bottom:0;display:none">
                   <label class="who-lbl" style="margin-bottom:10px">Order Type</label>
                   <div class="who-ot-grid">
                     <div class="who-ot-card proj-card" id="ot-proj" onclick="pickOT('projection')">
@@ -1902,6 +1922,7 @@ tr.tonnage-detail-row td{padding:0}
     <button class="dash-page-tab" id="tab-filters" onclick="switchDashPage('filters')">&#128269; Filters</button>
     <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">&#128202; Order Fulfilment</button>
     <button class="dash-page-tab" id="tab-tracker" onclick="switchDashPage('tracker')">&#128681; Route Tracker</button>
+    <button class="dash-page-tab" id="tab-routeorder" onclick="switchDashPage('routeorder')">&#128230; Generate Route Order</button>
   </div>
 
   <!-- PAGE: ORDERS — Salesperson Summary Table -->
@@ -2607,6 +2628,45 @@ tr.tonnage-detail-row td{padding:0}
   </div>
   </div><!-- #tracker-page -->
 
+  <!-- ══════════════ GENERATE ROUTE ORDER PAGE ══════════════ -->
+  <div id="routeorder-page" style="display:none">
+  <div class="content" style="max-width:860px;padding-bottom:60px">
+
+    <!-- Header -->
+    <div style="margin:18px 0 14px">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:10px">
+        📦 Generate Route Order
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">Consolidate every customer LPO entered for a route into one order, ready to share with the salesman on that route.</div>
+    </div>
+
+    <!-- Controls row -->
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="fg" style="min-width:200px;flex:1;margin-bottom:0">
+        <label class="lbl">Route</label>
+        <select class="inp" id="ro-route" style="padding:10px 14px">
+          <option value="">— Select Route —</option>
+        </select>
+      </div>
+      <div class="fg" style="min-width:160px;flex:1;margin-bottom:0">
+        <label class="lbl">Date</label>
+        <input type="date" class="inp" id="ro-date" style="padding:10px 14px">
+      </div>
+      <button onclick="generateRouteOrder()" style="padding:11px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--accent-hov)'" onmouseout="this.style.background='var(--accent)'">
+        Generate →
+      </button>
+    </div>
+
+    <!-- Result container -->
+    <div id="ro-result">
+      <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px">
+        Select a route and date, then click <strong>Generate</strong> to build the consolidated order.
+      </div>
+    </div>
+
+  </div>
+  </div><!-- #routeorder-page -->
+
 </div><!-- #dash-app -->
 
 <!-- ══════════════ EXPORT MODAL ══════════════ -->
@@ -2674,6 +2734,7 @@ tr.tonnage-detail-row td{padding:0}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <!-- ── CONFIRM MODAL (logout / discard warning) ── -->
 <div id="confirm-modal">
@@ -3364,14 +3425,6 @@ function renderLoginList(q) {
       selSP = sp;
       document.getElementById('ln-inp').value = name + (pay ? ` (${pay})` : '');
       list.classList.remove('open');
-      const titleVal = getTitle(sp);
-      const isSales  = isSalesmanTitle(titleVal);
-      const titleInp = document.getElementById('ln-title');
-      titleInp.value = titleVal || '(no title)';
-      titleInp.style.background  = isSales ? '#E8F5ED' : '#FFF3E8';
-      titleInp.style.color       = isSales ? '#1B6B3A' : 'var(--accent)';
-      titleInp.style.borderColor = isSales ? '#1B6B3A' : 'var(--accent)';
-      document.getElementById('title-field').style.display = 'block';
       document.getElementById('pw-inp').focus();
     };
     list.appendChild(d);
@@ -3446,24 +3499,10 @@ async function doLogin() {
     err.style.display = 'block'; return;
   }
 
-  // Check if clerk mode selected
-  if (window.loginRole === 'clerk') {
-    err.textContent = 'Clerk LPO Mode: Coming soon! Please use Salesman mode for now.';
-    err.style.color = '#2563EB';
-    err.style.display = 'block';
-    return;
-  }
-
-  const title = getTitle(selSP);
-  if (isSalesmanTitle(title)) {
-    startApp(selSP);
-  } else {
-    const nk2 = findKey(selSP, NAME_KEYS);
-    const pk2 = findKey(selSP, PAYROLL_KEYS);
-    dashUser = { name: selSP[nk2]||'', payroll: selSP[pk2]||'', title };
-    document.getElementById('login-screen').style.display = 'none';
-    openDashboard();
-  }
+  // Everyone who signs in here is a clerk entering LPOs — go straight
+  // to the order-entry flow. (The separate reporting dashboard is reached
+  // via its own access path, not through this form.)
+  startApp(selSP);
 }
 
 function startApp(sp) {
@@ -3497,18 +3536,24 @@ function startApp(sp) {
 
   populateLocations();
 
+  // Clerks enter real LPOs, not forecasts — always Full Order, no picker needed.
+  pickOT('full');
+
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   setStep(1);
+
+  // The Status Update panel tracked Projection/Full Order submission per
+  // salesman — not applicable to clerk LPO entry (no single "my orders"
+  // concept). Hide it and let the Place Orders panel take the full width.
+  const statusCard = document.getElementById('ts-card');
+  if (statusCard) statusCard.style.display = 'none';
 
   // Check for a saved draft for this user
   checkForDraft(name);
 
   // Check for a partial order in progress
   checkForPartialOrder(name);
-
-  // Load today's order status panel on Step 1
-  loadTodayStatus();
 
   // Start live order notification listener
   startOrderNotifListener();
@@ -5002,7 +5047,7 @@ async function submitOrder() {
         clientOrderId, batchId: S._batchId, orderId,
         status:    'PENDING',
         timestamp: new Date().toISOString(),
-        date:      S.orderDate, salesman: name, payroll: pay,
+        date:      S.orderDate, salesman: name, payroll: pay, enteredBy: name,
         route:     S.route,     location: S.location, orderType: otLbl,
         customer:  co.customer, customerCode: co.custCode,
         itemsJson: JSON.stringify(items), notes
@@ -5647,7 +5692,7 @@ function showPanel(which) {
     if (el) el.classList.add('hidden');
   });
 
-  const target = which === 'set' ? 'panel-set' : 'panel-signin';
+  const target = which === 'set' ? 'panel-set' : which === 'dash' ? 'panel-dash' : 'panel-signin';
 
   document.getElementById(target).classList.remove('hidden');
 
@@ -5658,7 +5703,8 @@ function showPanel(which) {
   const spOk = document.getElementById('sp-ok');
   if (spOk) spOk.style.display = 'none';
 
-  if (which === 'set') { clearSetPwForm(); initSetPwSearch(); }
+  if (which === 'set')  { clearSetPwForm(); initSetPwSearch(); }
+  if (which === 'dash') { initDashPayrollSearch(); }
 }
 
 let selDashSP = null;
@@ -8498,11 +8544,13 @@ function switchDashPage(page) {
   document.getElementById('filters-page').style.display = page === 'filters' ? 'block' : 'none';
   document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? 'block' : 'none';
   document.getElementById('tracker-page').style.display = page === 'tracker' ? 'block' : 'none';
+  document.getElementById('routeorder-page').style.display = page === 'routeorder' ? 'block' : 'none';
   document.getElementById('tab-orders').classList.toggle('active',  page === 'orders');
   document.getElementById('tab-status').classList.toggle('active',  page === 'status');
   document.getElementById('tab-filters').classList.toggle('active', page === 'filters');
   document.getElementById('tab-fulfil').classList.toggle('active',  page === 'fulfil');
   document.getElementById('tab-tracker').classList.toggle('active', page === 'tracker');
+  document.getElementById('tab-routeorder').classList.toggle('active', page === 'routeorder');
   // Orders tab always shows today's data only
   if (page === 'orders') {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -8536,6 +8584,13 @@ function switchDashPage(page) {
     const today = new Date().toISOString().slice(0,10);
     document.getElementById('rt-date').value = today;
     loadTrackerData();
+  }
+  // Generate Route Order tab: populate route dropdown + default date on first visit
+  if (page === 'routeorder' && !_routeOrderInit) {
+    _routeOrderInit = true;
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('ro-date').value = today;
+    populateRouteOrderDropdown();
   }
 }
 
@@ -9507,10 +9562,315 @@ function _motRenderFullOrders(fullOrders) {
 }
 
 // ══════════════════════════════════════════
+//  GENERATE ROUTE ORDER
+//  Consolidates every customer LPO entered for a given route + date
+//  into a single combined order, ready to share with the salesman
+//  who covers that route.
+// ══════════════════════════════════════════
+
+let _roLastResult = null; // { route, date, customers:[{name,code,cart:[...]}] }
+
+function populateRouteOrderDropdown() {
+  const sel = document.getElementById('ro-route');
+  const cur = sel.value;
+
+  const routes = (S.data && S.data.routes) || [];
+  let names = [];
+  if (routes.length) {
+    const r0 = routes[0];
+    const routeKey = findKey(r0, ['Route','Route Name','RouteName','ROUTE'], Object.keys(r0)[0]);
+    names = [...new Set(routes.map(r => (r[routeKey]||'').trim()).filter(Boolean))].sort();
+  }
+
+  sel.innerHTML = '<option value="">— Select Route —</option>';
+  names.forEach(name => {
+    const o = document.createElement('option');
+    o.value = o.textContent = name;
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+}
+
+// Build the consolidated per-customer carts for a route + date, reusing
+// the existing authoritative fetcher (GAS sheet → /orders → /queue
+// fallback chain) so this stays consistent with every other report tab
+// instead of reading Firebase directly and risking stale/incomplete data.
+async function _fetchRouteOrderRows(route, date) {
+  const rows = await _fetchOrdersFromFirebase(date, date);
+
+  const rowsByCustomer = {};
+  rows.forEach(r => {
+    if ((r['Route'] || '').trim().toLowerCase() !== route.trim().toLowerCase()) return;
+
+    const custKey = (r['Customer Name'] || 'Unknown') + '||' + (r['Customer Code'] || '');
+    if (!rowsByCustomer[custKey]) {
+      rowsByCustomer[custKey] = {
+        customer: r['Customer Name'] || 'Unknown',
+        custCode: r['Customer Code'] || '',
+        cart: []
+      };
+    }
+    rowsByCustomer[custKey].cart.push({
+      desc:    r['Description']  || '',
+      code:    r['Product Code'] || '',
+      pack:    r['Packaging']    || '',
+      qty:     r['Qty']               || 0,
+      price:   r['Unit Price (KES)']  || 0,
+      total:   r['Total (KES)']       || 0,
+      totalKg: r['Total (KG)']        || 0
+    });
+  });
+
+  return Object.values(rowsByCustomer);
+}
+
+async function generateRouteOrder() {
+  const route = document.getElementById('ro-route').value.trim();
+  const date  = document.getElementById('ro-date').value.trim();
+  const resultEl = document.getElementById('ro-result');
+
+  if (!route) { toast('⚠️ Please select a route'); return; }
+  if (!date)  { toast('⚠️ Please select a date'); return; }
+
+  resultEl.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px"><div class="spinner" style="width:22px;height:22px;border-width:2.5px;margin:0 auto 10px"></div>Loading orders for ${route}…</div>`;
+
+  let customers = [];
+  try {
+    customers = await _fetchRouteOrderRows(route, date);
+  } catch (e) {
+    resultEl.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:32px 20px;text-align:center;color:#C62828;font-size:13px">Could not load orders: ${e.message}. Please try again.</div>`;
+    return;
+  }
+
+  if (!customers.length) {
+    resultEl.innerHTML = `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:44px 20px;text-align:center;color:var(--muted);font-size:13px">No LPOs found for <strong>${route}</strong> on ${fmtDate(date)}.<br><span style="font-size:11px">If you just entered an order, it may take up to a minute to sync — try Generate again shortly.</span></div>`;
+    _roLastResult = null;
+    return;
+  }
+
+  _roLastResult = { route, date, customers };
+  renderRouteOrderResult(_roLastResult);
+}
+
+function renderRouteOrderResult(data) {
+  const resultEl = document.getElementById('ro-result');
+  const { route, date, customers } = data;
+
+  const grandAmt = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.totalKg,0),0);
+
+  // Product totals across the whole route
+  const prodTotals = {};
+  customers.forEach(c => {
+    c.cart.forEach(item => {
+      const key = item.code + '||' + item.pack;
+      if (!prodTotals[key]) prodTotals[key] = { desc: item.desc, pack: item.pack, code: item.code, qty: 0 };
+      prodTotals[key].qty += item.qty;
+    });
+  });
+  const prodEntries = Object.values(prodTotals);
+
+  let html = `
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px">
+      <div style="padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:.02em">🚚 ${route}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(date)} · ${customers.length} customer${customers.length!==1?'s':''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="shareRouteOrderWhatsApp()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:#25D366;color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </button>
+          <button onclick="downloadRouteOrderPDF()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:var(--text);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PDF
+          </button>
+        </div>
+      </div>
+      <div style="padding:16px 20px">`;
+
+  customers.forEach((c, ci) => {
+    const totAmt = c.cart.reduce((s,i)=>s+i.total,0);
+    html += `<div style="${ci>0?'border-top:1px solid var(--border);margin-top:12px;':''}padding-top:${ci>0?'12px':'0'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700">${c.customer}${c.custCode?` <span style="font-weight:400;font-size:12px;color:var(--muted)">(${c.custCode})</span>`:''}</div>`;
+    c.cart.forEach(item => {
+      html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--muted)">
+        <span>${item.desc} <span style="font-size:10px">[${item.code}]</span> · ${item.pack} · ×${item.qty}</span>
+        <span style="font-weight:600;color:var(--text)">KES ${item.total.toLocaleString()}</span>
+      </div>`;
+    });
+    html += `<div style="text-align:right;font-size:11px;color:var(--muted);margin-top:2px">Subtotal: KES ${totAmt.toLocaleString()}</div>
+    </div>`;
+  });
+
+  html += `</div>
+      <div style="padding:14px 20px;background:var(--bg);border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800">Grand Total</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">KES ${grandAmt.toLocaleString()}${grandKg ? ` <span style="font-size:12px;font-weight:400;color:var(--muted)">(${grandKg.toFixed(2)} KG)</span>` : ''}</span>
+      </div>
+    </div>`;
+
+  if (prodEntries.length) {
+    html += `<div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="padding:14px 20px;border-bottom:2px solid var(--border);background:var(--bg);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800">📦 Product Totals — Whole Route</div>
+      <div style="padding:6px 20px 14px">`;
+    prodEntries.forEach(p => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:13px;font-weight:500">${p.desc}</div>
+          <div style="font-size:10px;color:var(--muted)">${p.code} · ${p.pack}</div>
+        </div>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">×${p.qty}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  resultEl.innerHTML = html;
+}
+
+function _buildRouteOrderText(data) {
+  const { route, date, customers } = data;
+  const sep = '─────────────────────────────';
+  let txt = `🚚 *CONSOLIDATED ROUTE ORDER*\n${sep}\n`;
+  txt += `*Route:* ${route}\n*Date:* ${fmtDate(date)}\n${sep}\n`;
+
+  customers.forEach((c, ci) => {
+    const totAmt = c.cart.reduce((s,i)=>s+i.total,0);
+    txt += `\n*${ci+1}. ${c.customer}*${c.custCode?' ('+c.custCode+')':''}\n`;
+    c.cart.forEach((item, ii) => {
+      txt += `   ${ii+1}. ${item.desc} [${item.code}]\n`;
+      txt += `      ${item.pack} · Qty: ${item.qty} × KES ${item.price.toLocaleString()} = *KES ${item.total.toLocaleString()}*\n`;
+    });
+    txt += `   _Subtotal: KES ${totAmt.toLocaleString()}_\n`;
+  });
+
+  const grandAmt = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.totalKg,0),0);
+
+  const prodTotals = {};
+  customers.forEach(c => {
+    c.cart.forEach(item => {
+      const key = item.code + '||' + item.pack;
+      if (!prodTotals[key]) prodTotals[key] = { desc: item.desc, pack: item.pack, code: item.code, qty: 0 };
+      prodTotals[key].qty += item.qty;
+    });
+  });
+  const prodEntries = Object.values(prodTotals);
+
+  txt += `\n${sep}\n*GRAND TOTAL: KES ${grandAmt.toLocaleString()}*`;
+  if (grandKg) txt += `\n*Total Weight: ${grandKg.toFixed(2)} KG*`;
+
+  if (prodEntries.length) {
+    txt += `\n\n📦 PRODUCT TOTALS\n`;
+    prodEntries.forEach(p => { txt += `  • ${p.desc} [${p.code}] ${p.pack}: ×${p.qty}\n`; });
+  }
+
+  txt += `\n${sep}`;
+  return txt;
+}
+
+function shareRouteOrderWhatsApp() {
+  if (!_roLastResult) { toast('No route order data to share'); return; }
+  const txt = _buildRouteOrderText(_roLastResult);
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
+function downloadRouteOrderPDF() {
+  if (!_roLastResult) { toast('No route order data to export'); return; }
+  if (typeof window.jspdf === 'undefined') { toast('PDF library failed to load — check your connection'); return; }
+
+  const { route, date, customers } = _roLastResult;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const marginX = 40;
+  let y = 50;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('Consolidated Route Order', marginX, y);
+  y += 24;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  doc.text(`Route: ${route}`, marginX, y);
+  doc.text(`Date: ${fmtDate(date)}`, pageW - marginX, y, { align: 'right' });
+  y += 20;
+  doc.setDrawColor(200); doc.line(marginX, y, pageW - marginX, y);
+  y += 20;
+
+  const checkPageBreak = (needed) => {
+    if (y + needed > 780) { doc.addPage(); y = 50; }
+  };
+
+  customers.forEach((c, ci) => {
+    checkPageBreak(40);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text(`${ci+1}. ${c.customer}${c.custCode ? ' ('+c.custCode+')' : ''}`, marginX, y);
+    y += 16;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    let subtotal = 0;
+    c.cart.forEach(item => {
+      checkPageBreak(16);
+      const line = `${item.desc} [${item.code}] · ${item.pack} · Qty ${item.qty} × KES ${item.price.toLocaleString()}`;
+      const amt  = `KES ${item.total.toLocaleString()}`;
+      doc.text(line, marginX + 10, y, { maxWidth: pageW - marginX*2 - 110 });
+      doc.text(amt, pageW - marginX, y, { align: 'right' });
+      subtotal += item.total;
+      y += 15;
+    });
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(10);
+    doc.text(`Subtotal: KES ${subtotal.toLocaleString()}`, pageW - marginX, y, { align: 'right' });
+    y += 20;
+  });
+
+  const grandAmt = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.total,0),0);
+  const grandKg  = customers.reduce((s,c)=>s+c.cart.reduce((a,i)=>a+i.totalKg,0),0);
+
+  checkPageBreak(30);
+  doc.setDrawColor(150); doc.line(marginX, y, pageW - marginX, y);
+  y += 18;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text('Grand Total', marginX, y);
+  doc.text(`KES ${grandAmt.toLocaleString()}`, pageW - marginX, y, { align: 'right' });
+  y += 16;
+  if (grandKg) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(`Total Weight: ${grandKg.toFixed(2)} KG`, pageW - marginX, y, { align: 'right' });
+    y += 20;
+  } else { y += 10; }
+
+  // Product totals page
+  const prodTotals = {};
+  customers.forEach(c => c.cart.forEach(item => {
+    const key = item.code + '||' + item.pack;
+    if (!prodTotals[key]) prodTotals[key] = { desc: item.desc, pack: item.pack, code: item.code, qty: 0 };
+    prodTotals[key].qty += item.qty;
+  }));
+  const prodEntries = Object.values(prodTotals);
+  if (prodEntries.length) {
+    checkPageBreak(30);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('Product Totals — Whole Route', marginX, y);
+    y += 18;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    prodEntries.forEach(p => {
+      checkPageBreak(16);
+      doc.text(`${p.desc} [${p.code}] ${p.pack}`, marginX + 10, y, { maxWidth: pageW - marginX*2 - 80 });
+      doc.text(`×${p.qty}`, pageW - marginX, y, { align: 'right' });
+      y += 15;
+    });
+  }
+
+  const safeRoute = route.replace(/[^a-z0-9]+/gi, '_');
+  doc.save(`Route_Order_${safeRoute}_${date}.pdf`);
+}
+
+// ══════════════════════════════════════════
 //  ROUTE DAILY TRACKER
 // ══════════════════════════════════════════
 
 let _trackerLoaded = false;
+let _routeOrderInit = false;
 let _trackerCurrentAlert = {};
 
 async function loadTrackerData() {
