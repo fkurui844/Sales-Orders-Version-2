@@ -499,11 +499,22 @@ textarea.inp{resize:vertical;min-height:80px}
 
 /* ── STATS ROW ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stats-row-5{grid-template-columns:repeat(5,1fr)}
 .stat-card{background:#fff;border-radius:var(--radius);padding:16px 14px;box-shadow:var(--shadow);text-align:center}
 .stat-card-kg{border:1.5px solid #d1fae5}
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--accent);line-height:1}
 .stat-val-kg{color:var(--ok)}
 .stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+/* ── SUMMARY VIEW TOGGLE ── */
+.sm-view-btn{padding:9px 18px;background:#fff;color:var(--muted);border:none;border-right:1.5px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .15s}
+.sm-view-btn:last-child{border-right:none}
+.sm-view-btn:hover:not(.sm-view-active){background:var(--bg);color:var(--text)}
+.sm-view-active{background:var(--text);color:#fff}
+
+@media (max-width: 760px) {
+  .stats-row-5{grid-template-columns:repeat(2,1fr)}
+}
 
 /* ── CHART SECTION ── */
 .charts-section{margin-bottom:14px}
@@ -1917,7 +1928,8 @@ tr.tonnage-detail-row td{padding:0}
 
   <!-- PAGE NAV TABS -->
   <div class="dash-page-nav">
-    <button class="dash-page-tab active" id="tab-orders" onclick="switchDashPage('orders')">&#128203; Orders</button>
+    <button class="dash-page-tab active" id="tab-summary" onclick="switchDashPage('summary')">&#128202; Summary</button>
+    <button class="dash-page-tab" id="tab-orders" onclick="switchDashPage('orders')">&#128203; Orders</button>
     <button class="dash-page-tab" id="tab-status" onclick="switchDashPage('status')">&#128308; Order Status</button>
     <button class="dash-page-tab" id="tab-filters" onclick="switchDashPage('filters')">&#128269; Filters</button>
     <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">&#128202; Order Fulfilment</button>
@@ -1925,8 +1937,71 @@ tr.tonnage-detail-row td{padding:0}
     <button class="dash-page-tab" id="tab-routeorder" onclick="switchDashPage('routeorder')">&#128230; Generate Route Order</button>
   </div>
 
+  <!-- PAGE: SUMMARY — Total LPOs, per outlet / route / SKU / category -->
+  <div id="summary-page">
+  <div class="content" style="max-width:1000px">
+
+    <!-- Date range controls -->
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px;margin-bottom:14px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="fg" style="margin:0">
+        <label class="lbl">From Date</label>
+        <input class="inp" type="date" id="sm-from" onchange="loadSummaryData()">
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="lbl">To Date</label>
+        <input class="inp" type="date" id="sm-to" onchange="loadSummaryData()">
+      </div>
+      <button class="btn-ghost" onclick="setSummaryToday()">Today</button>
+      <button class="btn-ghost" onclick="clearSummaryRange()">All Dates</button>
+      <div style="flex:1"></div>
+      <span id="sm-loaded-note" style="font-size:11px;color:var(--muted)"></span>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="stats-row stats-row-5" id="sm-stats">
+      <div class="stat-card"><div class="stat-val" id="sm-lpos">—</div><div class="stat-lbl">Total LPOs Captured</div></div>
+      <div class="stat-card"><div class="stat-val" id="sm-outlets">—</div><div class="stat-lbl">Outlets Ordering</div></div>
+      <div class="stat-card"><div class="stat-val" id="sm-routes">—</div><div class="stat-lbl">Routes Covered</div></div>
+      <div class="stat-card"><div class="stat-val" id="sm-amount">—</div><div class="stat-lbl">Revenue (KES)</div></div>
+      <div class="stat-card stat-card-kg"><div class="stat-val stat-val-kg" id="sm-weight">—</div><div class="stat-lbl">Total Weight (KG)</div></div>
+    </div>
+
+    <!-- Breakdown view toggle -->
+    <div style="display:flex;gap:0;border:1.5px solid var(--border);border-radius:9px;overflow:hidden;width:fit-content;margin-bottom:14px">
+      <button id="sm-view-outlet"   class="sm-view-btn sm-view-active" onclick="setSummaryView('outlet')">By Outlet</button>
+      <button id="sm-view-route"    class="sm-view-btn"                onclick="setSummaryView('route')">By Route</button>
+      <button id="sm-view-sku"      class="sm-view-btn"                onclick="setSummaryView('sku')">By SKU</button>
+      <button id="sm-view-category" class="sm-view-btn"                onclick="setSummaryView('category')">By Category</button>
+    </div>
+
+    <!-- Breakdown table -->
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:80px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:2px solid var(--border);background:var(--bg)">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.02em" id="sm-table-title">LPOs by Outlet</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="sm-table-subtitle">Every customer that has an order in the selected date range.</div>
+        </div>
+        <button onclick="exportSummaryCSV()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--ok);color:#fff;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.05em;cursor:pointer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="sm-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="sm-thead"></thead>
+          <tbody id="sm-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+          </tbody>
+          <tfoot id="sm-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  </div><!-- #summary-page -->
+
   <!-- PAGE: ORDERS — Salesperson Summary Table -->
-  <div id="orders-page">
+  <div id="orders-page" style="display:none">
   <div class="content" style="max-width:960px">
 
 
@@ -5812,6 +5887,12 @@ async function openDashboard() {
 
   await loadDashOrders();
 
+  // Summary tab is the landing tab — load it with today's date by default
+  _summaryInit = true;
+  document.getElementById('sm-from').value = _todayISO;
+  document.getElementById('sm-to').value   = _todayISO;
+  loadSummaryData();
+
   // Start live order notification listener
   startOrderNotifListener();
 }
@@ -8539,18 +8620,25 @@ function tagOrderRowsForSearch() {
 
 // ── Page switching ──────────────────────────────────────────────────────
 function switchDashPage(page) {
+  document.getElementById('summary-page').style.display = page === 'summary' ? 'block' : 'none';
   document.getElementById('orders-page').style.display  = page === 'orders'  ? 'block' : 'none';
   document.getElementById('status-page').style.display  = page === 'status'  ? 'block' : 'none';
   document.getElementById('filters-page').style.display = page === 'filters' ? 'block' : 'none';
   document.getElementById('fulfil-page').style.display  = page === 'fulfil'  ? 'block' : 'none';
   document.getElementById('tracker-page').style.display = page === 'tracker' ? 'block' : 'none';
   document.getElementById('routeorder-page').style.display = page === 'routeorder' ? 'block' : 'none';
+  document.getElementById('tab-summary').classList.toggle('active', page === 'summary');
   document.getElementById('tab-orders').classList.toggle('active',  page === 'orders');
   document.getElementById('tab-status').classList.toggle('active',  page === 'status');
   document.getElementById('tab-filters').classList.toggle('active', page === 'filters');
   document.getElementById('tab-fulfil').classList.toggle('active',  page === 'fulfil');
   document.getElementById('tab-tracker').classList.toggle('active', page === 'tracker');
   document.getElementById('tab-routeorder').classList.toggle('active', page === 'routeorder');
+  // Summary tab: default to "All Dates" on first visit, then load
+  if (page === 'summary' && !_summaryInit) {
+    _summaryInit = true;
+    loadSummaryData();
+  }
   // Orders tab always shows today's data only
   if (page === 'orders') {
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -9866,11 +9954,322 @@ function downloadRouteOrderPDF() {
 }
 
 // ══════════════════════════════════════════
+//  SUMMARY DASHBOARD
+//  Total LPOs captured, and breakdowns by outlet, route, SKU, category.
+//  "LPO" = one customer's order on one date (matches how a clerk works:
+//  one LPO email = one customer = one date), regardless of how many
+//  product lines it contains.
+// ══════════════════════════════════════════
+
+function setSummaryToday() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('sm-from').value = today;
+  document.getElementById('sm-to').value   = today;
+  loadSummaryData();
+}
+
+function clearSummaryRange() {
+  document.getElementById('sm-from').value = '';
+  document.getElementById('sm-to').value   = '';
+  loadSummaryData();
+}
+
+async function loadSummaryData() {
+  const from = document.getElementById('sm-from').value.trim();
+  const to   = document.getElementById('sm-to').value.trim();
+  const note = document.getElementById('sm-loaded-note');
+
+  document.getElementById('sm-tbody').innerHTML =
+    '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>';
+  if (note) note.textContent = 'Loading…';
+
+  let rows = [];
+  try {
+    rows = await _fetchOrdersFromFirebase(from, to);
+  } catch (e) {
+    document.getElementById('sm-tbody').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;padding:32px;color:#C62828">Could not load data: ${e.message}</td></tr>`;
+    return;
+  }
+
+  _summaryRows = rows;
+  if (note) {
+    note.textContent = (from || to)
+      ? `Showing ${fmtDate(from||to)} – ${fmtDate(to||from)}`
+      : 'Showing all captured dates';
+  }
+
+  renderSummaryKPIs(rows);
+  renderSummaryTable();
+}
+
+function renderSummaryKPIs(rows) {
+  // An LPO = one customer's order on one date (route included in the key
+  // only to keep the same customer on two different routes distinct,
+  // which shouldn't normally happen but is a safe guard).
+  const lpoKeys   = new Set();
+  const outletSet = new Set();
+  const routeSet  = new Set();
+  let totalAmt = 0, totalKg = 0;
+
+  rows.forEach(r => {
+    const date  = normaliseDate(r['Date']||r['Order Date']||'');
+    const cust  = (r['Customer Name']||r['Customer']||'').trim();
+    const route = (r['Route']||'').trim();
+    if (cust) {
+      lpoKeys.add(date + '||' + cust + '||' + route);
+      outletSet.add(cust);
+    }
+    if (route) routeSet.add(route);
+    totalAmt += parseFloat(r['Total (KES)']||r['Line Total']||0) || 0;
+    totalKg  += parseFloat(r['Total (KG)']||0) || 0;
+  });
+
+  document.getElementById('sm-lpos').textContent    = lpoKeys.size;
+  document.getElementById('sm-outlets').textContent = outletSet.size;
+  document.getElementById('sm-routes').textContent  = routeSet.size;
+  document.getElementById('sm-amount').textContent  = totalAmt >= 1000
+    ? (totalAmt/1000).toFixed(1) + 'K'
+    : totalAmt.toLocaleString();
+  document.getElementById('sm-weight').textContent  = totalKg >= 1000
+    ? (totalKg/1000).toFixed(1) + 'T'
+    : totalKg.toFixed(1);
+}
+
+function setSummaryView(view) {
+  _summaryView = view;
+  ['outlet','route','sku','category'].forEach(v => {
+    document.getElementById('sm-view-' + v).classList.toggle('sm-view-active', v === view);
+  });
+  renderSummaryTable();
+}
+
+function renderSummaryTable() {
+  const titleEl = document.getElementById('sm-table-title');
+  const subEl   = document.getElementById('sm-table-subtitle');
+  const thead   = document.getElementById('sm-thead');
+  const tbody   = document.getElementById('sm-tbody');
+  const tfoot   = document.getElementById('sm-tfoot');
+
+  if (!_summaryRows.length) {
+    thead.innerHTML = '';
+    tfoot.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No LPOs found for the selected date range.</td></tr>';
+    _summaryTableData = [];
+    return;
+  }
+
+  const headCellStyle = 'padding:10px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap';
+  const tdStyle  = 'padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px';
+
+  if (_summaryView === 'outlet') {
+    titleEl.textContent = 'LPOs by Outlet';
+    subEl.textContent   = 'Every customer with at least one captured LPO in this date range.';
+
+    const map = {};
+    _summaryRows.forEach(r => {
+      const cust  = (r['Customer Name']||r['Customer']||'').trim() || 'Unknown';
+      const code  = (r['Customer Code']||'').trim();
+      const route = (r['Route']||'').trim() || '—';
+      const date  = normaliseDate(r['Date']||r['Order Date']||'');
+      const key   = cust + '||' + code;
+      if (!map[key]) map[key] = { name: cust, code, route, lpoKeys: new Set(), amt: 0, kg: 0 };
+      map[key].lpoKeys.add(date + '||' + cust);
+      map[key].amt += parseFloat(r['Total (KES)']||0) || 0;
+      map[key].kg  += parseFloat(r['Total (KG)']||0) || 0;
+    });
+
+    const list = Object.values(map).sort((a,b) => b.amt - a.amt);
+    _summaryTableData = list.map(o => ({
+      Outlet: o.name, 'Customer Code': o.code, Route: o.route,
+      LPOs: o.lpoKeys.size, 'Amount (KES)': o.amt.toFixed(2), 'Weight (KG)': o.kg.toFixed(2)
+    }));
+
+    thead.innerHTML = `<tr style="background:var(--bg)">
+      <th style="${headCellStyle};text-align:left">Outlet</th>
+      <th style="${headCellStyle};text-align:left">Route</th>
+      <th style="${headCellStyle};text-align:center">LPOs</th>
+      <th style="${headCellStyle};text-align:right">Amount (KES)</th>
+      <th style="${headCellStyle};text-align:right">Weight (KG)</th>
+    </tr>`;
+    tbody.innerHTML = list.map(o => `<tr>
+      <td style="${tdStyle};font-weight:600">${o.name}${o.code?` <span style="color:var(--muted);font-weight:400;font-size:11px">(${o.code})</span>`:''}</td>
+      <td style="${tdStyle};color:var(--muted)">${o.route}</td>
+      <td style="${tdStyle};text-align:center;font-weight:600">${o.lpoKeys.size}</td>
+      <td style="${tdStyle};text-align:right;color:var(--accent);font-weight:700">KES ${o.amt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="${tdStyle};text-align:right;color:var(--ok);font-weight:600">${o.kg.toFixed(1)} KG</td>
+    </tr>`).join('');
+
+    const gLpos = list.reduce((s,o)=>s+o.lpoKeys.size,0), gAmt = list.reduce((s,o)=>s+o.amt,0), gKg = list.reduce((s,o)=>s+o.kg,0);
+    tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:800">
+      <td style="padding:10px 14px;border-top:2px solid var(--border)">TOTAL — ${list.length} outlet${list.length!==1?'s':''}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border)"></td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:center">${gLpos}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right;color:var(--accent)">KES ${gAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right;color:var(--ok)">${gKg.toFixed(1)} KG</td>
+    </tr>`;
+
+  } else if (_summaryView === 'route') {
+    titleEl.textContent = 'LPOs by Route';
+    subEl.textContent   = 'Every route with at least one captured LPO in this date range.';
+
+    const map = {};
+    _summaryRows.forEach(r => {
+      const route = (r['Route']||'').trim() || 'Unknown Route';
+      const cust  = (r['Customer Name']||r['Customer']||'').trim();
+      const date  = normaliseDate(r['Date']||r['Order Date']||'');
+      if (!map[route]) map[route] = { route, lpoKeys: new Set(), custSet: new Set(), amt: 0, kg: 0 };
+      if (cust) { map[route].lpoKeys.add(date + '||' + cust); map[route].custSet.add(cust); }
+      map[route].amt += parseFloat(r['Total (KES)']||0) || 0;
+      map[route].kg  += parseFloat(r['Total (KG)']||0) || 0;
+    });
+
+    const list = Object.values(map).sort((a,b) => b.amt - a.amt);
+    _summaryTableData = list.map(o => ({
+      Route: o.route, Outlets: o.custSet.size, LPOs: o.lpoKeys.size,
+      'Amount (KES)': o.amt.toFixed(2), 'Weight (KG)': o.kg.toFixed(2)
+    }));
+
+    thead.innerHTML = `<tr style="background:var(--bg)">
+      <th style="${headCellStyle};text-align:left">Route</th>
+      <th style="${headCellStyle};text-align:center">Outlets</th>
+      <th style="${headCellStyle};text-align:center">LPOs</th>
+      <th style="${headCellStyle};text-align:right">Amount (KES)</th>
+      <th style="${headCellStyle};text-align:right">Weight (KG)</th>
+    </tr>`;
+    tbody.innerHTML = list.map(o => `<tr>
+      <td style="${tdStyle};font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:15px">🚚 ${o.route}</td>
+      <td style="${tdStyle};text-align:center;color:var(--muted)">${o.custSet.size}</td>
+      <td style="${tdStyle};text-align:center;font-weight:600">${o.lpoKeys.size}</td>
+      <td style="${tdStyle};text-align:right;color:var(--accent);font-weight:700">KES ${o.amt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="${tdStyle};text-align:right;color:var(--ok);font-weight:600">${o.kg.toFixed(1)} KG</td>
+    </tr>`).join('');
+
+    const gLpos = list.reduce((s,o)=>s+o.lpoKeys.size,0), gAmt = list.reduce((s,o)=>s+o.amt,0), gKg = list.reduce((s,o)=>s+o.kg,0);
+    tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:800">
+      <td style="padding:10px 14px;border-top:2px solid var(--border)">TOTAL — ${list.length} route${list.length!==1?'s':''}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border)"></td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:center">${gLpos}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right;color:var(--accent)">KES ${gAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right;color:var(--ok)">${gKg.toFixed(1)} KG</td>
+    </tr>`;
+
+  } else if (_summaryView === 'sku') {
+    titleEl.textContent = 'Orders by SKU';
+    subEl.textContent   = 'Total quantity and value ordered per product, across all outlets and routes.';
+
+    const map = {};
+    _summaryRows.forEach(r => {
+      const code = (r['Product Code']||'').trim() || '—';
+      const desc = (r['Description']||'').trim() || 'Unknown product';
+      const pack = (r['Packaging']||'').trim();
+      const key  = code + '||' + pack;
+      if (!map[key]) map[key] = { code, desc, pack, qty: 0, amt: 0, kg: 0 };
+      map[key].qty += parseFloat(r['Qty']||0) || 0;
+      map[key].amt += parseFloat(r['Total (KES)']||0) || 0;
+      map[key].kg  += parseFloat(r['Total (KG)']||0) || 0;
+    });
+
+    const list = Object.values(map).sort((a,b) => b.amt - a.amt);
+    _summaryTableData = list.map(o => ({
+      'Product Code': o.code, Description: o.desc, Packaging: o.pack,
+      Qty: o.qty, 'Amount (KES)': o.amt.toFixed(2), 'Weight (KG)': o.kg.toFixed(2)
+    }));
+
+    thead.innerHTML = `<tr style="background:var(--bg)">
+      <th style="${headCellStyle};text-align:left">Product</th>
+      <th style="${headCellStyle};text-align:left">Code</th>
+      <th style="${headCellStyle};text-align:left">Pack</th>
+      <th style="${headCellStyle};text-align:center">Qty</th>
+      <th style="${headCellStyle};text-align:right">Amount (KES)</th>
+    </tr>`;
+    tbody.innerHTML = list.map(o => `<tr>
+      <td style="${tdStyle};font-weight:600">${o.desc}</td>
+      <td style="${tdStyle};color:var(--muted);font-size:11px">${o.code}</td>
+      <td style="${tdStyle};color:var(--muted)">${o.pack}</td>
+      <td style="${tdStyle};text-align:center;font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--accent)">×${o.qty}</td>
+      <td style="${tdStyle};text-align:right;font-weight:600">KES ${o.amt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    </tr>`).join('');
+
+    const gQty = list.reduce((s,o)=>s+o.qty,0), gAmt = list.reduce((s,o)=>s+o.amt,0);
+    tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:800">
+      <td style="padding:10px 14px;border-top:2px solid var(--border)">TOTAL — ${list.length} SKU${list.length!==1?'s':''}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border)"></td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border)"></td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:center">${gQty}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right">KES ${gAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    </tr>`;
+
+  } else if (_summaryView === 'category') {
+    titleEl.textContent = 'Orders by Category';
+    subEl.textContent   = 'Total quantity and value ordered per product category.';
+
+    const map = {};
+    _summaryRows.forEach(r => {
+      const cat = (r['Category']||'').trim() || 'Uncategorised';
+      if (!map[cat]) map[cat] = { cat, skuSet: new Set(), qty: 0, amt: 0, kg: 0 };
+      map[cat].skuSet.add((r['Product Code']||'').trim());
+      map[cat].qty += parseFloat(r['Qty']||0) || 0;
+      map[cat].amt += parseFloat(r['Total (KES)']||0) || 0;
+      map[cat].kg  += parseFloat(r['Total (KG)']||0) || 0;
+    });
+
+    const list = Object.values(map).sort((a,b) => b.amt - a.amt);
+    _summaryTableData = list.map(o => ({
+      Category: o.cat, 'SKU Count': o.skuSet.size, Qty: o.qty,
+      'Amount (KES)': o.amt.toFixed(2), 'Weight (KG)': o.kg.toFixed(2)
+    }));
+
+    thead.innerHTML = `<tr style="background:var(--bg)">
+      <th style="${headCellStyle};text-align:left">Category</th>
+      <th style="${headCellStyle};text-align:center">SKUs</th>
+      <th style="${headCellStyle};text-align:center">Qty</th>
+      <th style="${headCellStyle};text-align:right">Amount (KES)</th>
+      <th style="${headCellStyle};text-align:right">Weight (KG)</th>
+    </tr>`;
+    tbody.innerHTML = list.map(o => `<tr>
+      <td style="${tdStyle};font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:15px">📦 ${o.cat}</td>
+      <td style="${tdStyle};text-align:center;color:var(--muted)">${o.skuSet.size}</td>
+      <td style="${tdStyle};text-align:center;font-weight:700;color:var(--accent)">×${o.qty}</td>
+      <td style="${tdStyle};text-align:right;font-weight:600">KES ${o.amt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="${tdStyle};text-align:right;color:var(--ok);font-weight:600">${o.kg.toFixed(1)} KG</td>
+    </tr>`).join('');
+
+    const gQty = list.reduce((s,o)=>s+o.qty,0), gAmt = list.reduce((s,o)=>s+o.amt,0), gKg = list.reduce((s,o)=>s+o.kg,0);
+    tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:800">
+      <td style="padding:10px 14px;border-top:2px solid var(--border)">TOTAL — ${list.length} categor${list.length!==1?'ies':'y'}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border)"></td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:center">${gQty}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right">KES ${gAmt.toLocaleString('en-KE',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:10px 14px;border-top:2px solid var(--border);text-align:right;color:var(--ok)">${gKg.toFixed(1)} KG</td>
+    </tr>`;
+  }
+}
+
+function exportSummaryCSV() {
+  if (!_summaryTableData.length) { toast('No data to export'); return; }
+  if (typeof XLSX === 'undefined') { toast('Export library failed to load — check your connection'); return; }
+
+  const ws = XLSX.utils.json_to_sheet(_summaryTableData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+
+  const from = document.getElementById('sm-from').value.trim();
+  const to   = document.getElementById('sm-to').value.trim();
+  const range = (from || to) ? `${from||to}_to_${to||from}` : 'all_dates';
+  XLSX.writeFile(wb, `Summary_${_summaryView}_${range}.xlsx`);
+}
+
+// ══════════════════════════════════════════
 //  ROUTE DAILY TRACKER
 // ══════════════════════════════════════════
 
 let _trackerLoaded = false;
 let _routeOrderInit = false;
+let _summaryInit = false;
+let _summaryView = 'outlet'; // 'outlet' | 'route' | 'sku' | 'category'
+let _summaryRows = [];       // currently loaded rows for the selected date range
+let _summaryTableData = [];  // last rendered breakdown, for CSV export
 let _trackerCurrentAlert = {};
 
 async function loadTrackerData() {
