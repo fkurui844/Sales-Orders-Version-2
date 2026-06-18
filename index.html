@@ -913,7 +913,7 @@ tr.tonnage-detail-row td{padding:0}
       </button>
 
       <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px;margin-top:10px" onclick="showPanel('dash')">
-        📊 Manager / Reports Login
+        📊 View Reports
       </button>
     </div>
 
@@ -967,7 +967,7 @@ tr.tonnage-detail-row td{padding:0}
     <div id="panel-dash" class="login-panel hidden">
       <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
 
-      <div class="logo" style="font-size:26px">Manager Login</div>
+      <div class="logo" style="font-size:26px">Log in to view reports</div>
       <div class="logo-sub">View consolidated orders &amp; reports</div>
 
       <div class="fg">
@@ -3132,6 +3132,7 @@ const S = {
 // ══════════════════════════════════════════
 const NAME_KEYS    = ['Name','Salesperson Name','Salesperson','SALESPERSON','SALESPERSON NAME','NAME','Employee Name','EMPLOYEE NAME'];
 const PAYROLL_KEYS = ['Payroll No','Payroll No.','Payroll Number','PayrollNo','Payroll','Employee No','Employee No.','PAYROLL NO','PAYROLL NUMBER','EMPLOYEE NO'];
+const PASSWORD_KEYS = ['Password', 'Dashboard Password', 'DASHBOARD PASSWORD', 'PASSWORD'];
 const TITLE_KEYS   = ['Title','TITLE','title','Tittle','TITTLE','Job Title','Role','Position','Designation','Type','Category'];
 const SALESMAN_TITLES = ['salesman','saleswoman','saleslady','sales rep','sales representative','rep','sales'];
 function getTitle(sp) {
@@ -5753,7 +5754,7 @@ function clearNotifs() {
 // ══════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════
-const DASH_PASSWORD = '123123';
+// Password is now validated from the Google Sheet Salesperson Details tab
 let   dashUser      = null;
 let   allOrders     = [];
 let   filteredOrders = [];
@@ -5855,7 +5856,12 @@ function doDashLogin() {
     errEl.style.display = 'block'; return;
   }
 
-  if (pw !== DASH_PASSWORD) {
+  // Get password from the selected salesperson's record in the Google Sheet
+  const pwk = findKey(selDashSP, PASSWORD_KEYS);
+  const correctPw = (selDashSP[pwk] || '').toString().trim();
+  const enteredPw = pw.trim();
+
+  if (enteredPw !== correctPw) {
     errEl.textContent = 'Incorrect dashboard password. Please try again.';
     errEl.style.display = 'block'; return;
   }
