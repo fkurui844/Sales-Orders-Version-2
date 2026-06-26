@@ -3829,12 +3829,22 @@ function buildProjProductUI() {
 
   container.innerHTML = '';
   container.appendChild(frag);
+
+  // Hide all rows — user must search or pick a category first
+  _projProdListData.forEach(({ row, catHeader }) => {
+    row.style.display = 'none';
+    if (catHeader) catHeader.style.display = 'none';
+  });
   markQtyRows();
 
   const searchBar = document.getElementById('proj-search-bar');
   const countLbl  = document.getElementById('proj-count-lbl');
   if (searchBar) searchBar.style.display = 'flex';
-  if (countLbl)  { countLbl.textContent = `${list.length} product${list.length!==1?'s':''}`; countLbl.style.display = 'block'; }
+  if (countLbl) {
+    countLbl.textContent = '\uD83D\uDD0D  Type a product name, code, or pick a category to load results';
+    countLbl.style.cssText = 'display:block;padding:8px 14px;font-size:12px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);font-style:italic';
+  }
+  setTimeout(() => { const si = document.getElementById('proj-prod-search'); if (si) si.focus(); }, 150);
 
   renderProjCart();
 }
@@ -3846,6 +3856,19 @@ function filterProjProducts() {
   const clearBtn = document.getElementById('proj-clear-btn');
   if (clearBtn) clearBtn.style.display = (q || cat) ? 'inline-flex' : 'none';
 
+  // If nothing typed and no category — hide all rows, show nudge
+  if (!q && !cat) {
+    _projProdListData.forEach(({ row, catHeader }) => {
+      row.style.display = 'none';
+      if (catHeader) catHeader.style.display = 'none';
+    });
+    if (countLbl) {
+      countLbl.textContent = '\uD83D\uDD0D  Type a product name, code, or pick a category to load results';
+      countLbl.style.cssText = 'display:block;padding:8px 14px;font-size:12px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);font-style:italic';
+    }
+    return;
+  }
+
   let visible = 0;
   const visibleCats = new Set();
   _projProdListData.forEach(({ code, desc, cat: itemCat, catHeader, row }) => {
@@ -3856,9 +3879,10 @@ function filterProjProducts() {
   _projProdListData.forEach(({ cat: itemCat, catHeader }) => {
     if (catHeader) catHeader.style.display = visibleCats.has(itemCat) ? '' : 'none';
   });
-  if (countLbl) countLbl.textContent = (q || cat)
-    ? `${visible} result${visible!==1?'s':''}`
-    : `${_projProdListData.length} product${_projProdListData.length!==1?'s':''}`;
+  if (countLbl) {
+    countLbl.textContent = `${visible} result${visible!==1?'s':''}`;
+    countLbl.style.cssText = '';
+  }
 }
 
 function clearProjProductSearch() {
@@ -4383,13 +4407,27 @@ function buildProductUI() {
 
   container.innerHTML = '';
   container.appendChild(frag);
+
+  // Hide all rows — user must search or pick a category first
+  _prodListData.forEach(({ row, catHeader }) => {
+    row.style.display = 'none';
+    if (catHeader) catHeader.style.display = 'none';
+  });
   markQtyRows();
 
-  // Show search bar now that products are loaded
+  // Show search bar
   const searchBar = document.getElementById('prod-search-bar');
   const countLbl  = document.getElementById('prod-count-lbl');
   if (searchBar) searchBar.style.display = 'flex';
-  if (countLbl)  { countLbl.textContent = `${list.length} product${list.length!==1?'s':''}` ; countLbl.style.display = 'block'; }
+
+  // Show search nudge instead of full product count
+  if (countLbl) {
+    countLbl.textContent = String.fromCharCode(128269) + '  Type a product name, code, or pick a category to load results';
+    countLbl.style.cssText = 'display:block;padding:8px 14px;font-size:12px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);font-style:italic';
+  }
+
+  // Auto-focus search to invite typing
+  setTimeout(() => { const si = document.getElementById('prod-search'); if (si) si.focus(); }, 150);
 
   renderCart();
 }
@@ -4417,6 +4455,19 @@ function _doFilterProducts() {
   const clearBtn = document.getElementById('prod-clear-btn');
   if (clearBtn) clearBtn.style.display = (q || cat) ? 'inline-flex' : 'none';
 
+  // If nothing typed and no category — hide all rows, show nudge
+  if (!q && !cat) {
+    _prodListData.forEach(({ row, catHeader }) => {
+      row.style.display = 'none';
+      if (catHeader) catHeader.style.display = 'none';
+    });
+    if (countLbl) {
+      countLbl.textContent = '\uD83D\uDD0D  Type a product name, code, or pick a category to load results';
+      countLbl.style.cssText = 'display:block;padding:8px 14px;font-size:12px;color:var(--muted);background:var(--bg);border-bottom:1px solid var(--border);font-style:italic';
+    }
+    return;
+  }
+
   let visible = 0;
   const visibleCats = new Set();
 
@@ -4433,9 +4484,10 @@ function _doFilterProducts() {
     if (catHeader) catHeader.style.display = visibleCats.has(itemCat) ? '' : 'none';
   });
 
-  if (countLbl) countLbl.textContent = q || cat
-    ? `${visible} result${visible!==1?'s':''}`
-    : `${_prodListData.length} product${_prodListData.length!==1?'s':''}`;
+  if (countLbl) {
+    countLbl.textContent = `${visible} result${visible!==1?'s':''}`;
+    countLbl.style.cssText = '';
+  }
 }
 
 function clearProductSearch() {
