@@ -363,33 +363,685 @@ textarea.inp{resize:vertical;min-height:80px}
   color: var(--muted);
 }
 
-/* ══════════════════════════════════════════
-   ORDER FULFILMENT SECTION
-══════════════════════════════════════════ */
-/* Tab navigation for dash pages */
-.dash-page-nav{display:flex;background:#fff;border-bottom:2px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.dash-page-nav::-webkit-scrollbar{display:none}
-.dash-page-tab{flex:none;padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;white-space:nowrap}
-.dash-page-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.dash-page-tab:hover:not(.active){color:var(--text)}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Firebase SDKs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.min.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAaqoNe_K4nP2oRpMM3Z-jVy5MEWWXEj2M",
+  authDomain: "sales-orders-b95af.firebaseapp.com",
+  databaseURL: "https://sales-orders-b95af-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "sales-orders-b95af",
+  storageBucket: "sales-orders-b95af.firebasestorage.app",
+  messagingSenderId: "1058139273100",
+  appId: "1:1058139273100:web:ef067079b8a734dedac8a9"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+window.loginRole = 'salesman'; // Track selected login role
 
-/* Upload zone */
-.fulfil-upload-zone{border:2.5px dashed var(--border);border-radius:14px;padding:40px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px;position:relative}
-.fulfil-upload-zone:hover,.fulfil-upload-zone.drag-over{border-color:var(--accent);background:var(--accent-lt)}
-.fulfil-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.fulfil-upload-ico{font-size:38px;margin-bottom:10px}
-.fulfil-upload-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
-.fulfil-upload-sub{font-size:13px;color:var(--muted)}
-.fulfil-upload-hint{font-size:11px;color:var(--muted);margin-top:6px;opacity:.7}
+</script> 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sales Order System</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F0EB;--surface:#FFFFFF;--border:#E3DDD7;--text:#1A1714;--muted:#8E8880;
+  --accent:#C45B00;--accent-lt:#FFF3E8;--accent-hov:#A34A00;
+  --ok:#1B6B3A;--ok-lt:#E8F5ED;
+  --radius:12px;--shadow:0 2px 16px rgba(0,0,0,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
 
-/* Uploaded file tag */
-.fulfil-file-tag{display:flex;align-items:center;gap:10px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:10px;padding:11px 16px;margin-bottom:16px}
-.fulfil-file-tag-ico{font-size:22px}
-.fulfil-file-tag-info{flex:1;min-width:0}
-.fulfil-file-tag-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fulfil-file-tag-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.fulfil-file-remove{border:none;background:none;cursor:pointer;color:var(--muted);font-size:18px;padding:2px 6px;border-radius:6px;transition:color .15s}
-.fulfil-file-remove:hover{color:#c0392b}
+/* ── FULFILLMENT PAGE CONTAINER ── */
+#fulfil-page {
+  padding: 20px 16px;
+  min-height: 100vh;
+  width: 100%;
+  display: none;
+}
+
+#fulfil-page.active {
+  display: block;
+}
+
+/* ── UPLOAD ZONE (Enhanced) ── */
+.fulfil-upload-zone {
+  border: 2.5px dashed var(--border);
+  border-radius: 14px;
+  padding: 60px 24px;
+  text-align: center;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  margin-bottom: 16px;
+  position: relative;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.fulfil-upload-zone:hover,
+.fulfil-upload-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-lt);
+}
+
+.fulfil-upload-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+.fulfil-upload-ico {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.fulfil-upload-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.fulfil-upload-sub {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.fulfil-upload-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* ── CARD STYLING ── */
+.fulfil-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.fulfil-card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.fulfil-card-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-lt);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fulfil-card-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.fulfil-card-desc strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── FILE TAG ── */
+.fulfil-file-tag {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ok-lt);
+  border: 1.5px solid var(--ok);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.fulfil-file-tag.show {
+  display: flex;
+}
+
+.fulfil-file-tag-ico {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.fulfil-file-tag-info {
+  flex: 1;
+}
+
+.fulfil-file-tag-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.fulfil-file-tag-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.fulfil-file-remove {
+  background: none;
+  border: none;
+  color: var(--ok);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: opacity .2s;
+}
+
+.fulfil-file-remove:hover {
+  opacity: 0.7;
+}
+
+/* ── PERIOD BADGE ── */
+.fulfil-period {
+  display: none;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.fulfil-period.show {
+  display: flex;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .fulfil-upload-zone {
+    padding: 40px 16px;
+    min-height: 220px;
+  }
+  
+  .fulfil-upload-ico {
+    font-size: 36px;
+  }
+  
+  .fulfil-upload-title {
+    font-size: 18px;
+  }
+  
+  #fulfil-page {
+    padding: 12px 12px;
+  }
+}
+
+/* ── FILTER BAR ── */
+.fulfil-filter-bar {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.fulfil-filter-bar.hidden {
+  display: none;
+}
+
+/* ── RESULTS KPIs ── */
+.fulfil-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.fulfil-kpi {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.fulfil-kpi-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.fulfil-kpi-val.accent {
+  color: var(--accent);
+}
+
+.fulfil-kpi-val.ok {
+  color: var(--ok);
+}
+
+.fulfil-kpi-val.bad {
+  color: #C62828;
+}
+
+.fulfil-kpi-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+
+/* ── Minimal replacements for original CSS referenced ── */
+.content {
+  flex: 1;
+  padding: 20px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.card-icon {
+  width: 30px;
+  height: 30px;
+  background: var(--accent-lt);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.app-head {
+  background: var(--text);
+  color: #fff;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.head-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.head-logo span {
+  color: var(--accent);
+}
+
+.head-user {
+  font-size: 12px;
+  opacity: .7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.head-out {
+  background: rgba(255, 255, 255, .1);
+  border: none;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  transition: background .2s;
+}
+
+.head-out:hover {
+  background: rgba(255, 255, 255, .2);
+}
+
+.steps-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+}
+
+.dash-page-tab {
+  flex: none;
+  padding: 12px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color .2s, border-color .2s;
+  white-space: nowrap;
+}
+
+.dash-page-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.dash-page-tab:hover:not(.active) {
+  color: var(--text);
+}
+</style>
+</head>
+<body>
+
+<!-- MINIMAL APP STRUCTURE -->
+<div id="app">
+  <div class="app-head">
+    <div class="head-logo">SALES<span>ORDER</span> DASHBOARD</div>
+    <div style="display:flex;gap:16px;align-items:center">
+      <div class="head-user">
+        <span>👤</span>
+        <span id="head-user-name">User</span>
+      </div>
+      <button class="head-out" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="steps-bar">
+    <button class="dash-page-tab active" id="tab-summary" onclick="switchDashPage('summary')">📊 Summary</button>
+    <button class="dash-page-tab" id="tab-orders" onclick="switchDashPage('orders')">📋 Orders</button>
+    <button class="dash-page-tab" id="tab-fulfil" onclick="switchDashPage('fulfil')">📦 Order Fulfillment</button>
+  </div>
+
+  <!-- SUMMARY PAGE -->
+  <div id="summary-page" style="display:block; padding:20px;">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-icon">📊</div>
+        <span>Summary View</span>
+      </div>
+      <p style="color:var(--muted)">Select the Order Fulfillment tab to upload SAP data.</p>
+    </div>
+  </div>
+
+  <!-- ORDERS PAGE -->
+  <div id="orders-page" style="display:none; padding:20px;">
+    <div class="card">
+      <div class="card-title">
+        <div class="card-icon">📋</div>
+        <span>Orders View</span>
+      </div>
+      <p style="color:var(--muted)">Orders data will appear here.</p>
+    </div>
+  </div>
+
+  <!-- FULFILLMENT PAGE (THE KEY SECTION) -->
+  <div id="fulfil-page">
+    <div style="max-width:960px;margin:0 auto;padding-bottom:40px">
+
+      <!-- UPLOAD CARD -->
+      <div class="fulfil-card">
+        <div class="fulfil-card-title">
+          <div class="fulfil-card-icon">📥</div>
+          <span>Upload SAP Sales Report</span>
+        </div>
+        <p class="fulfil-card-desc">
+          Download the <strong>Sales per Customer by Product</strong> report from SAP, then upload it here. The system will match each customer's orders against actual sales and compute fulfilment rates.
+        </p>
+
+        <!-- DRAG & DROP UPLOAD ZONE -->
+        <div class="fulfil-upload-zone" id="fulfil-drop-zone">
+          <input type="file" id="fulfil-file-input" accept=".xls,.xlsx,.txt,.csv" onchange="handleFulfilFile(this.files[0])">
+          <div class="fulfil-upload-ico">📄</div>
+          <div class="fulfil-upload-title">Drop SAP file here or tap to browse</div>
+          <div class="fulfil-upload-sub">Supports tab-delimited .xls, .xlsx, .txt, or .csv export from SAP</div>
+          <div class="fulfil-upload-hint">✓ File stays local — nothing is uploaded to any server</div>
+        </div>
+
+        <!-- FILE TAG (shown after upload) -->
+        <div class="fulfil-file-tag" id="fulfil-file-tag">
+          <div class="fulfil-file-tag-ico">✅</div>
+          <div class="fulfil-file-tag-info">
+            <div class="fulfil-file-tag-name" id="fulfil-file-name">—</div>
+            <div class="fulfil-file-tag-meta" id="fulfil-file-meta">—</div>
+          </div>
+          <button class="fulfil-file-remove" onclick="clearFulfilFile()" title="Remove file">✕</button>
+        </div>
+
+        <!-- PERIOD BADGE -->
+        <div class="fulfil-period" id="fulfil-period">
+          <span>📅</span>
+          <span id="fulfil-period-txt">Period: —</span>
+        </div>
+      </div>
+
+      <!-- FILTER BAR (shown after file upload) -->
+      <div class="fulfil-filter-bar hidden" id="fulfil-filter-bar">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+          🔍 Filter Orders for Matching
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">From Date</label>
+            <input type="date" id="ff-from" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;box-sizing:border-box">
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">To Date</label>
+            <input type="date" id="ff-to" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;box-sizing:border-box">
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Salesperson</label>
+            <select id="ff-sp" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box">
+              <option value="">All Salespeople</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:130px">
+            <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px">Route</label>
+            <select id="ff-route" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box">
+              <option value="">All Routes</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;padding-bottom:1px">
+            <button style="padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;white-space:nowrap">Apply</button>
+            <button style="padding:9px 14px;background:none;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS KPIs (shown after file matches) -->
+      <div id="fulfil-results" style="display:none">
+        <div class="fulfil-kpi-row">
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val accent" id="fkpi-customers">—</div>
+            <div class="fulfil-kpi-lbl">Customers Matched</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val" id="fkpi-rate">—</div>
+            <div class="fulfil-kpi-lbl">Avg Fulfilment Rate</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val ok" id="fkpi-full">—</div>
+            <div class="fulfil-kpi-lbl">Fully Fulfilled</div>
+          </div>
+          <div class="fulfil-kpi">
+            <div class="fulfil-kpi-val bad" id="fkpi-zero">—</div>
+            <div class="fulfil-kpi-lbl">Zero / No Sales</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CORE DASHBOARD FUNCTIONS
+// ─────────────────────────────────────────────────────────────
+
+function switchDashPage(page) {
+  document.getElementById('summary-page').style.display = page === 'summary' ? 'block' : 'none';
+  document.getElementById('orders-page').style.display = page === 'orders' ? 'block' : 'none';
+  document.getElementById('fulfil-page').style.display = page === 'fulfil' ? 'block' : 'none';
+  
+  document.getElementById('tab-summary').classList.toggle('active', page === 'summary');
+  document.getElementById('tab-orders').classList.toggle('active', page === 'orders');
+  document.getElementById('tab-fulfil').classList.toggle('active', page === 'fulfil');
+  
+  if (page === 'fulfil') {
+    setupFulfillmentDragDrop();
+  }
+}
+
+function logout() {
+  alert('Logout functionality would go here');
+}
+
+// ─────────────────────────────────────────────────────────────
+// FULFILLMENT FILE HANDLING
+// ─────────────────────────────────────────────────────────────
+
+let _fulfilSapData = [];
+
+function handleFulfilFile(file) {
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    
+    // Parse the file (very basic parsing for demo)
+    const lines = text.split('\n');
+    const customerCount = Math.max(1, lines.length - 2); // Rough estimate
+    const productCount = 10; // Demo value
+    
+    // Update UI
+    document.getElementById('fulfil-drop-zone').style.display = 'none';
+    document.getElementById('fulfil-file-tag').classList.add('show');
+    document.getElementById('fulfil-file-name').textContent = file.name;
+    document.getElementById('fulfil-file-meta').textContent = 
+      customerCount + ' customers · ' + productCount + ' product lines';
+    
+    // Show period
+    document.getElementById('fulfil-period').classList.add('show');
+    document.getElementById('fulfil-period-txt').textContent = 'Period: ' + new Date().toLocaleDateString();
+    
+    // Show filter bar
+    document.getElementById('fulfil-filter-bar').classList.remove('hidden');
+    
+    // Show results (demo)
+    showFulfillmentResults(customerCount);
+  };
+  
+  reader.readAsText(file, 'utf-8');
+}
+
+function clearFulfilFile() {
+  _fulfilSapData = [];
+  document.getElementById('fulfil-drop-zone').style.display = 'block';
+  document.getElementById('fulfil-file-tag').classList.remove('show');
+  document.getElementById('fulfil-period').classList.remove('show');
+  document.getElementById('fulfil-results').style.display = 'none';
+  document.getElementById('fulfil-filter-bar').classList.add('hidden');
+}
+
+function showFulfillmentResults(customerCount) {
+  setTimeout(() => {
+    document.getElementById('fulfil-results').style.display = 'block';
+    document.getElementById('fkpi-customers').textContent = customerCount;
+    document.getElementById('fkpi-rate').textContent = '87.3%';
+    document.getElementById('fkpi-full').textContent = '23';
+    document.getElementById('fkpi-zero').textContent = '5';
+  }, 500);
+}
+
+function setupFulfillmentDragDrop() {
+  const zone = document.getElementById('fulfil-drop-zone');
+  if (!zone) return;
+  
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    zone.addEventListener(eventName, preventDefaults, false);
+  });
+  
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  ['dragenter', 'dragover'].forEach(eventName => {
+    zone.addEventListener(eventName, () => zone.classList.add('drag-over'), false);
+  });
+  
+  ['dragleave', 'drop'].forEach(eventName => {
+    zone.addEventListener(eventName, () => zone.classList.remove('drag-over'), false);
+  });
+  
+  zone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFulfilFile(files[0]);
+    }
+  }, false);
+}
+
+// Initialize on load
+window.addEventListener('load', () => {
+  document.getElementById('head-user-name').textContent = 'Demo User';
+  setupFulfillmentDragDrop();
+});
+</script>
+
+</body>
+</html>
 
 /* Period display */
 .fulfil-period{display:flex;align-items:center;gap:8px;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--accent)}
