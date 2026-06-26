@@ -3844,7 +3844,7 @@ function buildProjProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}" data-code="${code}" data-pack="${pack}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
         </div>
         <div class="prod-price">KES ${price.toLocaleString()}</div>
         <div class="qty-ctl">
@@ -4409,7 +4409,7 @@ function buildProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta" id="pmeta-${safeId}">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}" data-code="${code}" data-pack="${pack}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
         </div>
         <div class="prod-price" id="pprice-${safeId}">KES ${price.toLocaleString()}</div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -4481,7 +4481,14 @@ function markQtyRows() {
       // Update the placed-pill with quantity and packaging unit
       const pill = row.querySelector('.prod-added-pill');
       if (pill) {
-        const packUnit = pill.dataset.unit || '';
+        const code = pill.dataset.code || '';
+        const pack = pill.dataset.pack || '';
+        const pmKey = `${code}||${pack}`;
+        
+        // Check if this product is in pieces mode
+        const isInPiecesMode = _piecesMode && _piecesMode[pmKey];
+        const packUnit = isInPiecesMode ? 'Pieces' : (pill.dataset.unit || '');
+        
         pill.innerHTML = v > 0 
           ? `✓ <span class="pill-qty">${v}</span> ${packUnit} Placed`
           : `✓ <span class="pill-qty"></span> Placed`;
@@ -4565,6 +4572,8 @@ function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, bt
     if (metaEl) metaEl.innerHTML = `${pack} <span class="badge">${code}</span>`;
     const priceEl = document.getElementById(`pprice-${safeId}`);
     if (priceEl) priceEl.textContent = `KES ${price.toLocaleString()}`;
+    // Update pills to reflect back to pack mode
+    markQtyRows();
     renderCart();
     return;
   }
@@ -4623,6 +4632,9 @@ function activatePiecesMode(code, pack, pcsPerPack, price, kg, desc, cat, safeId
   // Remove any existing pack-mode cart entry for this product
   const pIdx = S.cart.findIndex(c => c.code === code && c.pack === pack && !c.piecesMode);
   if (pIdx !== -1) S.cart.splice(pIdx, 1);
+  
+  // Update pills to reflect pieces mode
+  markQtyRows();
   renderCart();
 }
 
