@@ -3133,6 +3133,38 @@ function findKey(obj, candidates, fallback) {
 }
 
 // ══════════════════════════════════════════
+//  GET PACKAGING UNIT FROM PACK STRING
+// ══════════════════════════════════════════
+function getPackagingUnit(packStr) {
+  if (!packStr) return 'Units';
+  
+  const packLower = packStr.toLowerCase();
+  
+  // Check for common packaging types
+  if (packLower.includes('carton')) return 'Cartons';
+  if (packLower.includes('crate')) return 'Crates';
+  if (packLower.includes('tray')) return 'Trays';
+  if (packLower.includes('pack')) return 'Packs';
+  if (packLower.includes('box')) return 'Boxes';
+  if (packLower.includes('case')) return 'Cases';
+  if (packLower.includes('pouch')) return 'Pouches';
+  if (packLower.includes('bottle')) return 'Bottles';
+  if (packLower.includes('piece')) return 'Pieces';
+  
+  // If pack string has number × unit pattern (e.g., "12 × Carton")
+  const match = packStr.match(/(\d+)\s*[x×]\s*(.+)/i);
+  if (match && match[2]) {
+    let unit = match[2].trim();
+    // Pluralize if not already
+    if (!unit.endsWith('s')) unit = unit + 's';
+    return unit;
+  }
+  
+  // Otherwise return the pack string as is, pluralized
+  return packStr.endsWith('s') ? packStr : (packStr + 's');
+}
+
+// ══════════════════════════════════════════
 //  TOGGLE PASSWORD EYE
 // ══════════════════════════════════════════
 function toggleEye(inputId, btn) {
@@ -3812,7 +3844,7 @@ function buildProjProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}">✓ <span class="pill-qty">${qty||''}</span> Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
         </div>
         <div class="prod-price">KES ${price.toLocaleString()}</div>
         <div class="qty-ctl">
@@ -4377,7 +4409,7 @@ function buildProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta" id="pmeta-${safeId}">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}">✓ <span class="pill-qty">${qty||''}</span> Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
         </div>
         <div class="prod-price" id="pprice-${safeId}">KES ${price.toLocaleString()}</div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -4446,9 +4478,14 @@ function markQtyRows() {
     if (inp) {
       const v = parseInt(inp.value) || 0;
       row.classList.toggle('has-qty', v > 0);
-      // Update the placed-pill quantity text
-      const pillQty = row.querySelector('.pill-qty');
-      if (pillQty) pillQty.textContent = v > 0 ? v + ' ' : '';
+      // Update the placed-pill with quantity and packaging unit
+      const pill = row.querySelector('.prod-added-pill');
+      if (pill) {
+        const packUnit = pill.dataset.unit || '';
+        pill.innerHTML = v > 0 
+          ? `✓ <span class="pill-qty">${v}</span> ${packUnit} Placed`
+          : `✓ <span class="pill-qty"></span> Placed`;
+      }
     }
   });
 }
