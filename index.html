@@ -11027,5 +11027,652 @@ function _tsSetRow(type, placed, summary) {
       </div>
     </div>
   </div>
+<!-- ═══════════════════════════════════════════════════════
+     UNIFIED SINGLE-PAGE ORDER FLOW REDESIGN
+     Replaces 3-step wizard with one scrollable accordion
+════════════════════════════════════════════════════════ -->
+<style>
+/* ── Hide the old steps bar ── */
+.steps-bar { display: none !important; }
+
+/* ── Hide old sticky footers on step panels (we add inline CTAs) ── */
+#step-who > .sticky-ft,
+#step-items > .sticky-ft,
+#step-submit > .sticky-ft { display: none !important; }
+
+/* ── Show all step panels simultaneously ── */
+#step-who,
+#step-items,
+#step-submit { display: block !important; }
+
+/* ── Remove the old greeting banner (redundant now) ── */
+.who-greeting { display: none !important; }
+
+/* ── Remove old split layout, use full width ── */
+#step-who .content { max-width: 640px; padding: 0 !important; }
+.step1-split { flex-direction: column !important; min-height: auto !important; }
+.step1-left  { flex: none !important; border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+.step1-right { flex: none !important; }
+.step1-section-header { position: relative !important; top: auto !important; }
+
+/* ── Remove step-items/step-submit paddings that assume full-page ── */
+#step-items .content,
+#step-submit .content { padding: 0 !important; max-width: 640px !important; margin: 0 auto; }
+
+/* ── SECTION SHELL ── */
+.uos-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 14px 16px 80px;
+}
+
+/* Progress strip */
+.uos-progress {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  max-width: 640px;
+  margin: 0 auto;
+}
+.ups-step { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.ups-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--border); color: #fff;
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .3s; flex-shrink: 0;
+}
+.ups-lbl { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #C8C2BC; transition: color .3s; }
+.ups-line { flex: 1; height: 2px; background: var(--border); margin: 0 8px; border-radius: 99px; transition: background .3s; }
+.ups-step.active .ups-num  { background: var(--text); }
+.ups-step.active .ups-lbl  { color: var(--text); }
+.ups-step.done   .ups-num  { background: var(--accent); }
+.ups-step.done   .ups-lbl  { color: var(--accent); }
+.ups-line.done   { background: var(--accent); }
+
+/* Section card */
+.uos-section {
+  background: #fff;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  transition: border-color .2s;
+}
+.uos-section.active { border-color: var(--text); }
+.uos-section.done   { border-color: var(--accent); }
+.uos-section.locked { opacity: .55; }
+
+/* Section header */
+.uos-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  gap: 10px;
+  cursor: default;
+}
+.uos-head-left { display: flex; align-items: center; gap: 10px; }
+.uos-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--border); color: #fff;
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .3s;
+}
+.uos-section.active .uos-step-num { background: var(--text); }
+.uos-section.done   .uos-step-num { background: var(--accent); }
+
+.uos-section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 800; letter-spacing: .02em;
+  color: var(--text);
+}
+.uos-section-done-txt {
+  font-size: 11px; color: var(--accent); font-weight: 600;
+  margin-top: 1px; display: none;
+}
+.uos-section.done .uos-section-done-txt { display: block; }
+
+.uos-section-edit {
+  display: none;
+  background: none; border: 1.5px solid var(--border); border-radius: 7px;
+  padding: 4px 12px; font-family: inherit; font-size: 12px; font-weight: 700;
+  color: var(--muted); cursor: pointer; flex-shrink: 0; transition: all .15s;
+}
+.uos-section-edit:hover { border-color: var(--accent); color: var(--accent); }
+.uos-section.done .uos-section-edit { display: block; }
+
+.uos-lock-hint {
+  font-size: 11px; color: #C8C2BC; font-weight: 500;
+}
+
+/* Section body */
+.uos-body { border-top: 1px solid var(--border); animation: uosFadeIn .2s ease; }
+@keyframes uosFadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+/* ── Detail section: 2-col grid for location+route ── */
+.uos-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) { .uos-detail-grid { grid-template-columns: 1fr; } }
+
+/* ── Status twin pills (compact) ── */
+.uos-status-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+.uos-status-pill {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border-radius: 9px; padding: 9px 11px;
+}
+.uos-status-ico { font-size: 15px; flex-shrink: 0; }
+.uos-status-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.uos-status-val { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); margin-top: 1px; }
+
+/* ── CTA buttons at bottom of sections ── */
+.uos-cta { padding: 12px 16px 16px; }
+.uos-cta-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 11px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .2s, transform .1s;
+}
+.uos-cta-btn.primary { background: var(--accent); color: #fff; }
+.uos-cta-btn.primary:hover { background: var(--accent-hov); }
+.uos-cta-btn.primary:disabled { opacity: .4; cursor: not-allowed; }
+.uos-cta-btn.success { background: var(--ok); color: #fff; font-size: 19px; padding: 16px; }
+.uos-cta-btn.success:hover { background: #155730; }
+
+/* ── Items section: inline add-customer panel ── */
+#uos-add-panel { display: none; }
+
+/* ── Review section styling ── */
+#uos-review-hint {
+  display: flex; align-items: center; gap: 10px;
+  background: #F0FFF4; border: 1.5px solid #86EFAC;
+  border-radius: 10px; padding: 10px 14px; margin: 12px 16px 0;
+}
+
+/* ── Success step ── */
+#step-ok { display: block !important; }
+</style>
+
+<script>
+(function() {
+  /* ── Wait for DOM ready ── */
+  function ready(fn) {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+
+  ready(function() {
+
+    /* ── 1. BUILD THE NEW UNIFIED SHELL ── */
+    buildUnifiedShell();
+
+    /* ── 2. OVERRIDE setStep ── */
+    const _origSetStep = window.setStep;
+    window.setStep = function(n) {
+      // Always call original to keep S state consistent
+      _origSetStep(n);
+
+      // For salesman order flow steps 1-3, sync our UI
+      if (n >= 1 && n <= 3) {
+        // Make sure wrapper is visible and success is hidden
+        const wrapper = document.getElementById('uos-wrapper');
+        const prog = document.getElementById('uos-progress-strip');
+        const ok = document.getElementById('step-ok');
+        if (wrapper) wrapper.style.display = 'block';
+        if (prog) prog.style.display = 'block';
+        if (ok) ok.style.display = 'none';
+        // Hide old step panels
+        ['step-who','step-items','step-submit'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        syncSections(n);
+      }
+      if (n === 4) {
+        hideOrderSections();
+      }
+      if (n === 1) {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    /* ── 3. OVERRIDE go2 to just expand section 2 ── */
+    const _origGo2 = window.go2;
+    window.go2 = function() {
+      _origGo2();
+    };
+
+    /* ── 4. OVERRIDE go3 / projGo3 to expand section 3 ── */
+    const _origGo3 = window.go3;
+    window.go3 = function() {
+      _origGo3();
+    };
+    const _origProjGo3 = window.projGo3;
+    window.projGo3 = function() {
+      _origProjGo3();
+    };
+
+    /* ── 5. Wire up CTA buttons in sections ── */
+    document.getElementById('uos-cta1').addEventListener('click', function() {
+      if (window.go2) window.go2();
+    });
+    document.getElementById('uos-cta2').addEventListener('click', function() {
+      const isProj = window.S && window.S.orderType === 'projection';
+      if (isProj) { if (window.projGo3) window.projGo3(); }
+      else        { if (window.go3)     window.go3(); }
+    });
+    document.getElementById('uos-edit1').addEventListener('click', function() {
+      syncSections(1);
+      setTimeout(() => document.getElementById('uos-sec1').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    });
+    document.getElementById('uos-edit2').addEventListener('click', function() {
+      syncSections(2);
+      setTimeout(() => document.getElementById('uos-sec2').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    });
+    document.getElementById('uos-edit2b').addEventListener('click', function() {
+      syncSections(2);
+      setTimeout(() => document.getElementById('uos-sec2').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    });
+
+    /* ── Wire submit button ── */
+    document.getElementById('uos-submit-btn').addEventListener('click', function() {
+      if (window.submitOrder) window.submitOrder();
+    });
+
+    /* ── Watch go3-btn / proj-go3-btn / sub-btn disabled ── */
+    observeButton('go3-btn', 'uos-cta2');
+    observeButton('proj-go3-btn', 'uos-cta2');
+    observeButton('sub-btn', 'uos-submit-btn');
+
+    /* ── Wire notes textarea ── */
+    // sync notes between original and our copy
+    const origNotes = document.getElementById('notes-inp');
+    const uosNotes = document.getElementById('uos-notes-inp');
+    if (origNotes && uosNotes) {
+      uosNotes.addEventListener('input', () => { origNotes.value = uosNotes.value; });
+    }
+
+    /* ── Show/hide status cards inside section 1 ── */
+    // Load status on open
+    setTimeout(() => {
+      if (window.loadTodayStatus) window.loadTodayStatus();
+      if (window.loadMyOrdersToday) window.loadMyOrdersToday();
+    }, 1500);
+
+  }); // ready
+
+  /* ── Build HTML shell ── */
+  function buildUnifiedShell() {
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    // Build the progress strip element
+    const progressHTML = `
+      <div id="uos-progress-strip" style="background:#fff;border-bottom:1px solid var(--border);display:none">
+        <div style="display:flex;align-items:center;padding:10px 16px;max-width:640px;margin:0 auto;gap:0">
+          <div class="ups-step active" id="ups-s1"><span class="ups-num" id="ups-n1">1</span><span class="ups-lbl">Details</span></div>
+          <div class="ups-line" id="ups-l1"></div>
+          <div class="ups-step" id="ups-s2"><span class="ups-num" id="ups-n2">2</span><span class="ups-lbl">Items</span></div>
+          <div class="ups-line" id="ups-l2"></div>
+          <div class="ups-step" id="ups-s3"><span class="ups-num" id="ups-n3">3</span><span class="ups-lbl">Submit</span></div>
+        </div>
+      </div>`;
+
+    // Insert progress strip after the app-head
+    const appHead = app.querySelector('.app-head');
+    if (appHead) appHead.insertAdjacentHTML('afterend', progressHTML);
+
+    // Build the outer wrapper div to contain all order sections
+    const wrapper = document.createElement('div');
+    wrapper.id = 'uos-wrapper';
+    wrapper.style.cssText = 'display:none;max-width:640px;margin:0 auto;padding:14px 16px 100px';
+
+    wrapper.innerHTML = `
+
+      <!-- SECTION 1: DETAILS -->
+      <div class="uos-section active" id="uos-sec1">
+        <div class="uos-head">
+          <div class="uos-head-left">
+            <div class="uos-step-num">1</div>
+            <div>
+              <div class="uos-section-title">Your Details</div>
+              <div class="uos-section-done-txt" id="uos1-done-txt"></div>
+            </div>
+          </div>
+          <button class="uos-section-edit" id="uos-edit1">Edit</button>
+        </div>
+        <!-- body: hoisted from step-who's form -->
+        <div class="uos-body" id="uos-sec1-body">
+          <div style="padding:14px 16px 0">
+            <!-- fields mirrored here via DOM move (done in JS below) -->
+            <div id="uos-details-slot"></div>
+          </div>
+          <!-- Status pills -->
+          <div class="uos-status-row">
+            <div class="uos-status-pill">
+              <span class="uos-status-ico">🌅</span>
+              <div>
+                <div class="uos-status-lbl">Projection</div>
+                <div class="uos-status-val" id="uos-ts-proj">—</div>
+              </div>
+            </div>
+            <div class="uos-status-pill">
+              <span class="uos-status-ico">📦</span>
+              <div>
+                <div class="uos-status-lbl">Full Order</div>
+                <div class="uos-status-val" id="uos-ts-full">—</div>
+              </div>
+            </div>
+            <button onclick="if(window.loadTodayStatus)window.loadTodayStatus()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:4px 8px;align-self:flex-end;transition:color .15s;flex-shrink:0" title="Refresh">↻</button>
+          </div>
+          <div class="uos-cta">
+            <button class="uos-cta-btn primary" id="uos-cta1">Continue — Add Products →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: ADD ITEMS -->
+      <div class="uos-section locked" id="uos-sec2">
+        <div class="uos-head">
+          <div class="uos-head-left">
+            <div class="uos-step-num">2</div>
+            <div>
+              <div class="uos-section-title">Add Items</div>
+              <div class="uos-section-done-txt" id="uos2-done-txt"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="uos-section-edit" id="uos-edit2b" style="display:none">Edit</button>
+            <span class="uos-lock-hint" id="uos-lock2">Fill details first</span>
+          </div>
+        </div>
+        <div class="uos-body" id="uos-sec2-body" style="display:none">
+          <!-- content moved here from step-items -->
+          <div id="uos-items-slot" style="padding:0 0 4px"></div>
+          <div class="uos-cta">
+            <button class="uos-cta-btn primary" id="uos-cta2" disabled>Review &amp; Submit →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: REVIEW & SUBMIT -->
+      <div class="uos-section locked" id="uos-sec3">
+        <div class="uos-head">
+          <div class="uos-head-left">
+            <div class="uos-step-num">3</div>
+            <div>
+              <div class="uos-section-title">Review &amp; Submit</div>
+            </div>
+          </div>
+          <span class="uos-lock-hint" id="uos-lock3">Add items first</span>
+          <button class="uos-section-edit" id="uos-edit2" style="display:none">← Back</button>
+        </div>
+        <div class="uos-body" id="uos-sec3-body" style="display:none">
+          <div id="uos-submit-slot" style="padding:14px 16px 0"></div>
+          <div style="padding:0 16px 16px">
+            <div style="margin-bottom:12px">
+              <label class="lbl">Notes (Optional)</label>
+              <textarea class="inp" id="uos-notes-inp" placeholder="Special instructions…" rows="3"></textarea>
+            </div>
+            <div id="uos-autosave-ind" style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:8px"></div>
+            <button class="uos-cta-btn success" id="uos-submit-btn">Submit All Orders ✓</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Insert wrapper before #step-who
+    const stepWho = document.getElementById('step-who');
+    if (stepWho && stepWho.parentNode) {
+      stepWho.parentNode.insertBefore(wrapper, stepWho);
+    }
+
+    // ── MIGRATE DOM NODES ──
+    // Move details form into slot 1
+    const detailsSlot = document.getElementById('uos-details-slot');
+    const whoFormBody = document.querySelector('#step-who .who-form-body');
+    if (detailsSlot && whoFormBody) {
+      // Move each who-field into our slot
+      Array.from(whoFormBody.children).forEach(child => detailsSlot.appendChild(child));
+    }
+
+    // Move items content into slot 2
+    const itemsSlot = document.getElementById('uos-items-slot');
+    const stepItems = document.getElementById('step-items');
+    if (itemsSlot && stepItems) {
+      Array.from(stepItems.children).forEach(child => {
+        if (!child.classList.contains('sticky-ft')) {
+          itemsSlot.appendChild(child);
+        }
+      });
+    }
+
+    // Move submit content into slot 3
+    const submitSlot = document.getElementById('uos-submit-slot');
+    const stepSubmit = document.getElementById('step-submit');
+    if (submitSlot && stepSubmit) {
+      const submitContent = stepSubmit.querySelector('.content');
+      if (submitContent) {
+        Array.from(submitContent.children).forEach(child => {
+          // Skip the notes card (we render our own) 
+          const hasNotesInp = child.querySelector && child.querySelector('#notes-inp');
+          if (!hasNotesInp) {
+            child.style.margin = child.style.margin || '';
+            child.style.padding = child.style.padding || '';
+            submitSlot.appendChild(child);
+          }
+        });
+      }
+    }
+
+    // Move draft & partial banners into the wrapper (before sections)
+    const draftBanner = document.getElementById('draft-banner');
+    const partialBanner = document.getElementById('partial-order-banner');
+    if (draftBanner) wrapper.insertBefore(draftBanner, wrapper.firstChild);
+    if (partialBanner) {
+      const ref = document.getElementById('draft-banner');
+      if (ref) wrapper.insertBefore(partialBanner, ref.nextSibling);
+      else wrapper.insertBefore(partialBanner, wrapper.firstChild);
+    }
+
+    // Watch ts-proj-sub and ts-full-sub to mirror into our pills
+    mirrorStatus();
+
+    // Apply a 2-col layout for location + route
+    const whoLoc = document.getElementById('who-loc');
+    const routeWrap = document.getElementById('route-wrap');
+    if (whoLoc && routeWrap) {
+      const locField = whoLoc.closest('.who-field');
+      const routeField = routeWrap.closest('.who-field');
+      if (locField && routeField && locField.parentNode === routeField.parentNode) {
+        const grid = document.createElement('div');
+        grid.className = 'uos-detail-grid';
+        grid.style.marginBottom = '14px';
+        locField.parentNode.insertBefore(grid, locField);
+        // Remove margin from children
+        locField.style.marginBottom = '0';
+        routeField.style.marginBottom = '0';
+        grid.appendChild(locField);
+        grid.appendChild(routeField);
+      }
+    }
+  }
+
+  /* ── Mirror status values ── */
+  function mirrorStatus() {
+    function sync() {
+      const p = document.getElementById('ts-proj-sub');
+      const f = document.getElementById('ts-full-sub');
+      const up = document.getElementById('uos-ts-proj');
+      const uf = document.getElementById('uos-ts-full');
+      if (p && up) up.innerHTML = p.innerHTML;
+      if (f && uf) uf.innerHTML = f.innerHTML;
+    }
+    setInterval(sync, 2000);
+    sync();
+  }
+
+  /* ── Observe a button's disabled state ── */
+  function observeButton(srcId, tgtId) {
+    const src = document.getElementById(srcId);
+    const tgt = document.getElementById(tgtId);
+    if (!src || !tgt) return;
+    const obs = new MutationObserver(() => {
+      tgt.disabled = src.disabled;
+    });
+    obs.observe(src, { attributes: true, attributeFilter: ['disabled'] });
+    tgt.disabled = src.disabled;
+  }
+
+  /* ── Sync section states based on current step ── */
+  function syncSections(n) {
+    const s1 = document.getElementById('uos-sec1');
+    const s2 = document.getElementById('uos-sec2');
+    const s3 = document.getElementById('uos-sec3');
+    const b1 = document.getElementById('uos-sec1-body');
+    const b2 = document.getElementById('uos-sec2-body');
+    const b3 = document.getElementById('uos-sec3-body');
+    const l2 = document.getElementById('uos-lock2');
+    const l3 = document.getElementById('uos-lock3');
+    const e2b = document.getElementById('uos-edit2b');
+    const e3  = document.getElementById('uos-edit2');
+
+    if (!s1) return;
+
+    // Step 1 active
+    s1.className = 'uos-section' + (n === 1 ? ' active' : (n > 1 ? ' done' : ''));
+    b1.style.display = n === 1 ? 'block' : 'none';
+
+    // Update done text for section 1
+    if (n > 1) {
+      const loc = (document.getElementById('who-loc') || {}).value || '';
+      const route = (document.getElementById('route-inp') || {}).value || '';
+      const dt1 = document.getElementById('uos1-done-txt');
+      if (dt1) dt1.textContent = [loc, route].filter(Boolean).join(' · ') || 'Details saved';
+    }
+
+    // Step 2
+    if (n < 2) {
+      s2.className = 'uos-section locked';
+      b2.style.display = 'none';
+      if (l2) l2.style.display = 'inline';
+      if (e2b) e2b.style.display = 'none';
+    } else {
+      s2.className = 'uos-section' + (n === 2 ? ' active' : ' done');
+      b2.style.display = 'block';
+      if (l2) l2.style.display = 'none';
+      if (e2b) e2b.style.display = (n === 3) ? 'block' : 'none';
+      // Scroll to sec2
+      if (n === 2) setTimeout(() => s2.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    }
+
+    // Update done text for section 2
+    if (n > 2) {
+      const custCount = (window.S && window.S.orders) ? window.S.orders.length : 0;
+      const dt2 = document.getElementById('uos2-done-txt');
+      if (dt2 && custCount > 0) dt2.textContent = custCount + ' customer' + (custCount !== 1 ? 's' : '') + ' added';
+    }
+
+    // Step 3
+    if (n < 3) {
+      s3.className = 'uos-section locked';
+      b3.style.display = 'none';
+      if (l3) l3.style.display = 'inline';
+      if (e3)  e3.style.display = 'none';
+    } else {
+      s3.className = 'uos-section active';
+      b3.style.display = 'block';
+      if (l3) l3.style.display = 'none';
+      if (e3)  e3.style.display = 'block';
+      // Scroll to sec3
+      if (n === 3) setTimeout(() => s3.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    }
+
+    // Update progress strip
+    updateProgress(n);
+  }
+
+  function updateProgress(n) {
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('ups-s' + i);
+      if (!el) return;
+      el.className = 'ups-step' + (i < n ? ' done' : i === n ? ' active' : '');
+    });
+    [1,2].forEach(i => {
+      const el = document.getElementById('ups-l' + i);
+      if (!el) return;
+      el.className = 'ups-line' + (i < n ? ' done' : '');
+    });
+  }
+
+  function hideOrderSections() {
+    const w = document.getElementById('uos-wrapper');
+    const prog = document.getElementById('uos-progress-strip');
+    if (w) w.style.display = 'none';
+    if (prog) prog.style.display = 'none';
+    // Show the success screen
+    const ok = document.getElementById('step-ok');
+    if (ok) ok.style.display = 'block';
+  }
+
+  /* ── Show the UOS wrapper when the salesman app is active ── */
+  // Watch for app becoming visible and role
+  const appEl = document.getElementById('app');
+  const stepWhoEl = document.getElementById('step-who');
+  if (appEl) {
+    const appObs = new MutationObserver(() => {
+      if (appEl.style.display !== 'none' && window.loginRole === 'salesman') {
+        const wrapper = document.getElementById('uos-wrapper');
+        const prog = document.getElementById('uos-progress-strip');
+        if (wrapper) wrapper.style.display = 'block';
+        if (prog) prog.style.display = 'block';
+        // Hide old step panels (content migrated to wrapper)
+        ['step-who','step-items','step-submit','step-ok'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        syncSections(1);
+        appObs.disconnect();
+      }
+    });
+    appObs.observe(appEl, { attributes: true, attributeFilter: ['style'] });
+  }
+
+  /* ── Also hook afterLogin to expose wrapper ── */
+  const _origAfterLogin = window.afterLogin;
+  if (typeof _origAfterLogin === 'function') {
+    window.afterLogin = function(...args) {
+      _origAfterLogin.apply(this, args);
+      if (window.loginRole === 'salesman') {
+        setTimeout(() => {
+          const wrapper = document.getElementById('uos-wrapper');
+          const prog = document.getElementById('uos-progress-strip');
+          if (wrapper) wrapper.style.display = 'block';
+          if (prog) prog.style.display = 'block';
+          ['step-who','step-items','step-submit'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+          });
+          syncSections(1);
+        }, 100);
+      }
+    };
+  }
+
+})();
+</script>
 </body>
 </html>
