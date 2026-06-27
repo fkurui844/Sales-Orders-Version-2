@@ -374,17 +374,16 @@ textarea.inp{resize:vertical;min-height:80px}
 .dash-page-tab:hover:not(.active){color:var(--text)}
 
 /* Upload zone */
-.fulfil-upload-zone{border:2.5px dashed var(--border);border-radius:14px;padding:60px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px;position:relative;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.fulfil-upload-zone{border:2.5px dashed var(--border);border-radius:14px;padding:40px 24px;text-align:center;background:#fff;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px;position:relative}
 .fulfil-upload-zone:hover,.fulfil-upload-zone.drag-over{border-color:var(--accent);background:var(--accent-lt)}
-.fulfil-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10}
-.fulfil-upload-ico{font-size:48px;margin-bottom:8px}
-.fulfil-upload-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;color:var(--text)}
-.fulfil-upload-sub{font-size:14px;color:var(--muted)}
-.fulfil-upload-hint{font-size:12px;color:var(--muted);margin-top:8px;opacity:.7}
+.fulfil-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.fulfil-upload-ico{font-size:38px;margin-bottom:10px}
+.fulfil-upload-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px}
+.fulfil-upload-sub{font-size:13px;color:var(--muted)}
+.fulfil-upload-hint{font-size:11px;color:var(--muted);margin-top:6px;opacity:.7}
 
 /* Uploaded file tag */
-.fulfil-file-tag{display:none;align-items:center;gap:10px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:10px;padding:14px 16px;margin-bottom:16px}
-.fulfil-file-tag.show{display:flex}
+.fulfil-file-tag{display:flex;align-items:center;gap:10px;background:var(--ok-lt);border:1.5px solid var(--ok);border-radius:10px;padding:11px 16px;margin-bottom:16px}
 .fulfil-file-tag-ico{font-size:22px}
 .fulfil-file-tag-info{flex:1;min-width:0}
 .fulfil-file-tag-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -393,8 +392,7 @@ textarea.inp{resize:vertical;min-height:80px}
 .fulfil-file-remove:hover{color:#c0392b}
 
 /* Period display */
-.fulfil-period{display:none;align-items:center;gap:8px;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--accent)}
-.fulfil-period.show{display:flex}
+.fulfil-period{display:flex;align-items:center;gap:8px;background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--accent)}
 
 /* Summary KPI row */
 .fulfil-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
@@ -851,12 +849,6 @@ tr.tonnage-detail-row td{padding:0}
 .qe-total-strip{padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;flex-shrink:0}
 .qe-total-lbl{color:var(--muted);font-weight:500}
 .qe-total-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)}
-
-/* Page container styling */
-#summary-page, #orders-page, #fulfil-page {
-  width: 100%;
-  min-height: calc(100vh - 160px);
-}
 </style>
 </head>
 <body>
@@ -2398,7 +2390,7 @@ tr.tonnage-detail-row td{padding:0}
   </div><!-- #orders-page -->
 
   <!-- ORDER FULFILMENT PAGE -->
-  <div id="fulfil-page" style="display:none;padding:20px 16px">
+  <div id="fulfil-page" style="display:none">
     <div class="content" style="max-width:960px;padding-bottom:40px">
 
       <div class="card" style="margin-top:14px">
@@ -3139,38 +3131,6 @@ function findKey(obj, candidates, fallback) {
 }
 
 // ══════════════════════════════════════════
-//  GET PACKAGING UNIT FROM PACK STRING
-// ══════════════════════════════════════════
-function getPackagingUnit(packStr) {
-  if (!packStr) return 'Units';
-  
-  const packLower = packStr.toLowerCase();
-  
-  // Check for common packaging types
-  if (packLower.includes('carton')) return 'Cartons';
-  if (packLower.includes('crate')) return 'Crates';
-  if (packLower.includes('tray')) return 'Trays';
-  if (packLower.includes('pack')) return 'Packs';
-  if (packLower.includes('box')) return 'Boxes';
-  if (packLower.includes('case')) return 'Cases';
-  if (packLower.includes('pouch')) return 'Pouches';
-  if (packLower.includes('bottle')) return 'Bottles';
-  if (packLower.includes('piece')) return 'Pieces';
-  
-  // If pack string has number × unit pattern (e.g., "12 × Carton")
-  const match = packStr.match(/(\d+)\s*[x×]\s*(.+)/i);
-  if (match && match[2]) {
-    let unit = match[2].trim();
-    // Pluralize if not already
-    if (!unit.endsWith('s')) unit = unit + 's';
-    return unit;
-  }
-  
-  // Otherwise return the pack string as is, pluralized
-  return packStr.endsWith('s') ? packStr : (packStr + 's');
-}
-
-// ══════════════════════════════════════════
 //  TOGGLE PASSWORD EYE
 // ══════════════════════════════════════════
 function toggleEye(inputId, btn) {
@@ -3850,7 +3810,7 @@ function buildProjProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}" data-code="${code}" data-pack="${pack}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}">✓ <span class="pill-qty">${qty||''}</span> Placed</div>
         </div>
         <div class="prod-price">KES ${price.toLocaleString()}</div>
         <div class="qty-ctl">
@@ -4415,7 +4375,7 @@ function buildProductUI() {
         <div>
           <div class="prod-name">${desc}</div>
           <div class="prod-meta" id="pmeta-${safeId}">${pack} <span class="badge">${code}</span></div>
-          <div class="prod-added-pill" id="pill-${safeId}" data-unit="${getPackagingUnit(pack)}" data-code="${code}" data-pack="${pack}">✓ <span class="pill-qty">${qty||''}</span> ${qty ? getPackagingUnit(pack) : ''} Placed</div>
+          <div class="prod-added-pill" id="pill-${safeId}">✓ <span class="pill-qty">${qty||''}</span> Placed</div>
         </div>
         <div class="prod-price" id="pprice-${safeId}">KES ${price.toLocaleString()}</div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -4484,21 +4444,9 @@ function markQtyRows() {
     if (inp) {
       const v = parseInt(inp.value) || 0;
       row.classList.toggle('has-qty', v > 0);
-      // Update the placed-pill with quantity and packaging unit
-      const pill = row.querySelector('.prod-added-pill');
-      if (pill) {
-        const code = pill.dataset.code || '';
-        const pack = pill.dataset.pack || '';
-        const pmKey = `${code}||${pack}`;
-        
-        // Check if this product is in pieces mode
-        const isInPiecesMode = _piecesMode && _piecesMode[pmKey];
-        const packUnit = isInPiecesMode ? 'Pieces' : (pill.dataset.unit || '');
-        
-        pill.innerHTML = v > 0 
-          ? `✓ <span class="pill-qty">${v}</span> ${packUnit} Placed`
-          : `✓ <span class="pill-qty"></span> Placed`;
-      }
+      // Update the placed-pill quantity text
+      const pillQty = row.querySelector('.pill-qty');
+      if (pillQty) pillQty.textContent = v > 0 ? v + ' ' : '';
     }
   });
 }
@@ -4578,8 +4526,6 @@ function togglePiecesMode(code, pack, masterPcsPerPack, price, kg, desc, cat, bt
     if (metaEl) metaEl.innerHTML = `${pack} <span class="badge">${code}</span>`;
     const priceEl = document.getElementById(`pprice-${safeId}`);
     if (priceEl) priceEl.textContent = `KES ${price.toLocaleString()}`;
-    // Update pills to reflect back to pack mode
-    markQtyRows();
     renderCart();
     return;
   }
@@ -4638,9 +4584,6 @@ function activatePiecesMode(code, pack, pcsPerPack, price, kg, desc, cat, safeId
   // Remove any existing pack-mode cart entry for this product
   const pIdx = S.cart.findIndex(c => c.code === code && c.pack === pack && !c.piecesMode);
   if (pIdx !== -1) S.cart.splice(pIdx, 1);
-  
-  // Update pills to reflect pieces mode
-  markQtyRows();
   renderCart();
 }
 
@@ -8506,15 +8449,15 @@ function handleFulfilFile(file) {
     }
     _fulfilSapData = parsed.customers;
 
-    // Update UI with enhanced visibility
+    // Update UI
     document.getElementById('fulfil-drop-zone').style.display   = 'none';
-    document.getElementById('fulfil-file-tag').classList.add('show');
+    document.getElementById('fulfil-file-tag').style.display    = 'flex';
     document.getElementById('fulfil-file-name').textContent     = file.name;
     document.getElementById('fulfil-file-meta').textContent     =
       parsed.customers.length + ' customers · ' + parsed.totalProducts + ' product lines';
 
     if (parsed.period) {
-      document.getElementById('fulfil-period').classList.add('show');
+      document.getElementById('fulfil-period').style.display    = 'flex';
       document.getElementById('fulfil-period-txt').textContent  = 'SAP Period: ' + parsed.period;
     }
 
@@ -8531,8 +8474,8 @@ function clearFulfilFile() {
   _fulfilMatched    = [];
   _ffFilteredRows   = [];
   document.getElementById('fulfil-drop-zone').style.display   = '';
-  document.getElementById('fulfil-file-tag').classList.remove('show');
-  document.getElementById('fulfil-period').classList.remove('show');
+  document.getElementById('fulfil-file-tag').style.display    = 'none';
+  document.getElementById('fulfil-period').style.display      = 'none';
   document.getElementById('fulfil-results').style.display     = 'none';
   document.getElementById('fulfil-filter-bar').style.display  = 'none';
   document.getElementById('fulfil-empty-state').style.display = '';
