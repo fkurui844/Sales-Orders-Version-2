@@ -11253,8 +11253,8 @@ function _tsSetRow(type, placed, summary) {
   border-radius: 10px; padding: 10px 14px; margin: 12px 16px 0;
 }
 
-/* ── Success step ── */
-#step-ok { display: block !important; }
+/* ── Success step (now rendered inside Section 3 / Submit tab) ── */
+#step-ok { margin: 0; }
 </style>
 
 <script>
@@ -11282,9 +11282,11 @@ function _tsSetRow(type, placed, summary) {
         const wrapper = document.getElementById('uos-wrapper');
         const prog = document.getElementById('uos-progress-strip');
         const ok = document.getElementById('step-ok');
+        const actions = document.getElementById('uos-sec3-actions');
         if (wrapper) wrapper.style.display = 'block';
         if (prog) prog.style.display = 'block';
         if (ok) ok.style.display = 'none';
+        if (actions) actions.style.display = 'block';
         // Hide old step panels
         ['step-who','step-items','step-submit'].forEach(id => {
           const el = document.getElementById(id);
@@ -11473,7 +11475,7 @@ function _tsSetRow(type, placed, summary) {
         </div>
         <div class="uos-body" id="uos-sec3-body" style="display:none">
           <div id="uos-submit-slot" style="padding:14px 16px 0"></div>
-          <div style="padding:0 16px 16px">
+          <div id="uos-sec3-actions" style="padding:0 16px 16px">
             <div style="margin-bottom:12px">
               <label class="lbl">Notes (Optional)</label>
               <textarea class="inp" id="uos-notes-inp" placeholder="Special instructions…" rows="3"></textarea>
@@ -11527,6 +11529,13 @@ function _tsSetRow(type, placed, summary) {
           }
         });
       }
+    }
+
+    // Move the success screen into section 3's body, so "Orders Submitted!"
+    // renders inside the SUBMIT tab instead of as a separate full-page screen
+    const stepOk = document.getElementById('step-ok');
+    if (submitSlot && stepOk) {
+      submitSlot.parentNode.appendChild(stepOk);
     }
 
     // Move draft & partial banners into the wrapper (before sections)
@@ -11670,13 +11679,45 @@ function _tsSetRow(type, placed, summary) {
   }
 
   function hideOrderSections() {
+    // Keep the wrapper and progress strip visible — the success screen now
+    // lives inside Section 3 (Submit) rather than replacing the whole page.
     const w = document.getElementById('uos-wrapper');
     const prog = document.getElementById('uos-progress-strip');
-    if (w) w.style.display = 'none';
-    if (prog) prog.style.display = 'none';
-    // Show the success screen
+    if (w) w.style.display = 'block';
+    if (prog) prog.style.display = 'block';
+
+    const s1 = document.getElementById('uos-sec1');
+    const s2 = document.getElementById('uos-sec2');
+    const s3 = document.getElementById('uos-sec3');
+    const b1 = document.getElementById('uos-sec1-body');
+    const b2 = document.getElementById('uos-sec2-body');
+    const b3 = document.getElementById('uos-sec3-body');
+    const actions = document.getElementById('uos-sec3-actions');
     const ok = document.getElementById('step-ok');
+
+    // Collapse sections 1 & 2, keep 3 open showing the success content
+    if (s1) s1.className = 'uos-section done';
+    if (b1) b1.style.display = 'none';
+    if (s2) s2.className = 'uos-section done';
+    if (b2) b2.style.display = 'none';
+    if (s3) s3.className = 'uos-section done';
+    if (b3) b3.style.display = 'block';
+
+    // Swap out the notes/submit button for the success screen
+    if (actions) actions.style.display = 'none';
     if (ok) ok.style.display = 'block';
+
+    // Mark progress strip as fully complete
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('ups-s' + i);
+      if (el) el.className = 'ups-step done';
+    });
+    [1,2].forEach(i => {
+      const el = document.getElementById('ups-l' + i);
+      if (el) el.className = 'ups-line done';
+    });
+
+    setTimeout(() => { if (s3) s3.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80);
   }
 
   /* ── Show the UOS wrapper when the salesman app is active ── */
