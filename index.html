@@ -883,7 +883,6 @@ tr.tonnage-detail-row td{padding:0}
     <!-- ── PANEL A: SIGN IN ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
-      <div class="logo-sub">Clerk sign in — enter customer LPOs</div>
 
       <div class="fg">
         <label class="lbl">Your Name / Payroll Number</label>
@@ -3659,6 +3658,18 @@ function pickOT(type) {
   S.orderType = type;
   document.getElementById('ot-proj').classList.toggle('sel', type === 'projection');
   document.getElementById('ot-full').classList.toggle('sel', type === 'full');
+  // Reflect selection on the tappable status pills too
+  const pProj = document.getElementById('uos-pill-proj');
+  const pFull = document.getElementById('uos-pill-full');
+  if (pProj) pProj.classList.toggle('uos-ot-active', type === 'projection');
+  if (pFull) pFull.classList.toggle('uos-ot-active', type === 'full');
+}
+
+// Tapping a status pill on step 1 switches order type (Projection vs Full Order)
+function selectOrderTypeFromPill(type) {
+  pickOT(type);
+  const s2label = document.querySelector('#s2t span');
+  if (s2label) s2label.textContent = type === 'projection' ? 'PRODUCTS' : 'ADD ITEMS';
 }
 
 function shakeEl(id) {
@@ -11228,6 +11239,11 @@ function _tsSetRow(type, placed, summary) {
 .uos-status-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .uos-status-val { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800; color: var(--text); margin-top: 1px; }
 
+/* ── Order-type pills: tappable ── */
+.uos-ot-pill { cursor: pointer; border: 1.5px solid transparent; transition: border-color .15s, background .15s; }
+.uos-ot-pill:hover { background: #F3EFE9; }
+.uos-ot-pill.uos-ot-active { border-color: var(--accent); background: #FFF7F0; }
+
 /* ── CTA buttons at bottom of sections ── */
 .uos-cta { padding: 12px 16px 16px; }
 .uos-cta-btn {
@@ -11413,16 +11429,16 @@ function _tsSetRow(type, placed, summary) {
             <!-- fields mirrored here via DOM move (done in JS below) -->
             <div id="uos-details-slot"></div>
           </div>
-          <!-- Status pills -->
+          <!-- Status pills (tappable to choose order type) -->
           <div class="uos-status-row">
-            <div class="uos-status-pill">
+            <div class="uos-status-pill uos-ot-pill" id="uos-pill-proj" onclick="selectOrderTypeFromPill('projection')" role="button" tabindex="0">
               <span class="uos-status-ico">🌅</span>
               <div>
                 <div class="uos-status-lbl">Projection</div>
                 <div class="uos-status-val" id="uos-ts-proj">—</div>
               </div>
             </div>
-            <div class="uos-status-pill">
+            <div class="uos-status-pill uos-ot-pill" id="uos-pill-full" onclick="selectOrderTypeFromPill('full')" role="button" tabindex="0">
               <span class="uos-status-ico">📦</span>
               <div>
                 <div class="uos-status-lbl">Full Order</div>
