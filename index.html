@@ -11520,9 +11520,12 @@ function _tsSetRow(type, placed, summary) {
       const submitContent = stepSubmit.querySelector('.content');
       if (submitContent) {
         Array.from(submitContent.children).forEach(child => {
-          // Skip the notes card (we render our own) 
+          // Skip the notes card (we render our own) — but hide it so it
+          // doesn't show up as an orphaned leftover element on the page
           const hasNotesInp = child.querySelector && child.querySelector('#notes-inp');
-          if (!hasNotesInp) {
+          if (hasNotesInp) {
+            child.style.display = 'none';
+          } else {
             child.style.margin = child.style.margin || '';
             child.style.padding = child.style.padding || '';
             submitSlot.appendChild(child);
