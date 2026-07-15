@@ -3550,18 +3550,14 @@ function goBackFromSubmit() {
 //  STEP 1 — WHO
 // ══════════════════════════════════════════
 function populateLocations() {
-  const routes = S.data.routes || [];
-  if (!routes.length) return;
+  const custs = S.data.customers || [];
+  if (!custs.length) return;
 
-  const keys = Object.keys(routes[0]);
-  S._routeKey = keys[0] || '';
-  S._locKey   = keys[1] || '';
+  const c0 = custs[0];
+  S._routeKey = findKey(c0, CUST_ROUTE_KEYS, '');
+  S._locKey   = findKey(c0, ['Location','LOCATION','Area','Region','Town','AREA'], '');
 
-  const r0 = routes[0];
-  S._routeKey = findKey(r0, ['Route','Route Name','RouteName','ROUTE'], S._routeKey);
-  S._locKey   = findKey(r0, ['Location','LOCATION','Area','Region','Town','AREA'], S._locKey);
-
-  const locs = [...new Set(routes.map(r => (r[S._locKey]||'').trim()).filter(Boolean))].sort();
+  const locs = [...new Set(custs.map(c => (c[S._locKey]||'').trim()).filter(Boolean))].sort();
   const sel = document.getElementById('who-loc');
   sel.innerHTML = '<option value="">— Select Location —</option>';
   locs.forEach(l => {
@@ -3596,16 +3592,20 @@ function initRouteSearch() {
 
 function renderRouteList(q) {
   const list = document.getElementById('route-list');
-  const routes = (S.data.routes || [])
-    .filter(r => (r[S._locKey]||'').trim().toLowerCase() === S.location.toLowerCase())
-    .filter(r => (r[S._routeKey]||'').toLowerCase().includes(q.toLowerCase()))
+  const routes = [...new Set(
+    (S.data.customers || [])
+      .filter(c => (c[S._locKey]||'').trim().toLowerCase() === S.location.toLowerCase())
+      .map(c => (c[S._routeKey] || '').trim())
+      .filter(Boolean)
+  )]
+    .filter(r => r.toLowerCase().includes(q.toLowerCase()))
+    .sort()
     .slice(0, 30);
 
   list.innerHTML = '';
   if (!routes.length) { list.innerHTML = '<div class="dd-empty">No routes for this location</div>'; return; }
 
-  routes.forEach(r => {
-    const name = r[S._routeKey] || '';
+  routes.forEach(name => {
     const d = document.createElement('div');
     d.className = 'dd-item' + (S.route === name ? ' sel' : '');
     d.textContent = name;
