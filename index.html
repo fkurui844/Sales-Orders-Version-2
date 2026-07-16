@@ -94,6 +94,9 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 /* ── LOGIN ── */
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
 .login-stack{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+.login-stack.login-stack-wide{max-width:700px}
+.login-cards-row{display:flex;gap:16px;align-items:stretch}
+.login-cards-row .login-card{flex:1;min-width:0}
 .login-card{background:#fff;border-radius:20px;padding:32px 30px;width:100%;box-shadow:0 8px 48px rgba(0,0,0,.1)}
 .login-card-head{display:flex;align-items:center;gap:10px;margin-bottom:22px}
 .login-card-ico{font-size:20px;width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -708,6 +711,7 @@ tr.tonnage-detail-row td{padding:0}
 
   /* Login card */
   .login-card{padding:28px 20px}
+  .login-cards-row{flex-direction:column}
 
   /* Content padding */
   .content{padding:14px 12px}
@@ -881,11 +885,13 @@ tr.tonnage-detail-row td{padding:0}
 
 <!-- ══════════════ LOGIN ══════════════ -->
 <div id="login-screen">
-  <div class="login-stack">
+  <div class="login-stack login-stack-wide">
 
-    <!-- ── PANEL A: SIGN IN (two cards) ── -->
+    <!-- ── PANEL A: SIGN IN (two cards side by side) ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
+
+      <div class="login-cards-row">
 
       <!-- Card 1: Sign In to Place Orders -->
       <div class="login-card">
@@ -932,10 +938,12 @@ tr.tonnage-detail-row td{padding:0}
           📊 View Reports
         </button>
       </div>
+
+      </div><!-- /login-cards-row -->
     </div>
 
     <!-- ── PANEL B: SET PASSWORD ── -->
-    <div id="panel-set" class="login-panel login-card hidden">
+    <div id="panel-set" class="login-panel login-card hidden" style="max-width:420px;margin:0 auto">
       <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
 
       <div class="logo" style="font-size:26px;text-align:left">Set Password</div>
@@ -981,7 +989,7 @@ tr.tonnage-detail-row td{padding:0}
     </div>
 
     <!-- ── PANEL C: DASHBOARD / REPORTS LOGIN ── -->
-    <div id="panel-dash" class="login-panel login-card hidden">
+    <div id="panel-dash" class="login-panel login-card hidden" style="max-width:420px;margin:0 auto">
       <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
 
       <div class="logo" style="font-size:26px;text-align:left">Log in to view reports</div>
