@@ -93,17 +93,20 @@ select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
 
 /* ── LOGIN ── */
 #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
-.login-card{background:#fff;border-radius:20px;padding:44px 36px;width:100%;max-width:420px;box-shadow:0 8px 48px rgba(0,0,0,.1)}
-.logo{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.login-stack{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+.login-card{background:#fff;border-radius:20px;padding:32px 30px;width:100%;box-shadow:0 8px 48px rgba(0,0,0,.1)}
+.login-card-head{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.login-card-ico{font-size:20px;width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.login-card-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;letter-spacing:.01em;color:var(--text)}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;text-align:center}
 .logo span{color:var(--accent)}
-.logo-sub{color:var(--muted);font-size:13px;margin-bottom:32px}
+.logo-sub{color:var(--muted);font-size:13px;margin-bottom:8px;text-align:center}
+.login-card-sub{color:var(--muted);font-size:13px;margin-bottom:18px}
 .err-msg{color:#C62828;font-size:12px;margin-top:10px;display:none;font-weight:500}
 .ok-msg{color:var(--ok);font-size:12px;margin-top:10px;display:none;font-weight:500;display:flex;align-items:center;gap:6px}
 
 /* ── LOGIN PANEL TRANSITIONS ── */
-.login-panel{transition:opacity .22s,transform .22s}
-.login-panel.hidden{opacity:0;transform:translateY(8px);pointer-events:none;position:absolute;width:100%}
-.login-card{position:relative;overflow:hidden}
+.login-panel.hidden{display:none}
 
 /* ── PASSWORD STRENGTH ── */
 .pw-strength{margin-top:8px;display:flex;gap:4px;height:3px}
@@ -878,48 +881,65 @@ tr.tonnage-detail-row td{padding:0}
 
 <!-- ══════════════ LOGIN ══════════════ -->
 <div id="login-screen">
-  <div class="login-card">
+  <div class="login-stack">
 
-    <!-- ── PANEL A: SIGN IN ── -->
+    <!-- ── PANEL A: SIGN IN (two cards) ── -->
     <div id="panel-signin" class="login-panel">
       <div class="logo">SALES<span>ORDER</span></div>
 
-      <div class="fg">
-        <label class="lbl">Your Name / Payroll Number</label>
-        <div class="dd-wrap" id="ln-wrap">
-          <input class="inp" id="ln-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
-          <div class="dd-list" id="ln-list"></div>
+      <!-- Card 1: Sign In to Place Orders -->
+      <div class="login-card">
+        <div class="login-card-head">
+          <div class="login-card-ico">🛒</div>
+          <div class="login-card-title">Sign In to Place Orders</div>
         </div>
+
+        <div class="fg">
+          <label class="lbl">Your Name / Payroll Number</label>
+          <div class="dd-wrap" id="ln-wrap">
+            <input class="inp" id="ln-inp" placeholder="Type name or payroll number to search…" autocomplete="off">
+            <div class="dd-list" id="ln-list"></div>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="lbl">Password</label>
+          <div class="pw-wrap">
+            <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
+            <button class="pw-eye" tabindex="-1" onclick="toggleEye('pw-inp',this)">👁</button>
+          </div>
+        </div>
+
+        <div class="err-msg" id="login-err"></div>
+        <button class="btn-dark" style="margin-top:6px" onclick="doLogin()">Sign In →</button>
+
+        <div class="divider">or</div>
+
+        <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
+          🔑 Set / Change My Password
+        </button>
       </div>
 
-      <div class="fg">
-        <label class="lbl">Password</label>
-        <div class="pw-wrap">
-          <input class="inp" type="password" id="pw-inp" placeholder="Enter your password">
-          <button class="pw-eye" tabindex="-1" onclick="toggleEye('pw-inp',this)">👁</button>
+      <!-- Card 2: View Reports -->
+      <div class="login-card">
+        <div class="login-card-head">
+          <div class="login-card-ico">📊</div>
+          <div class="login-card-title">View Reports</div>
         </div>
+        <div class="login-card-sub">Log in to view consolidated orders &amp; reports</div>
+
+        <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('dash')">
+          📊 View Reports
+        </button>
       </div>
-
-      <div class="err-msg" id="login-err"></div>
-      <button class="btn-dark" style="margin-top:6px" onclick="doLogin()">Sign In →</button>
-
-      <div class="divider">or</div>
-
-      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px" onclick="showPanel('set')">
-        🔑 Set / Change My Password
-      </button>
-
-      <button class="btn-ghost" style="width:100%;text-align:center;font-size:15px;margin-top:10px" onclick="showPanel('dash')">
-        📊 View Reports
-      </button>
     </div>
 
     <!-- ── PANEL B: SET PASSWORD ── -->
-    <div id="panel-set" class="login-panel hidden">
+    <div id="panel-set" class="login-panel login-card hidden">
       <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
 
-      <div class="logo" style="font-size:26px">Set Password</div>
-      <div class="logo-sub">Choose a password for your account</div>
+      <div class="logo" style="font-size:26px;text-align:left">Set Password</div>
+      <div class="logo-sub" style="text-align:left;margin-bottom:32px">Choose a password for your account</div>
 
       <div class="fg">
         <label class="lbl">Your Name / Payroll Number</label>
@@ -961,11 +981,11 @@ tr.tonnage-detail-row td{padding:0}
     </div>
 
     <!-- ── PANEL C: DASHBOARD / REPORTS LOGIN ── -->
-    <div id="panel-dash" class="login-panel hidden">
+    <div id="panel-dash" class="login-panel login-card hidden">
       <button class="back-link" onclick="showPanel('signin')">← Back to Sign In</button>
 
-      <div class="logo" style="font-size:26px">Log in to view reports</div>
-      <div class="logo-sub">View consolidated orders &amp; reports</div>
+      <div class="logo" style="font-size:26px;text-align:left">Log in to view reports</div>
+      <div class="logo-sub" style="text-align:left;margin-bottom:32px">View consolidated orders &amp; reports</div>
 
       <div class="fg">
         <label class="lbl">Payroll Number</label>
